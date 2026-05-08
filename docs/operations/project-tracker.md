@@ -19,7 +19,8 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [ ] Decidere strategia seed/conversione.
 - [ ] Valutare se `DiagnosticFlow` deve restare solo per guide curate/fallback.
 - [ ] Esporre API organizzazioni/membership dopo stabilizzazione del dominio.
-- [ ] Modellare `CaseShareRequest`, `Conversation` e `ConversationPost`.
+- [ ] Rifinire condivisione selettiva allegati/chat diagnostica su `CaseShareRequest`.
+- [ ] Aggiungere assegnazione interna organizzazione/tecnico dopo accettazione richiesta.
 
 ## Fatto
 
@@ -81,6 +82,10 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [x] Aggiunta app `organizations` con `OrganizationPlan`, `Organization` e `OrganizationMembership`.
 - [x] Collegati `Property.organization` e `Case.owner_organization`.
 - [x] Eseguita suite test dopo ownership organizzativa: `76 passed`.
+- [x] Aggiunto modello `CaseShareRequest` con accettazione, rifiuto e revoca.
+- [x] Aggiunta app `conversations` con `Conversation`, `ConversationParticipant` e `ConversationPost`.
+- [x] Aggiunti endpoint per `case-share-requests` e `conversations`.
+- [x] Eseguita suite test dopo condivisione/conversazioni: `79 passed`.
 
 ## Decisioni Confermate
 

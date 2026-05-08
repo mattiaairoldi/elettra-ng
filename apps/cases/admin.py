@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Asset, Case, CaseEvent, CaseNote, Property
+from .models import Asset, Case, CaseEvent, CaseNote, CaseShareRequest, Property
 
 
 @admin.register(Property)
@@ -55,3 +55,19 @@ class CaseEventAdmin(admin.ModelAdmin):
 class CaseNoteAdmin(admin.ModelAdmin):
     list_display = ("case", "author_user", "note_type", "is_internal", "created_at")
     list_filter = ("note_type", "is_internal")
+
+
+@admin.register(CaseShareRequest)
+class CaseShareRequestAdmin(admin.ModelAdmin):
+    list_display = ("case", "recipient_organization", "recipient_membership", "status", "share_scope", "created_at")
+    list_filter = ("status", "share_scope", "recipient_organization")
+    search_fields = ("case__title", "requester_user__email", "recipient_organization__name")
+    autocomplete_fields = (
+        "case",
+        "requester_user",
+        "recipient_organization",
+        "recipient_membership",
+        "accepted_by_user",
+        "rejected_by_user",
+        "revoked_by_user",
+    )

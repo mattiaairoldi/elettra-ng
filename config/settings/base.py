@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.taxonomy",
     "apps.troubleshooting",
     "apps.cases",
+    "apps.conversations",
     "apps.professionals",
     "apps.appointments",
     "apps.attachments",

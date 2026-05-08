@@ -16,6 +16,7 @@ api_v1_patterns = [
     path("", include(("apps.taxonomy.urls", "taxonomy"), namespace="taxonomy")),
     path("", include(("apps.troubleshooting.urls", "troubleshooting"), namespace="troubleshooting")),
     path("", include(("apps.cases.urls", "cases"), namespace="cases")),
+    path("", include(("apps.conversations.urls", "conversations"), namespace="conversations")),
     path("", include(("apps.professionals.urls", "professionals"), namespace="professionals")),
     path("", include(("apps.appointments.urls", "appointments"), namespace="appointments")),
     path("", include(("apps.attachments.urls", "attachments"), namespace="attachments")),

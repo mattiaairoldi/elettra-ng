@@ -63,7 +63,7 @@ bucket: app-media
 docker compose run --rm web uv run pytest -q
 ```
 
-Ultima verifica: `76 passed`.
+Ultima verifica: `79 passed`.
 
 ## OpenAPI
 

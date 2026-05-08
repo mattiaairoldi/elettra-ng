@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.common.serializers import GeoPointField
 from apps.identity.models import User
+from apps.organizations.models import Organization, OrganizationMembership
 from apps.organizations.services import (
     get_or_create_personal_organization,
     user_has_active_organization_membership,
@@ -9,7 +10,7 @@ from apps.organizations.services import (
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticFlow, DiagnosticNode, DiagnosticOption
 
-from .models import Asset, Case, CaseEvent, CaseNote, Property
+from .models import Asset, Case, CaseEvent, CaseNote, CaseShareRequest, Property
 
 
 CASE_STATUS_TRANSITIONS = {
@@ -318,6 +319,120 @@ class CaseAssignSerializer(serializers.Serializer):
             raise serializers.ValidationError("Assigned user must have professional role.")
         self.context["professional_user"] = user
         return value
+
+
+class CaseShareRequestSerializer(serializers.ModelSerializer):
+    case_id = serializers.IntegerField(source="case.id", read_only=True)
+    requester_user_id = serializers.IntegerField(source="requester_user.id", read_only=True)
+    recipient_organization_id = serializers.IntegerField(source="recipient_organization.id", read_only=True)
+    recipient_membership_id = serializers.IntegerField(source="recipient_membership.id", read_only=True, allow_null=True)
+    accepted_by_user_id = serializers.IntegerField(source="accepted_by_user.id", read_only=True, allow_null=True)
+    rejected_by_user_id = serializers.IntegerField(source="rejected_by_user.id", read_only=True, allow_null=True)
+    revoked_by_user_id = serializers.IntegerField(source="revoked_by_user.id", read_only=True, allow_null=True)
+    conversation_id = serializers.IntegerField(source="conversation.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = CaseShareRequest
+        fields = (
+            "id",
+            "case_id",
+            "requester_user_id",
+            "recipient_organization_id",
+            "recipient_membership_id",
+            "status",
+            "share_scope",
+            "visible_title",
+            "visible_summary",
+            "shared_payload_json",
+            "rejection_reason",
+            "accepted_by_user_id",
+            "accepted_at",
+            "rejected_by_user_id",
+            "rejected_at",
+            "revoked_by_user_id",
+            "revoked_at",
+            "conversation_id",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+
+class CaseShareRequestCreateSerializer(serializers.ModelSerializer):
+    recipient_organization_id = serializers.IntegerField()
+    recipient_membership_id = serializers.IntegerField(required=False, allow_null=True)
+
+    class Meta:
+        model = CaseShareRequest
+        fields = (
+            "recipient_organization_id",
+            "recipient_membership_id",
+            "share_scope",
+            "visible_title",
+            "visible_summary",
+            "shared_payload_json",
+        )
+        extra_kwargs = {
+            "visible_title": {"required": False, "allow_blank": True},
+            "visible_summary": {"required": False, "allow_blank": True},
+            "shared_payload_json": {"required": False},
+            "share_scope": {"required": False},
+        }
+
+    def validate(self, attrs):
+        case = self.context["case"]
+        recipient_organization_id = attrs["recipient_organization_id"]
+        recipient_membership_id = attrs.get("recipient_membership_id")
+
+        try:
+            recipient_organization = Organization.objects.select_related("plan").get(
+                id=recipient_organization_id,
+                status=Organization.Statuses.ACTIVE,
+            )
+        except Organization.DoesNotExist as exc:
+            raise serializers.ValidationError({"recipient_organization_id": "Invalid recipient organization."}) from exc
+
+        if recipient_organization.id == case.owner_organization_id:
+            raise serializers.ValidationError({"recipient_organization_id": "Cannot share a case with its owner organization."})
+
+        if not recipient_organization.plan.can_receive_cases:
+            raise serializers.ValidationError({"recipient_organization_id": "Recipient organization cannot receive cases."})
+
+        recipient_membership = None
+        if recipient_membership_id is not None:
+            try:
+                recipient_membership = OrganizationMembership.objects.select_related("user", "organization").get(
+                    id=recipient_membership_id,
+                    organization=recipient_organization,
+                    status=OrganizationMembership.Statuses.ACTIVE,
+                )
+            except OrganizationMembership.DoesNotExist as exc:
+                raise serializers.ValidationError({"recipient_membership_id": "Invalid recipient membership."}) from exc
+
+        visible_title = attrs.get("visible_title", "").strip() or case.title
+        visible_summary = attrs.get("visible_summary", "").strip() or case.description
+
+        attrs["recipient_organization"] = recipient_organization
+        attrs["recipient_membership"] = recipient_membership
+        attrs["visible_title"] = visible_title
+        attrs["visible_summary"] = visible_summary
+        attrs["shared_payload_json"] = attrs.get("shared_payload_json") or {}
+        return attrs
+
+    def create(self, validated_data):
+        case = self.context["case"]
+        request = self.context["request"]
+        validated_data.pop("recipient_organization_id")
+        validated_data.pop("recipient_membership_id", None)
+        return CaseShareRequest.objects.create(
+            case=case,
+            requester_user=request.user,
+            **validated_data,
+        )
+
+
+class CaseShareRequestRejectSerializer(serializers.Serializer):
+    reason = serializers.CharField(required=False, allow_blank=True, max_length=2000)
 
 
 class CaseNoteSerializer(serializers.ModelSerializer):

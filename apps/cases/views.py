@@ -1,15 +1,21 @@
+from django.db.models import Q
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from .access import build_case_visibility_filter, user_can_respond_to_share_request, user_can_share_case
 from .events import create_case_event, update_case_status
-from .models import Asset, Case, CaseEvent, CaseNote, Property
+from .models import Asset, Case, CaseEvent, CaseNote, CaseShareRequest, Property
 from .permissions import IsAdminUserRole
+from .share_services import accept_case_share_request, reject_case_share_request, revoke_case_share_request
 from .serializers import (
     AssetSerializer,
     CaseAssignSerializer,
     CaseEventSerializer,
     CaseNoteSerializer,
+    CaseShareRequestCreateSerializer,
+    CaseShareRequestRejectSerializer,
+    CaseShareRequestSerializer,
     CaseSerializer,
     CaseStatusSerializer,
     CaseTroubleshootingProgressSerializer,
@@ -21,11 +27,10 @@ from apps.organizations.models import OrganizationMembership
 
 
 def build_case_queryset(user):
+    queryset = Case.objects.all()
     if user.role == "admin":
-        return Case.objects.all()
-    if user.role == "professional":
-        return Case.objects.filter(assigned_professional=user)
-    return Case.objects.filter(customer_user=user)
+        return queryset
+    return queryset.filter(build_case_visibility_filter(user)).distinct()
 
 
 class PropertyViewSet(
@@ -217,6 +222,41 @@ class CaseViewSet(
         serializer = CaseEventSerializer(case.events.select_related("actor_user"), many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["get", "post"], permission_classes=[permissions.IsAuthenticated], url_path="share-requests")
+    def share_requests(self, request, pk=None):
+        case = self.get_object()
+        if request.method == "GET":
+            queryset = case.share_requests.select_related(
+                "case",
+                "requester_user",
+                "recipient_organization",
+                "recipient_membership",
+                "recipient_membership__user",
+                "accepted_by_user",
+                "rejected_by_user",
+                "revoked_by_user",
+            )
+            serializer = CaseShareRequestSerializer(queryset, many=True)
+            return Response(serializer.data)
+
+        if not user_can_share_case(request.user, case):
+            return Response({"detail": "You cannot share this case."}, status=status.HTTP_403_FORBIDDEN)
+        serializer = CaseShareRequestCreateSerializer(data=request.data, context={"request": request, "case": case})
+        serializer.is_valid(raise_exception=True)
+        share_request = serializer.save()
+        create_case_event(
+            case=case,
+            event_type=CaseEvent.EventTypes.CASE_SHARE_REQUEST_CREATED,
+            actor_user=request.user,
+            payload={
+                "share_request_id": share_request.id,
+                "recipient_organization_id": share_request.recipient_organization_id,
+                "recipient_membership_id": share_request.recipient_membership_id,
+                "share_scope": share_request.share_scope,
+            },
+        )
+        return Response(CaseShareRequestSerializer(share_request).data, status=status.HTTP_201_CREATED)
+
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated], url_path="troubleshooting/start")
     def troubleshooting_start(self, request, pk=None):
         case = self.get_object()
@@ -264,3 +304,80 @@ class CaseViewSet(
             },
         )
         return Response({"case": CaseSerializer(case).data})
+
+
+class CaseShareRequestViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CaseShareRequestSerializer
+    queryset = CaseShareRequest.objects.all()
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = CaseShareRequest.objects.select_related(
+            "case",
+            "requester_user",
+            "recipient_organization",
+            "recipient_membership",
+            "recipient_membership__user",
+            "accepted_by_user",
+            "rejected_by_user",
+            "revoked_by_user",
+        )
+        if user.role == "admin":
+            return queryset
+        return queryset.filter(
+            Q(case__customer_user=user)
+            | Q(
+                case__owner_organization__memberships__user=user,
+                case__owner_organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+            )
+            | Q(
+                recipient_membership__user=user,
+                recipient_membership__status=OrganizationMembership.Statuses.ACTIVE,
+            )
+            | Q(
+                recipient_organization__memberships__user=user,
+                recipient_organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+                recipient_organization__memberships__scope=OrganizationMembership.Scopes.ORGANIZATION,
+            )
+        ).distinct()
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def accept(self, request, pk=None):
+        share_request = self.get_object()
+        if share_request.status != CaseShareRequest.Statuses.PENDING:
+            return Response({"detail": "Only pending share requests can be accepted."}, status=status.HTTP_400_BAD_REQUEST)
+        if not user_can_respond_to_share_request(request.user, share_request):
+            return Response({"detail": "You cannot accept this share request."}, status=status.HTTP_403_FORBIDDEN)
+        conversation = accept_case_share_request(share_request, request.user)
+        share_request.refresh_from_db()
+        return Response(
+            {
+                "share_request": CaseShareRequestSerializer(share_request).data,
+                "conversation_id": conversation.id,
+            }
+        )
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def reject(self, request, pk=None):
+        share_request = self.get_object()
+        if share_request.status != CaseShareRequest.Statuses.PENDING:
+            return Response({"detail": "Only pending share requests can be rejected."}, status=status.HTTP_400_BAD_REQUEST)
+        if not user_can_respond_to_share_request(request.user, share_request):
+            return Response({"detail": "You cannot reject this share request."}, status=status.HTTP_403_FORBIDDEN)
+        serializer = CaseShareRequestRejectSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reject_case_share_request(share_request, request.user, reason=serializer.validated_data.get("reason", ""))
+        share_request.refresh_from_db()
+        return Response({"share_request": CaseShareRequestSerializer(share_request).data})
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def revoke(self, request, pk=None):
+        share_request = self.get_object()
+        if share_request.status != CaseShareRequest.Statuses.ACCEPTED:
+            return Response({"detail": "Only accepted share requests can be revoked."}, status=status.HTTP_400_BAD_REQUEST)
+        if not user_can_share_case(request.user, share_request.case):
+            return Response({"detail": "You cannot revoke this share request."}, status=status.HTTP_403_FORBIDDEN)
+        revoke_case_share_request(share_request, request.user)
+        share_request.refresh_from_db()
+        return Response({"share_request": CaseShareRequestSerializer(share_request).data})
