@@ -13,6 +13,7 @@ api_v1_patterns = [
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("docs/", SpectacularSwaggerView.as_view(url_name="api_v1:schema"), name="docs"),
     path("auth/", include(("apps.identity.urls", "identity"), namespace="auth")),
+    path("", include(("apps.organizations.urls", "organizations"), namespace="organizations")),
     path("", include(("apps.taxonomy.urls", "taxonomy"), namespace="taxonomy")),
     path("", include(("apps.troubleshooting.urls", "troubleshooting"), namespace="troubleshooting")),
     path("", include(("apps.cases.urls", "cases"), namespace="cases")),
