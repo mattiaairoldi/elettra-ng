@@ -133,6 +133,17 @@ SPECTACULAR_SETTINGS = {
             ("published", "Published"),
             ("archived", "Archived"),
         ],
+        "UserRoleEnum": [
+            ("customer", "Customer"),
+            ("professional", "Professional"),
+            ("admin", "Admin"),
+        ],
+        "OrganizationMembershipRoleEnum": [
+            ("owner", "Owner"),
+            ("admin", "Admin"),
+            ("administrative", "Administrative"),
+            ("technician", "Technician"),
+        ],
     },
 }
 
@@ -175,6 +186,7 @@ EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
 EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@local.test")
+ORGANIZATION_INVITATION_TTL_DAYS = env.int("ORGANIZATION_INVITATION_TTL_DAYS", default=14)
 
 AI_PROVIDER = env("AI_PROVIDER", default="local")
 AI_DAILY_MESSAGE_LIMIT_PER_USER = env.int("AI_DAILY_MESSAGE_LIMIT_PER_USER", default=20)

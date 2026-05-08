@@ -1,7 +1,10 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
-from .models import Organization, OrganizationMembership, OrganizationPlan
+from .models import Organization, OrganizationInvitation, OrganizationMembership, OrganizationPlan
 
 
 BUILTIN_PLAN_DEFINITIONS = {
@@ -89,3 +92,33 @@ def user_has_active_organization_membership(user, organization_id: int | None) -
         status=OrganizationMembership.Statuses.ACTIVE,
     ).exists()
 
+
+def normalize_invitation_email(email: str) -> str:
+    from django.contrib.auth import get_user_model
+
+    return get_user_model().objects.normalize_email(email)
+
+
+def build_invitation_expiry():
+    return timezone.now() + timedelta(days=settings.ORGANIZATION_INVITATION_TTL_DAYS)
+
+
+def count_active_members_and_pending_invitations(organization) -> int:
+    active_members = OrganizationMembership.objects.filter(
+        organization=organization,
+        status=OrganizationMembership.Statuses.ACTIVE,
+    ).count()
+    pending_invitations = OrganizationInvitation.objects.filter(
+        organization=organization,
+        status=OrganizationInvitation.Statuses.PENDING,
+        expires_at__gt=timezone.now(),
+    ).count()
+    return active_members + pending_invitations
+
+
+def expire_invitation_if_needed(invitation) -> bool:
+    if invitation.status == OrganizationInvitation.Statuses.PENDING and invitation.expires_at <= timezone.now():
+        invitation.status = OrganizationInvitation.Statuses.EXPIRED
+        invitation.save(update_fields=["status", "updated_at"])
+        return True
+    return False

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Organization, OrganizationMembership, OrganizationPlan
+from .models import Organization, OrganizationInvitation, OrganizationMembership, OrganizationPlan
 
 
 @admin.register(OrganizationPlan)
@@ -25,3 +25,16 @@ class OrganizationMembershipAdmin(admin.ModelAdmin):
     search_fields = ("organization__name", "user__email")
     autocomplete_fields = ("organization", "user", "approved_by_user")
 
+
+@admin.register(OrganizationInvitation)
+class OrganizationInvitationAdmin(admin.ModelAdmin):
+    list_display = ("organization", "email", "role", "scope", "status", "expires_at")
+    list_filter = ("status", "role", "scope")
+    search_fields = ("organization__name", "email", "invited_by_user__email")
+    autocomplete_fields = (
+        "organization",
+        "invited_by_user",
+        "accepted_by_user",
+        "accepted_membership",
+        "revoked_by_user",
+    )

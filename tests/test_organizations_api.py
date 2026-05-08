@@ -1,11 +1,16 @@
 import json
+from datetime import timedelta
 
 import pytest
+from django.core import mail
 from django.contrib.auth import get_user_model
+from django.test import override_settings
 from django.urls import reverse
+from django.utils import timezone
 
-from apps.organizations.models import Organization, OrganizationMembership, OrganizationPlan
+from apps.organizations.models import Organization, OrganizationInvitation, OrganizationMembership, OrganizationPlan
 from apps.organizations.services import get_or_create_personal_organization
+from apps.organizations.tokens import generate_organization_invitation_token
 
 User = get_user_model()
 
@@ -219,3 +224,225 @@ def test_operational_multi_organization_membership_requires_platform_admin(clien
     assert response.status_code == 400
     assert response.json() == {"email": ["Multi-organization operational memberships require platform approval."]}
 
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_organization_invitation_dispatches_email_through_celery_task(client, monkeypatch):
+    owner = User.objects.create_user(email="owner@example.com", password="Password123!")
+    invited_user = User.objects.create_user(email="tech@example.com", password="Password123!")
+    plan = OrganizationPlan.objects.get(slug="professional")
+    plan.max_members = 2
+    plan.save(update_fields=["max_members", "updated_at"])
+    organization = Organization.objects.create(
+        name="Rossi Impianti",
+        kind=Organization.Kinds.PROFESSIONAL,
+        plan=plan,
+        created_by_user=owner,
+    )
+    OrganizationMembership.objects.create(
+        user=owner,
+        organization=organization,
+        role=OrganizationMembership.Roles.OWNER,
+        scope=OrganizationMembership.Scopes.ORGANIZATION,
+        status=OrganizationMembership.Statuses.ACTIVE,
+        approved_by_user=owner,
+    )
+    get_or_create_personal_organization(invited_user)
+    call_log = []
+
+    from apps.organizations import views
+
+    def tracked_delay(invitation_id):
+        call_log.append(invitation_id)
+
+    monkeypatch.setattr(views.send_organization_invitation_email_task, "delay", tracked_delay)
+
+    client.force_login(owner)
+    response = client.post(
+        reverse("api_v1:organizations:organization-invitations", args=[organization.id]),
+        data=json.dumps(
+            {
+                "email": invited_user.email,
+                "role": OrganizationMembership.Roles.TECHNICIAN,
+                "scope": OrganizationMembership.Scopes.ASSIGNED,
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    invitation = OrganizationInvitation.objects.get(id=response.json()["id"])
+    assert call_log == [invitation.id]
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    CELERY_TASK_EAGER_PROPAGATES=True,
+)
+def test_organization_invitation_email_is_sent_by_celery_task(client):
+    owner = User.objects.create_user(email="owner@example.com", password="Password123!")
+    invited_user = User.objects.create_user(email="tech@example.com", password="Password123!")
+    plan = OrganizationPlan.objects.get(slug="professional")
+    plan.max_members = 2
+    plan.save(update_fields=["max_members", "updated_at"])
+    organization = Organization.objects.create(
+        name="Rossi Impianti",
+        kind=Organization.Kinds.PROFESSIONAL,
+        plan=plan,
+        created_by_user=owner,
+    )
+    OrganizationMembership.objects.create(
+        user=owner,
+        organization=organization,
+        role=OrganizationMembership.Roles.OWNER,
+        scope=OrganizationMembership.Scopes.ORGANIZATION,
+        status=OrganizationMembership.Statuses.ACTIVE,
+        approved_by_user=owner,
+    )
+
+    client.force_login(owner)
+    response = client.post(
+        reverse("api_v1:organizations:organization-invitations", args=[organization.id]),
+        data=json.dumps(
+            {
+                "email": invited_user.email,
+                "role": OrganizationMembership.Roles.TECHNICIAN,
+                "scope": OrganizationMembership.Scopes.ASSIGNED,
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == [invited_user.email]
+    assert "invitation" in mail.outbox[0].subject.lower()
+
+
+@pytest.mark.django_db
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+def test_organization_invitation_email_task_ignores_non_pending_invitation():
+    from apps.organizations.tasks import send_organization_invitation_email_task
+
+    owner = User.objects.create_user(email="owner@example.com", password="Password123!")
+    plan = OrganizationPlan.objects.get(slug="professional")
+    organization = Organization.objects.create(
+        name="Rossi Impianti",
+        kind=Organization.Kinds.PROFESSIONAL,
+        plan=plan,
+        created_by_user=owner,
+    )
+    invitation = OrganizationInvitation.objects.create(
+        organization=organization,
+        email="tech@example.com",
+        role=OrganizationMembership.Roles.TECHNICIAN,
+        scope=OrganizationMembership.Scopes.ASSIGNED,
+        status=OrganizationInvitation.Statuses.REVOKED,
+        invited_by_user=owner,
+        revoked_by_user=owner,
+        revoked_at=timezone.now(),
+        expires_at=timezone.now() + timedelta(days=7),
+    )
+
+    send_organization_invitation_email_task(invitation.id)
+
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
+def test_accept_organization_invitation_creates_membership(client):
+    owner = User.objects.create_user(email="owner@example.com", password="Password123!")
+    invited_user = User.objects.create_user(email="tech@example.com", password="Password123!")
+    plan = OrganizationPlan.objects.get(slug="professional")
+    plan.max_members = 2
+    plan.save(update_fields=["max_members", "updated_at"])
+    organization = Organization.objects.create(
+        name="Rossi Impianti",
+        kind=Organization.Kinds.PROFESSIONAL,
+        plan=plan,
+        created_by_user=owner,
+    )
+    OrganizationMembership.objects.create(
+        user=owner,
+        organization=organization,
+        role=OrganizationMembership.Roles.OWNER,
+        scope=OrganizationMembership.Scopes.ORGANIZATION,
+        status=OrganizationMembership.Statuses.ACTIVE,
+        approved_by_user=owner,
+    )
+    invitation = OrganizationInvitation.objects.create(
+        organization=organization,
+        email=invited_user.email,
+        role=OrganizationMembership.Roles.TECHNICIAN,
+        scope=OrganizationMembership.Scopes.ASSIGNED,
+        invited_by_user=owner,
+        expires_at=timezone.now() + timedelta(days=7),
+    )
+    token = generate_organization_invitation_token(invitation)
+
+    client.force_login(invited_user)
+    response = client.post(
+        reverse("api_v1:organizations:organization-invitation-accept"),
+        data=json.dumps({"token": token}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    invitation.refresh_from_db()
+    assert invitation.status == OrganizationInvitation.Statuses.ACCEPTED
+    assert invitation.accepted_by_user == invited_user
+    assert OrganizationMembership.objects.filter(
+        user=invited_user,
+        organization=organization,
+        role=OrganizationMembership.Roles.TECHNICIAN,
+        scope=OrganizationMembership.Scopes.ASSIGNED,
+        status=OrganizationMembership.Statuses.ACTIVE,
+    ).exists()
+
+
+@pytest.mark.django_db
+def test_revoked_organization_invitation_cannot_be_accepted(client):
+    owner = User.objects.create_user(email="owner@example.com", password="Password123!")
+    invited_user = User.objects.create_user(email="tech@example.com", password="Password123!")
+    plan = OrganizationPlan.objects.get(slug="professional")
+    plan.max_members = 2
+    plan.save(update_fields=["max_members", "updated_at"])
+    organization = Organization.objects.create(
+        name="Rossi Impianti",
+        kind=Organization.Kinds.PROFESSIONAL,
+        plan=plan,
+        created_by_user=owner,
+    )
+    OrganizationMembership.objects.create(
+        user=owner,
+        organization=organization,
+        role=OrganizationMembership.Roles.OWNER,
+        scope=OrganizationMembership.Scopes.ORGANIZATION,
+        status=OrganizationMembership.Statuses.ACTIVE,
+        approved_by_user=owner,
+    )
+    invitation = OrganizationInvitation.objects.create(
+        organization=organization,
+        email=invited_user.email,
+        role=OrganizationMembership.Roles.TECHNICIAN,
+        scope=OrganizationMembership.Scopes.ASSIGNED,
+        status=OrganizationInvitation.Statuses.REVOKED,
+        invited_by_user=owner,
+        revoked_by_user=owner,
+        revoked_at=timezone.now(),
+        expires_at=timezone.now() + timedelta(days=7),
+    )
+    token = generate_organization_invitation_token(invitation)
+
+    client.force_login(invited_user)
+    response = client.post(
+        reverse("api_v1:organizations:organization-invitation-accept"),
+        data=json.dumps({"token": token}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"token": ["Invitation is not pending."]}

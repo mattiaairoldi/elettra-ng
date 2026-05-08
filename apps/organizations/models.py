@@ -121,3 +121,60 @@ class OrganizationMembership(models.Model):
 
     def __str__(self):
         return f"{self.user} @ {self.organization}"
+
+
+class OrganizationInvitation(models.Model):
+    class Statuses(models.TextChoices):
+        PENDING = "pending", "Pending"
+        ACCEPTED = "accepted", "Accepted"
+        REVOKED = "revoked", "Revoked"
+        EXPIRED = "expired", "Expired"
+
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name="invitations")
+    email = models.EmailField()
+    role = models.CharField(max_length=32, choices=OrganizationMembership.Roles.choices)
+    scope = models.CharField(max_length=32, choices=OrganizationMembership.Scopes.choices)
+    status = models.CharField(max_length=32, choices=Statuses.choices, default=Statuses.PENDING)
+    invited_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sent_organization_invitations",
+    )
+    accepted_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="accepted_organization_invitations",
+    )
+    accepted_membership = models.OneToOneField(
+        OrganizationMembership,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="source_invitation",
+    )
+    revoked_by_user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="revoked_organization_invitations",
+    )
+    expires_at = models.DateTimeField()
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        indexes = [
+            models.Index(fields=("organization", "status"), name="org_invite_org_status_idx"),
+            models.Index(fields=("email", "status"), name="org_invite_email_status_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.email} -> {self.organization}"
