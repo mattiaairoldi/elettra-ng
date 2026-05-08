@@ -5,8 +5,9 @@ from .models import Asset, Case, CaseEvent, CaseNote, Property
 
 @admin.register(Property)
 class PropertyAdmin(admin.ModelAdmin):
-    list_display = ("name", "owner_user", "city")
-    search_fields = ("name", "city", "owner_user__email")
+    list_display = ("name", "owner_user", "organization", "city")
+    search_fields = ("name", "city", "owner_user__email", "organization__name")
+    autocomplete_fields = ("owner_user", "organization")
 
 
 @admin.register(Asset)
@@ -18,9 +19,19 @@ class AssetAdmin(admin.ModelAdmin):
 
 @admin.register(Case)
 class CaseAdmin(admin.ModelAdmin):
-    list_display = ("title", "customer_user", "assigned_professional", "category", "status", "priority", "source")
+    list_display = (
+        "title",
+        "customer_user",
+        "owner_organization",
+        "assigned_professional",
+        "category",
+        "status",
+        "priority",
+        "source",
+    )
     list_filter = ("status", "priority", "source", "category")
-    search_fields = ("title", "customer_user__email", "assigned_professional__email")
+    search_fields = ("title", "customer_user__email", "owner_organization__name", "assigned_professional__email")
+    autocomplete_fields = ("customer_user", "owner_organization", "assigned_professional", "category", "property", "asset")
 
 
 @admin.register(CaseEvent)

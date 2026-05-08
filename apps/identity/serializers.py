@@ -63,7 +63,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        return User.objects.create_user(**validated_data)
+        user = User.objects.create_user(**validated_data)
+        from apps.organizations.services import get_or_create_personal_organization
+
+        get_or_create_personal_organization(user)
+        return user
 
 
 class LoginSerializer(serializers.Serializer):

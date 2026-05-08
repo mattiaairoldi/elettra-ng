@@ -2,6 +2,10 @@ from rest_framework import serializers
 
 from apps.common.serializers import GeoPointField
 from apps.identity.models import User
+from apps.organizations.services import (
+    get_or_create_personal_organization,
+    user_has_active_organization_membership,
+)
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticFlow, DiagnosticNode, DiagnosticOption
 
@@ -46,6 +50,7 @@ TERMINAL_CASE_STATUSES = {
 
 class PropertySerializer(serializers.ModelSerializer):
     owner_user_id = serializers.IntegerField(source="owner_user.id", read_only=True)
+    organization_id = serializers.IntegerField(read_only=True)
     location = GeoPointField(required=False, allow_null=True)
 
     class Meta:
@@ -53,6 +58,7 @@ class PropertySerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "owner_user_id",
+            "organization_id",
             "name",
             "address_text",
             "city",
@@ -61,7 +67,7 @@ class PropertySerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "owner_user_id", "created_at", "updated_at")
+        read_only_fields = ("id", "owner_user_id", "organization_id", "created_at", "updated_at")
 
 
 class AssetSerializer(serializers.ModelSerializer):
@@ -91,7 +97,7 @@ class AssetSerializer(serializers.ModelSerializer):
             property_obj = Property.objects.get(id=value)
         except Property.DoesNotExist as exc:
             raise serializers.ValidationError("Invalid property.") from exc
-        if request.user.role != "admin" and property_obj.owner_user_id != request.user.id:
+        if not user_has_active_organization_membership(request.user, property_obj.organization_id):
             raise serializers.ValidationError("You do not own this property.")
         self.context["property_obj"] = property_obj
         return value
@@ -118,6 +124,7 @@ class AssetSerializer(serializers.ModelSerializer):
 
 class CaseSerializer(serializers.ModelSerializer):
     customer_user_id = serializers.IntegerField(source="customer_user.id", read_only=True)
+    owner_organization_id = serializers.IntegerField(read_only=True)
     assigned_professional_id = serializers.IntegerField(source="assigned_professional.id", read_only=True, allow_null=True)
     category_id = serializers.IntegerField(read_only=True)
     property_id = serializers.IntegerField(read_only=True, allow_null=True)
@@ -130,6 +137,7 @@ class CaseSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "customer_user_id",
+            "owner_organization_id",
             "assigned_professional_id",
             "category_id",
             "property_id",
@@ -185,7 +193,7 @@ class CaseWriteSerializer(serializers.ModelSerializer):
                     property_obj = Property.objects.get(id=property_id)
                 except Property.DoesNotExist as exc:
                     raise serializers.ValidationError({"property_id": "Invalid property."}) from exc
-                if request.user.role != User.Roles.ADMIN and property_obj.owner_user_id != request.user.id:
+                if not user_has_active_organization_membership(request.user, property_obj.organization_id):
                     raise serializers.ValidationError({"property_id": "You do not own this property."})
 
         if asset_id_explicit:
@@ -197,7 +205,7 @@ class CaseWriteSerializer(serializers.ModelSerializer):
                     asset_obj = Asset.objects.select_related("property").get(id=asset_id)
                 except Asset.DoesNotExist as exc:
                     raise serializers.ValidationError({"asset_id": "Invalid asset."}) from exc
-                if request.user.role != User.Roles.ADMIN and asset_obj.property.owner_user_id != request.user.id:
+                if not user_has_active_organization_membership(request.user, asset_obj.property.organization_id):
                     raise serializers.ValidationError({"asset_id": "You do not own this asset."})
 
         if asset_obj is not None and property_id_explicit and property_obj is None:
@@ -208,6 +216,12 @@ class CaseWriteSerializer(serializers.ModelSerializer):
 
         if asset_obj is not None and property_obj is not None and asset_obj.property_id != property_obj.id:
             raise serializers.ValidationError({"asset_id": "Asset does not belong to the selected property."})
+
+        owner_organization = instance.owner_organization if instance is not None else None
+        if owner_organization is None:
+            owner_organization = property_obj.organization if property_obj is not None else get_or_create_personal_organization(request.user)
+        if property_obj is not None and property_obj.organization_id != owner_organization.id:
+            raise serializers.ValidationError({"property_id": "Property does not belong to the case owner organization."})
 
         if instance is not None and instance.troubleshooting_flow_id is not None:
             next_category_id = attrs.get("category_id", instance.category_id)
@@ -224,10 +238,12 @@ class CaseWriteSerializer(serializers.ModelSerializer):
 
         attrs["property"] = property_obj
         attrs["asset"] = asset_obj
+        attrs["owner_organization"] = owner_organization
         return attrs
 
     def create(self, validated_data):
         validated_data["customer_user"] = self.context["request"].user
+        validated_data["owner_organization"] = validated_data.pop("owner_organization")
         validated_data["category_id"] = validated_data.pop("category_id")
         validated_data["property"] = validated_data.pop("property", None)
         validated_data["asset"] = validated_data.pop("asset", None)
@@ -242,6 +258,7 @@ class CaseWriteSerializer(serializers.ModelSerializer):
             instance.property = validated_data.pop("property")
         if "asset" in validated_data:
             instance.asset = validated_data.pop("asset")
+        validated_data.pop("owner_organization", None)
         validated_data.pop("property_id", None)
         validated_data.pop("asset_id", None)
         return super().update(instance, validated_data)

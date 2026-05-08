@@ -4,6 +4,7 @@ from django.utils import timezone
 
 class Property(models.Model):
     owner_user = models.ForeignKey("identity.User", on_delete=models.CASCADE, related_name="properties")
+    organization = models.ForeignKey("organizations.Organization", on_delete=models.PROTECT, related_name="properties")
     name = models.CharField(max_length=200)
     address_text = models.CharField(max_length=255, blank=True)
     city = models.CharField(max_length=120, blank=True)
@@ -17,6 +18,13 @@ class Property(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.owner_user_id and not self.organization_id:
+            from apps.organizations.services import get_or_create_personal_organization
+
+            self.organization = get_or_create_personal_organization(self.owner_user)
+        super().save(*args, **kwargs)
 
 
 class Asset(models.Model):
@@ -59,6 +67,7 @@ class Case(models.Model):
         PROFESSIONAL = "professional", "Professional"
 
     customer_user = models.ForeignKey("identity.User", on_delete=models.CASCADE, related_name="cases")
+    owner_organization = models.ForeignKey("organizations.Organization", on_delete=models.PROTECT, related_name="cases")
     assigned_professional = models.ForeignKey(
         "identity.User",
         on_delete=models.SET_NULL,
@@ -98,6 +107,16 @@ class Case(models.Model):
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.owner_organization_id:
+            if self.property_id:
+                self.owner_organization = self.property.organization
+            elif self.customer_user_id:
+                from apps.organizations.services import get_or_create_personal_organization
+
+                self.owner_organization = get_or_create_personal_organization(self.customer_user)
+        super().save(*args, **kwargs)
 
 
 class CaseEvent(models.Model):

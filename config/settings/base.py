@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "storages",
     "apps.common",
     "apps.identity",
+    "apps.organizations",
     "apps.taxonomy",
     "apps.troubleshooting",
     "apps.cases",

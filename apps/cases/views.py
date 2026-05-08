@@ -17,6 +17,7 @@ from .serializers import (
     CaseWriteSerializer,
     PropertySerializer,
 )
+from apps.organizations.models import OrganizationMembership
 
 
 def build_case_queryset(user):
@@ -39,9 +40,12 @@ class PropertyViewSet(
     queryset = Property.objects.all()
 
     def get_queryset(self):
-        queryset = Property.objects.select_related("owner_user")
+        queryset = Property.objects.select_related("owner_user", "organization")
         if self.request.user.role != "admin":
-            queryset = queryset.filter(owner_user=self.request.user)
+            queryset = queryset.filter(
+                organization__memberships__user=self.request.user,
+                organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+            ).distinct()
         return queryset
 
     def perform_create(self, serializer):
@@ -70,9 +74,12 @@ class AssetViewSet(
     queryset = Asset.objects.all()
 
     def get_queryset(self):
-        queryset = Asset.objects.select_related("property", "category", "property__owner_user")
+        queryset = Asset.objects.select_related("property", "category", "property__owner_user", "property__organization")
         if self.request.user.role != "admin":
-            queryset = queryset.filter(property__owner_user=self.request.user)
+            queryset = queryset.filter(
+                property__organization__memberships__user=self.request.user,
+                property__organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+            ).distinct()
 
         property_id = self.request.query_params.get("property_id")
         if property_id:
@@ -108,6 +115,7 @@ class CaseViewSet(
     def get_queryset(self):
         queryset = build_case_queryset(self.request.user).select_related(
             "customer_user",
+            "owner_organization",
             "assigned_professional",
             "category",
             "property",

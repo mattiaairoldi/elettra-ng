@@ -18,7 +18,8 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [ ] Decidere se i professionisti seed saranno demo o reali.
 - [ ] Decidere strategia seed/conversione.
 - [ ] Valutare se `DiagnosticFlow` deve restare solo per guide curate/fallback.
-- [ ] Tradurre il modello organizzazioni/permessi in modelli Django e migrazioni.
+- [ ] Esporre API organizzazioni/membership dopo stabilizzazione del dominio.
+- [ ] Modellare `CaseShareRequest`, `Conversation` e `ConversationPost`.
 
 ## Fatto
 
@@ -77,6 +78,9 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [x] Formalizzato modello unico `Organization` con piani `personal` e `professional`.
 - [x] Creato documento `docs/architecture/modello-organizzazioni-permessi.md`.
 - [x] Formalizzate ownership `Property`/`Case`, allegati a cascata e conversazioni flessibili.
+- [x] Aggiunta app `organizations` con `OrganizationPlan`, `Organization` e `OrganizationMembership`.
+- [x] Collegati `Property.organization` e `Case.owner_organization`.
+- [x] Eseguita suite test dopo ownership organizzativa: `76 passed`.
 
 ## Decisioni Confermate
 
