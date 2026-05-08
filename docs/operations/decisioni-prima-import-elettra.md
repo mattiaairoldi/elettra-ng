@@ -12,6 +12,29 @@ Non deve imporre schema dati, API legacy o vecchi compromessi tecnici.
 Esiste inoltre un'ipotesi alternativa da verificare: ridurre fortemente gli alberi diagnostici statici e usare l'AI per costruire domande dinamiche durante l'uso reale.
 Questa ipotesi e' descritta in [Ipotesi Diagnostica AI Dinamica](../product/ipotesi-diagnostica-ai-dinamica.md).
 
+## Decisioni Confermate
+
+- `elettra-ng` e' il repository principale.
+- `../elettra` e `../elettra2` restano fonti di contesto o import selettivo.
+- La diagnostica e' ibrida ma prioritariamente chat-first.
+- I macro-capitoli iniziali restano pochi e modificabili.
+- Storage documenti: S3-compatible fin dall'inizio, con MinIO in locale.
+- AI: un provider reale iniziale, OpenAI, con provider abstraction e possibilita' di usare OpenAI anche in sviluppo/test.
+- Nessun import automatico del vecchio albero diagnostico prima di consolidare il modello nuovo.
+- `Case` nasce personale/non assegnato e puo' essere condiviso successivamente.
+- Introdurre subito `Property` come modello tecnico di "Immobile".
+- `Property` appartiene a una `Organization`.
+- `Case` appartiene a una `owner_organization` e mantiene il riferimento all'utente richiedente.
+- `Case.property` e' opzionale; `Asset` appartiene sempre a una `Property`.
+- Gli allegati ereditano l'owner dal contesto, senza duplicare necessariamente `owner_organization`.
+- La condivisione caso usa richiesta, accettazione/rifiuto e revoca sempre possibile dall'utente.
+- Dopo revoca, il professionista perde accesso al caso e ai documenti, ma mantiene lo storico dei messaggi gia' scambiati nella conversazione.
+- La comunicazione usa `Conversation` e `ConversationPost`, thread flessibili collegabili o meno a un caso.
+- Usare un solo modello organizzativo, documentato in [Modello Organizzazioni E Permessi](../architecture/modello-organizzazioni-permessi.md).
+- Partire con due profili organizzazione iniziali:
+  - `personal`, per l'utente finale;
+  - `professional`, per professionista singolo o organizzazione professionale.
+
 ## Decisioni Da Prendere
 
 ### 1. Perimetro dei contenuti

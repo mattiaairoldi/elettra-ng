@@ -39,6 +39,10 @@ Le API nuove devono rappresentare il dominio, non la UI esistente.
 - Backoffice iniziale: Django Admin.
 - API pubbliche: `/api/v1/`.
 - Primo MVP senza videochiamate, pagamenti, AI immagini, marketplace avanzato.
+- Identita' globale con modello unico `Organization`, membership scoped e piani iniziali `personal`/`professional`.
+- Il `Case` nasce personale/non assegnato e puo' essere condiviso selettivamente con professionisti.
+- `Property` e `Case` appartengono a una `Organization`; `Asset` appartiene sempre a una `Property`.
+- Conversazioni modellate come thread flessibili: `Conversation` + `ConversationPost`.
 
 ## Fase 0 - Preparazione Repository
 
@@ -241,9 +245,25 @@ Preparare bene il dominio geolocalizzato senza sovra-progettare.
 ### Scopo
 
 Rendere `Case` il centro operativo del prodotto.
+Allineare identita', organizzazioni e permessi al modello descritto in [Modello Organizzazioni E Permessi](../architecture/modello-organizzazioni-permessi.md).
 
 ### Attivita'
 
+- Introdurre o rifinire:
+  - `Organization`
+  - `OrganizationPlan`
+  - `OrganizationMembership`
+  - `Conversation`
+  - `ConversationPost`
+  - `ConversationParticipant`
+  - `CaseShareRequest`
+  - membership role/scope/status
+  - preferenze tecnici come riferimento a membership professionale
+- Collegare `Property` a `Organization`.
+- Collegare `Case` a `owner_organization` e `requester`.
+- Mantenere `Case.property` opzionale.
+- Mantenere `Asset` sempre collegato a `Property`.
+- Modellare allegati con owner risolto dal contesto proprietario, evitando allegati orfani.
 - Rivedere stati di `Case`.
 - Rivedere transizioni consentite per ruolo.
 - Verificare relazione `Case` con:
@@ -256,21 +276,29 @@ Rendere `Case` il centro operativo del prodotto.
   - `CaseEvent`
   - `Appointment`
   - `AiSession`
-- Verificare permessi cliente/professionista/admin.
+- Verificare permessi per utente finale, organization admin, tecnico, amministrativo e platform owner.
+- Implementare il principio: il caso nasce non assegnato e puo' essere condiviso dopo.
+- Modellare richiesta di condivisione, accettazione/rifiuto, partecipazione e revoca.
+- Modellare chat utente-professionista come conversazione flessibile, non come relazione rigida 1:1.
+- Modellare condivisione selettiva di riepilogo, chat diagnostica e allegati.
+- Prevedere advice sui dati sensibili e sui metadati degli allegati.
 - Rendere gli eventi storici append-only o read-only dove necessario.
 - Definire in modo chiaro quando una diagnosi genera una pratica.
 - Definire in modo chiaro quando una pratica richiede escalation professionista.
 
 ### Workflow Minimo
 
-1. Cliente apre problema.
-2. Cliente sceglie o avvia percorso diagnostico.
+1. Utente apre problema.
+2. Utente sceglie o avvia percorso diagnostico.
 3. Sistema registra avanzamento nel caso.
-4. Cliente allega foto/documenti.
-5. AI puo' aiutare sul caso.
-6. Se necessario, cliente contatta o richiede professionista.
-7. Appuntamento viene richiesto e gestito.
-8. Caso viene risolto, chiuso o cancellato.
+4. Utente collega eventuale immobile e allega foto/documenti.
+5. AI puo' aiutare sul caso senza ricevere automaticamente tutti gli allegati.
+6. Se necessario, utente sceglie cosa condividere con tecnico/organizzazione.
+7. Tecnico o organizzazione accetta o rifiuta la richiesta.
+8. Dopo accettazione si apre o collega una conversazione utente-professionista.
+9. Appuntamento o preventivo di massima vengono richiesti e gestiti.
+10. Caso viene risolto, chiuso o cancellato.
+11. L'utente puo' revocare la condivisione; resta visibile al professionista solo lo storico conversazione gia' scambiato.
 
 ### Criteri di completamento
 
@@ -296,6 +324,10 @@ Stabilizzare contratti backend prima del frontend.
 - `POST /api/v1/auth/forgot-password`
 - `POST /api/v1/auth/reset-password`
 - `POST /api/v1/auth/verify-email`
+- `GET /api/v1/organizations`
+- `GET /api/v1/organizations/{id}`
+- `GET /api/v1/organizations/{id}/memberships`
+- `POST /api/v1/organizations/{id}/memberships`
 - `GET /api/v1/categories`
 - `GET /api/v1/tags`
 - `GET /api/v1/flows`
@@ -314,8 +346,18 @@ Stabilizzare contratti backend prima del frontend.
 - `GET /api/v1/cases/{id}/events`
 - `GET /api/v1/cases/{id}/notes`
 - `POST /api/v1/cases/{id}/notes`
+- `GET /api/v1/cases/{id}/share-requests`
+- `POST /api/v1/cases/{id}/share-requests`
+- `POST /api/v1/case-share-requests/{id}/accept`
+- `POST /api/v1/case-share-requests/{id}/reject`
+- `POST /api/v1/case-share-requests/{id}/revoke`
 - `POST /api/v1/cases/{id}/troubleshooting/start`
 - `POST /api/v1/cases/{id}/troubleshooting/progress`
+- `GET /api/v1/conversations`
+- `POST /api/v1/conversations`
+- `GET /api/v1/conversations/{id}`
+- `GET /api/v1/conversations/{id}/posts`
+- `POST /api/v1/conversations/{id}/posts`
 - `GET /api/v1/professionals`
 - `POST /api/v1/appointments`
 - `GET /api/v1/appointments`
@@ -636,4 +678,3 @@ La priorita' non e' aggiungere subito funzioni visibili, ma rendere solida la fo
 - test e contratti API stabili.
 
 Solo dopo ha senso investire seriamente sul client.
-

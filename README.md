@@ -17,6 +17,7 @@ API locale: `http://127.0.0.1:8000/api/v1/`
 - [Progetto Elettra canonico](docs/product/progetto-elettra-canonico.md)
 - [Sintesi progetto](docs/product/elettra-sintesi-progetto.md)
 - [Direttiva implementativa](docs/architecture/direttiva-implementativa.md)
+- [Modello organizzazioni e permessi](docs/architecture/modello-organizzazioni-permessi.md)
 - [Piano implementativo dettagliato](docs/operations/piano-implementativo-dettagliato.md)
 - [Ipotesi diagnostica AI dinamica](docs/product/ipotesi-diagnostica-ai-dinamica.md)
 - [Spike diagnostica AI dinamica](docs/operations/ai-diagnostic-spike.md)

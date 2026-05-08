@@ -34,10 +34,13 @@ Una pratica raccoglie:
 
 Attorno alla pratica ruotano:
 
-- account cliente, professionista e admin;
+- identita' utente globali;
+- organizzazioni personali o professionali;
+- membership con ruolo e scope;
 - immobili e asset;
 - categorie e tag tecnici;
 - allegati su storage S3;
+- conversazioni thread/post;
 - appuntamenti;
 - backoffice Django;
 - API versionate e documentate con OpenAPI.
@@ -59,6 +62,29 @@ Stack previsto:
 - test automatici con pytest.
 
 In locale lo stack gira con container per API, worker, database, Redis, MinIO e Mailpit.
+
+## Organizzazioni E Permessi
+
+Elettra usa un solo modello `Organization`.
+
+I due profili iniziali sono:
+
+- `personal`: organizzazione personale dell'utente finale, di norma invisibile nella UI, massimo un membro, puo' aprire casi e gestire immobili;
+- `professional`: organizzazione del professionista singolo o del team, puo' ricevere richieste, accettarle, gestire chat e interventi.
+
+La distinzione tra utente finale, professionista, amministrativo e admin dipende da membership, ruolo, scope e capability del piano.
+
+Il `Case` nasce non assegnato. L'utente puo' poi condividerlo con un tecnico preferito, una organizzazione o un professionista trovato per competenza/geolocalizzazione.
+
+La condivisione e' selettiva: riepilogo, chat diagnostica, allegati scelti o tutto il caso. Prima della condivisione va mostrato un advice sui dati sensibili e sui metadati degli allegati.
+
+`Property` e `Case` appartengono a una organizzazione proprietaria. Per l'utente finale questa e' la sua organizzazione personale, anche se in UI resta semplicemente "il mio immobile" o "il mio caso".
+
+Gli allegati ereditano l'owner dal contesto a cui sono collegati: immobile, asset, caso o conversazione. Non devono esistere allegati orfani.
+
+La chat con professionisti usa conversazioni flessibili con subject/topic e post. Una conversazione puo' essere collegata a un caso, ma puo' anche esistere fuori da un caso specifico.
+
+Il modello completo e' descritto in [Modello Organizzazioni E Permessi](../architecture/modello-organizzazioni-permessi.md).
 
 ## Diagnostica
 

@@ -136,7 +136,10 @@ Il primo MVP deve essere centrato sulla gestione tecnica della casa e sui proble
 
 Oggetti centrali:
 
-- `User`: cliente, professionista, admin.
+- `User`: identita' globale.
+- `Organization`: soggetto operativo personale, professionale o futuro gestionale.
+- `OrganizationPlan`: piano/capability della organizzazione.
+- `OrganizationMembership`: ruolo, scope e stato di un utente dentro una organizzazione.
 - `Property`: abitazione o sede.
 - `Asset`: impianto, componente o area tecnica della casa.
 - `DiagnosticFlow`: percorso diagnostico pubblicabile.
@@ -146,24 +149,29 @@ Oggetti centrali:
 - `CaseEvent`: cronologia tecnica e audit operativo.
 - `CaseNote`: note utente/professionista.
 - `Attachment`: foto, documenti e allegati.
-- `ProfessionalProfile`: profilo professionista.
+- `Conversation`: thread comunicativo, opzionalmente legato a un caso o altro contesto.
+- `ConversationPost`: post/messaggio dentro una conversazione.
+- `ProfessionalProfile`: profilo pubblico/operativo della organizzazione o membership professionale.
 - `Appointment`: richiesta/intervento.
 - `AiSession` e `AiMessage`: AI contestuale legata a caso o percorso.
 
 La `Case` deve restare l'oggetto operativo centrale.
 Il troubleshooting non deve essere una schermata isolata: deve poter generare o aggiornare una pratica.
+Il modello organizzazioni/permessi e' descritto in [Modello Organizzazioni E Permessi](modello-organizzazioni-permessi.md).
 
 ## Perimetro Primo Rilascio
 
 Dentro il primo rilascio:
 
 - registrazione, login, logout, recupero password, verifica email;
-- ruoli base: customer, professional, admin;
+- organizzazioni iniziali `personal` e `professional`;
+- membership con ruolo e scope;
 - categorie e tag tecnici;
 - percorsi diagnostici pubblici;
 - creazione pratica da problema manuale o da troubleshooting;
 - avanzamento troubleshooting dentro una pratica;
 - allegati su pratica e asset;
+- conversazioni thread/post tra utenti e organizzazioni, anche fuori da un caso specifico;
 - note e storico pratica;
 - elenco professionisti filtrabile per categoria/tag;
 - richiesta appuntamento base;
