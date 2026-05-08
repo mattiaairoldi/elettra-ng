@@ -144,6 +144,12 @@ SPECTACULAR_SETTINGS = {
             ("administrative", "Administrative"),
             ("technician", "Technician"),
         ],
+        "OrganizationInvitationStatusEnum": [
+            ("pending", "Pending"),
+            ("accepted", "Accepted"),
+            ("revoked", "Revoked"),
+            ("expired", "Expired"),
+        ],
     },
 }
 

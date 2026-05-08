@@ -353,6 +353,42 @@ def test_organization_invitation_email_task_ignores_non_pending_invitation():
 
 
 @pytest.mark.django_db
+def test_organization_invitation_preview_is_public(client):
+    owner = User.objects.create_user(email="owner@example.com", password="Password123!")
+    plan = OrganizationPlan.objects.get(slug="professional")
+    plan.max_members = 2
+    plan.save(update_fields=["max_members", "updated_at"])
+    organization = Organization.objects.create(
+        name="Rossi Impianti",
+        kind=Organization.Kinds.PROFESSIONAL,
+        plan=plan,
+        created_by_user=owner,
+    )
+    invitation = OrganizationInvitation.objects.create(
+        organization=organization,
+        email="new-tech@example.com",
+        role=OrganizationMembership.Roles.TECHNICIAN,
+        scope=OrganizationMembership.Scopes.ASSIGNED,
+        invited_by_user=owner,
+        expires_at=timezone.now() + timedelta(days=7),
+    )
+    token = generate_organization_invitation_token(invitation)
+
+    response = client.post(
+        reverse("api_v1:organizations:organization-invitation-preview"),
+        data=json.dumps({"token": token}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["user_exists"] is False
+    assert body["invitation"]["email"] == invitation.email
+    assert body["invitation"]["organization_name"] == organization.name
+    assert body["invitation"]["status"] == OrganizationInvitation.Statuses.PENDING
+
+
+@pytest.mark.django_db
 def test_accept_organization_invitation_creates_membership(client):
     owner = User.objects.create_user(email="owner@example.com", password="Password123!")
     invited_user = User.objects.create_user(email="tech@example.com", password="Password123!")

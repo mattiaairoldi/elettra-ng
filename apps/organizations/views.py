@@ -1,5 +1,7 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -10,12 +12,17 @@ from .serializers import (
     OrganizationCreateSerializer,
     OrganizationInvitationAcceptSerializer,
     OrganizationInvitationCreateSerializer,
+    OrganizationInvitationPreviewResponseSerializer,
+    OrganizationInvitationPublicSerializer,
     OrganizationInvitationSerializer,
+    OrganizationInvitationTokenSerializer,
     OrganizationMembershipCreateSerializer,
     OrganizationMembershipSerializer,
     OrganizationSerializer,
 )
 from .tasks import send_organization_invitation_email_task
+
+User = get_user_model()
 
 
 class OrganizationViewSet(
@@ -141,6 +148,22 @@ class OrganizationInvitationViewSet(mixins.RetrieveModelMixin, viewsets.GenericV
                 },
             )
         ).distinct()
+
+    @extend_schema(
+        request=OrganizationInvitationTokenSerializer,
+        responses={200: OrganizationInvitationPreviewResponseSerializer},
+    )
+    @action(detail=False, methods=["post"], permission_classes=[permissions.AllowAny])
+    def preview(self, request):
+        serializer = OrganizationInvitationTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        invitation = serializer.validated_data["invitation"]
+        return Response(
+            {
+                "invitation": OrganizationInvitationPublicSerializer(invitation).data,
+                "user_exists": User.objects.filter(email__iexact=invitation.email, is_active=True).exists(),
+            }
+        )
 
     @action(detail=False, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def accept(self, request):

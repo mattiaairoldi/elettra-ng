@@ -1,21 +1,28 @@
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.core import signing
 from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Organization, OrganizationInvitation, OrganizationMembership, OrganizationPlan
 from .permissions import user_can_manage_organization
 from .services import (
+    accept_organization_invitation_for_user,
     build_invitation_expiry,
     count_active_members_and_pending_invitations,
-    expire_invitation_if_needed,
     get_or_create_builtin_plan,
     normalize_invitation_email,
+    resolve_organization_invitation_token,
+    validate_organization_invitation_for_user,
 )
-from .tokens import validate_organization_invitation_token
 
 User = get_user_model()
+
+
+def raise_serializer_validation_error(exc: DjangoValidationError) -> None:
+    if hasattr(exc, "message_dict"):
+        raise serializers.ValidationError(exc.message_dict) from exc
+    raise serializers.ValidationError(exc.messages) from exc
 
 
 class OrganizationPlanSerializer(serializers.ModelSerializer):
@@ -223,6 +230,44 @@ class OrganizationInvitationSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class OrganizationInvitationPublicSerializer(serializers.ModelSerializer):
+    organization_id = serializers.IntegerField(source="organization.id", read_only=True)
+    organization_name = serializers.CharField(source="organization.name", read_only=True)
+    organization_kind = serializers.CharField(source="organization.kind", read_only=True)
+
+    class Meta:
+        model = OrganizationInvitation
+        fields = (
+            "id",
+            "organization_id",
+            "organization_name",
+            "organization_kind",
+            "email",
+            "role",
+            "scope",
+            "status",
+            "expires_at",
+        )
+        read_only_fields = fields
+
+
+class OrganizationInvitationTokenSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+    def validate(self, attrs):
+        try:
+            invitation = resolve_organization_invitation_token(attrs["token"])
+        except DjangoValidationError as exc:
+            raise_serializer_validation_error(exc)
+        attrs["invitation"] = invitation
+        return attrs
+
+
+class OrganizationInvitationPreviewResponseSerializer(serializers.Serializer):
+    invitation = OrganizationInvitationPublicSerializer()
+    user_exists = serializers.BooleanField()
+
+
 class OrganizationInvitationCreateSerializer(serializers.Serializer):
     email = serializers.EmailField()
     role = serializers.ChoiceField(choices=OrganizationMembership.Roles.choices)
@@ -296,44 +341,10 @@ class OrganizationInvitationAcceptSerializer(serializers.Serializer):
     def validate(self, attrs):
         request = self.context["request"]
         try:
-            payload = validate_organization_invitation_token(attrs["token"])
-        except signing.BadSignature as exc:
-            raise serializers.ValidationError({"token": "Invalid invitation token."}) from exc
-
-        invitation = (
-            OrganizationInvitation.objects.select_related("organization", "organization__plan")
-            .filter(id=payload.get("invitation_id"), email=payload.get("email"))
-            .first()
-        )
-        if invitation is None:
-            raise serializers.ValidationError({"token": "Invalid invitation token."})
-        if expire_invitation_if_needed(invitation):
-            raise serializers.ValidationError({"token": "Invitation expired."})
-        if invitation.status != OrganizationInvitation.Statuses.PENDING:
-            raise serializers.ValidationError({"token": "Invitation is not pending."})
-        if request.user.email.lower() != invitation.email.lower():
-            raise serializers.ValidationError({"token": "Invitation email does not match current user."})
-        if OrganizationMembership.objects.filter(user=request.user, organization=invitation.organization).exists():
-            raise serializers.ValidationError({"token": "Current user is already a member of the organization."})
-        active_members = OrganizationMembership.objects.filter(
-            organization=invitation.organization,
-            status=OrganizationMembership.Statuses.ACTIVE,
-        ).count()
-        if active_members >= invitation.organization.plan.max_members:
-            raise serializers.ValidationError({"organization": "Organization member limit reached."})
-
-        has_other_operational_membership = OrganizationMembership.objects.filter(
-            user=request.user,
-            status=OrganizationMembership.Statuses.ACTIVE,
-        ).exclude(
-            organization__kind=Organization.Kinds.PERSONAL,
-        ).exclude(
-            organization=invitation.organization,
-        ).exists()
-        if has_other_operational_membership and invitation.invited_by_user and invitation.invited_by_user.role != "admin":
-            raise serializers.ValidationError(
-                {"token": "Multi-organization operational memberships require platform approval."}
-            )
+            invitation = resolve_organization_invitation_token(attrs["token"])
+            validate_organization_invitation_for_user(invitation, request.user)
+        except DjangoValidationError as exc:
+            raise_serializer_validation_error(exc)
 
         attrs["invitation"] = invitation
         return attrs
@@ -342,26 +353,4 @@ class OrganizationInvitationAcceptSerializer(serializers.Serializer):
     def save(self):
         request = self.context["request"]
         invitation = self.validated_data["invitation"]
-        membership = OrganizationMembership.objects.create(
-            user=request.user,
-            organization=invitation.organization,
-            role=invitation.role,
-            scope=invitation.scope,
-            status=OrganizationMembership.Statuses.ACTIVE,
-            approved_by_user=invitation.invited_by_user,
-            approved_at=timezone.now(),
-        )
-        invitation.status = OrganizationInvitation.Statuses.ACCEPTED
-        invitation.accepted_by_user = request.user
-        invitation.accepted_membership = membership
-        invitation.accepted_at = timezone.now()
-        invitation.save(
-            update_fields=[
-                "status",
-                "accepted_by_user",
-                "accepted_membership",
-                "accepted_at",
-                "updated_at",
-            ]
-        )
-        return invitation, membership
+        return accept_organization_invitation_for_user(invitation, request.user)

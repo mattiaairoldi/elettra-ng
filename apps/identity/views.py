@@ -16,6 +16,7 @@ from .serializers import (
     VerifyEmailSerializer,
     VerifyEmailResponseSerializer,
     build_forgot_password_response,
+    build_login_response,
     build_register_response,
 )
 from .tasks import send_password_reset_email_task, send_verification_email_task
@@ -30,7 +31,10 @@ class RegisterView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         send_verification_email_task.delay(user.id)
-        return Response(build_register_response(user), status=status.HTTP_201_CREATED)
+        return Response(
+            build_register_response(user, serializer.accepted_organization_invitation),
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class LoginView(APIView):
@@ -41,9 +45,10 @@ class LoginView(APIView):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
+        accepted_organization_invitation = serializer.accept_organization_invitation()
         login(request, user)
         user.refresh_from_db(fields=["last_login", "last_login_at", "updated_at"])
-        return Response({"user": UserSerializer(user).data})
+        return Response(build_login_response(user, accepted_organization_invitation))
 
 
 class LogoutView(APIView):

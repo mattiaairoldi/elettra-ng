@@ -1,7 +1,17 @@
-from django.core import signing
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.core import signing
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from rest_framework import serializers
+
+from apps.organizations.serializers import OrganizationInvitationSerializer, OrganizationMembershipSerializer
+from apps.organizations.services import (
+    accept_organization_invitation_for_user,
+    resolve_organization_invitation_token,
+    validate_organization_invitation_for_email,
+    validate_organization_invitation_for_user,
+)
 
 from .tokens import (
     validate_email_verification_token,
@@ -9,6 +19,12 @@ from .tokens import (
 )
 
 User = get_user_model()
+
+
+def raise_serializer_validation_error(exc: DjangoValidationError) -> None:
+    if hasattr(exc, "message_dict"):
+        raise serializers.ValidationError(exc.message_dict) from exc
+    raise serializers.ValidationError(exc.messages) from exc
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -29,8 +45,14 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class AcceptedOrganizationInvitationResponseSerializer(serializers.Serializer):
+    invitation = OrganizationInvitationSerializer()
+    membership = OrganizationMembershipSerializer()
+
+
 class UserResponseSerializer(serializers.Serializer):
     user = UserSerializer()
+    organization_invitation = AcceptedOrganizationInvitationResponseSerializer(required=False)
 
 
 class DetailResponseSerializer(serializers.Serializer):
@@ -39,6 +61,7 @@ class DetailResponseSerializer(serializers.Serializer):
 
 class RegisterResponseSerializer(DetailResponseSerializer):
     user = UserSerializer()
+    organization_invitation = AcceptedOrganizationInvitationResponseSerializer(required=False)
 
 
 class VerifyEmailResponseSerializer(DetailResponseSerializer):
@@ -47,10 +70,11 @@ class VerifyEmailResponseSerializer(DetailResponseSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+    organization_invitation_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ("email", "password", "first_name", "last_name")
+        fields = ("email", "password", "first_name", "last_name", "organization_invitation_token")
 
     def validate_email(self, value):
         normalized_value = User.objects.normalize_email(value)
@@ -62,17 +86,38 @@ class RegisterSerializer(serializers.ModelSerializer):
         validate_password(value)
         return value
 
+    def validate(self, attrs):
+        token = attrs.get("organization_invitation_token")
+        if token:
+            try:
+                invitation = resolve_organization_invitation_token(token)
+                validate_organization_invitation_for_email(invitation, attrs["email"])
+            except DjangoValidationError as exc:
+                raise_serializer_validation_error(exc)
+            attrs["organization_invitation"] = invitation
+        return attrs
+
+    @transaction.atomic
     def create(self, validated_data):
+        token = validated_data.pop("organization_invitation_token", "")
+        invitation = validated_data.pop("organization_invitation", None)
         user = User.objects.create_user(**validated_data)
         from apps.organizations.services import get_or_create_personal_organization
 
         get_or_create_personal_organization(user)
+        self.accepted_organization_invitation = None
+        if token and invitation is not None:
+            try:
+                self.accepted_organization_invitation = accept_organization_invitation_for_user(invitation, user)
+            except DjangoValidationError as exc:
+                raise_serializer_validation_error(exc)
         return user
 
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
+    organization_invitation_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     def validate(self, attrs):
         user = authenticate(
@@ -84,8 +129,25 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError({"detail": "Invalid credentials."})
         if not user.is_active:
             raise serializers.ValidationError({"detail": "User account is inactive."})
+        token = attrs.get("organization_invitation_token")
+        if token:
+            try:
+                invitation = resolve_organization_invitation_token(token)
+                validate_organization_invitation_for_user(invitation, user)
+            except DjangoValidationError as exc:
+                raise_serializer_validation_error(exc)
+            attrs["organization_invitation"] = invitation
         attrs["user"] = user
         return attrs
+
+    def accept_organization_invitation(self):
+        invitation = self.validated_data.get("organization_invitation")
+        if invitation is None:
+            return None
+        try:
+            return accept_organization_invitation_for_user(invitation, self.validated_data["user"])
+        except DjangoValidationError as exc:
+            raise_serializer_validation_error(exc)
 
 
 class ForgotPasswordSerializer(serializers.Serializer):
@@ -146,11 +208,33 @@ class VerifyEmailSerializer(serializers.Serializer):
         return user
 
 
-def build_register_response(user):
+def serialize_accepted_organization_invitation(accepted_organization_invitation):
+    if accepted_organization_invitation is None:
+        return None
+    invitation, membership = accepted_organization_invitation
     return {
+        "invitation": OrganizationInvitationSerializer(invitation).data,
+        "membership": OrganizationMembershipSerializer(membership).data,
+    }
+
+
+def build_register_response(user, accepted_organization_invitation=None):
+    response = {
         "user": UserSerializer(user).data,
         "detail": "User created successfully. Verification email sent.",
     }
+    organization_invitation = serialize_accepted_organization_invitation(accepted_organization_invitation)
+    if organization_invitation is not None:
+        response["organization_invitation"] = organization_invitation
+    return response
+
+
+def build_login_response(user, accepted_organization_invitation=None):
+    response = {"user": UserSerializer(user).data}
+    organization_invitation = serialize_accepted_organization_invitation(accepted_organization_invitation)
+    if organization_invitation is not None:
+        response["organization_invitation"] = organization_invitation
+    return response
 
 
 def build_forgot_password_response(user):
