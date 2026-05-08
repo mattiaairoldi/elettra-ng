@@ -8,11 +8,25 @@ from django.urls import reverse
 
 from apps.cases.models import Case, CaseEvent
 from apps.ai_assistant.models import AiContextDigest, AiDiagnosticSnapshot, AiMessage
+from apps.ai_assistant.providers import AiProviderError, LocalAiProvider, get_ai_provider
 from apps.ai_assistant.tasks import generate_ai_diagnostic_reply_task, generate_ai_reply_task
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption, DiagnosticFlow, DiagnosticNode
 
 User = get_user_model()
+
+
+@override_settings(AI_PROVIDER="local")
+def test_ai_provider_registry_returns_configured_provider():
+    provider = get_ai_provider()
+
+    assert isinstance(provider, LocalAiProvider)
+
+
+@override_settings(AI_PROVIDER="unsupported")
+def test_ai_provider_registry_rejects_unsupported_provider():
+    with pytest.raises(AiProviderError, match="Unsupported AI provider: unsupported"):
+        get_ai_provider()
 
 
 @pytest.mark.django_db
@@ -385,7 +399,7 @@ def test_ai_message_flow_can_use_openai_provider(client, monkeypatch):
                 ]
             return SimpleNamespace(output_text="Risposta OpenAI di test")
 
-    monkeypatch.setattr("apps.ai_assistant.provider.OpenAI", FakeClient, raising=False)
+    monkeypatch.setattr("apps.ai_assistant.providers.openai.OpenAI", FakeClient, raising=False)
 
     session_response = client.post(
         reverse("api_v1:ai_assistant:ai-session-list"),
@@ -714,7 +728,7 @@ def test_generate_ai_reply_task_clears_partial_content_when_chunked_provider_fai
                 try:
                     yield from FakeProvider().stream_reply(session, messages)
                 except Exception as exc:
-                    from apps.ai_assistant.provider import AiProviderError
+                    from apps.ai_assistant.providers import AiProviderError
 
                     raise AiProviderError("OpenAI provider request failed.") from exc
 

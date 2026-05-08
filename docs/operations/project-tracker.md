@@ -71,6 +71,8 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [x] Aggiunta compattazione automatica a soglia.
 - [x] Aggiunti endpoint `context`, `context-digests`, `compact-context`.
 - [x] Aggiunte stime token/costo sui digest.
+- [x] Rifinita astrazione provider AI con package `apps.ai_assistant.providers`.
+- [x] Creato documento `docs/operations/ai-provider-abstraction.md`.
 
 ## Decisioni Confermate
 

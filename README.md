@@ -21,6 +21,7 @@ API locale: `http://127.0.0.1:8000/api/v1/`
 - [Ipotesi diagnostica AI dinamica](docs/product/ipotesi-diagnostica-ai-dinamica.md)
 - [Spike diagnostica AI dinamica](docs/operations/ai-diagnostic-spike.md)
 - [Piano diagnostica ibrida chat-first](docs/operations/piano-implementativo-diagnostica-chat-first.md)
+- [Astrazione provider AI](docs/operations/ai-provider-abstraction.md)
 - [Setup locale](docs/operations/local-setup.md)
 - [Project tracker](docs/operations/project-tracker.md)
 - [Decisioni prima dell'import da elettra](docs/operations/decisioni-prima-import-elettra.md)

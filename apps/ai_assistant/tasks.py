@@ -5,7 +5,7 @@ from apps.cases.models import Case, CaseEvent
 
 from .context import compact_ai_context
 from .models import AiDiagnosticSnapshot, AiMessage
-from .provider import (
+from .providers import (
     AiProviderError,
     build_diagnostic_context,
     build_diagnostic_provider_messages,

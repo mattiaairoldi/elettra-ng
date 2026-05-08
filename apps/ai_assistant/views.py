@@ -12,7 +12,7 @@ from rest_framework.viewsets import GenericViewSet
 
 from .context import compact_ai_context
 from .models import AiDiagnosticSnapshot, AiMessage, AiSession
-from .provider import build_diagnostic_context
+from .providers import build_diagnostic_context
 from .serializers import (
     AiContextCompactSerializer,
     AiContextDigestSerializer,
