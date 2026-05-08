@@ -13,7 +13,6 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [ ] Valutare utente non-root per il container `worker`.
 - [ ] Decidere criteri di sicurezza non negoziabili per risposte AI.
 - [ ] Tarare soglie di compattazione storico e stime costo/token su dati reali.
-- [ ] Definire 5 scenari reali per verifica qualitativa dello spike.
 - [ ] Decidere quali contenuti di `../elettra` usare come corpus di test, non come import.
 - [ ] Decidere se i professionisti seed saranno demo o reali.
 - [ ] Decidere strategia seed/conversione.
@@ -91,6 +90,9 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [x] Eseguita suite test dopo inviti organizzazione: `89 passed`.
 - [x] Collegato invito organizzazione a preview pubblica, registrazione e login.
 - [x] Eseguita suite test dopo collegamento inviti-auth: `93 passed`.
+- [x] Aggiunto benchmark ripetibile per diagnostica AI chat-first.
+- [x] Eseguita suite test dopo benchmark diagnostico: `94 passed`.
+- [x] Definiti 5 scenari canonici per verifica qualitativa dello spike diagnostico.
 
 ## Decisioni Confermate
 

@@ -22,6 +22,18 @@ Seed opzionale dei macro-capitoli diagnostici iniziali:
 docker compose run --rm web uv run python manage.py seed_diagnostic_chapters
 ```
 
+Benchmark diagnostico chat-first:
+
+```bash
+docker compose run --rm web uv run python manage.py run_diagnostic_benchmark --provider local --scenario elettrico-quadro-odore
+```
+
+Validazione qualitativa con OpenAI reale:
+
+```bash
+docker compose run --rm web uv run python manage.py run_diagnostic_benchmark --provider openai --output /tmp/elettra-diagnostic-benchmark.json
+```
+
 Variabili AI utili in locale:
 
 ```env
@@ -63,7 +75,7 @@ bucket: app-media
 docker compose run --rm web uv run pytest -q
 ```
 
-Ultima verifica: `93 passed`.
+Ultima verifica: `94 passed`.
 
 ## OpenAPI
 

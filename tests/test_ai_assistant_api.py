@@ -1,8 +1,10 @@
 import json
+from io import StringIO
 from types import SimpleNamespace
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
 from django.test import override_settings
 from django.urls import reverse
 
@@ -856,3 +858,40 @@ def test_ai_polling_endpoints_validate_query_params(client):
     )
     assert invalid_after_response.status_code == 400
     assert "after_id" in invalid_after_response.json()
+
+
+@pytest.mark.django_db
+def test_run_diagnostic_benchmark_command_outputs_repeatable_report():
+    stdout = StringIO()
+
+    call_command(
+        "run_diagnostic_benchmark",
+        provider="local",
+        scenario=["elettrico-quadro-odore"],
+        format="json",
+        stdout=stdout,
+    )
+
+    report = json.loads(stdout.getvalue())
+    scenario = report["scenarios"][0]
+    assert report["provider"] == "local"
+    assert report["scenario_count"] == 1
+    assert scenario["slug"] == "elettrico-quadro-odore"
+    assert scenario["checks"]["assistant_completed"] is True
+    assert scenario["checks"]["snapshot_created"] is True
+    assert scenario["checks"]["expected_risk_level"] is True
+    assert scenario["checks"]["expected_escalation"] is True
+    assert scenario["checks"]["context_digest_created"] is True
+    assert scenario["snapshot"]["risk_level"] == "urgent"
+    assert AiContextDigest.objects.filter(session_id=scenario["session_id"]).exists()
+
+    first_user_message = (
+        AiMessage.objects.filter(
+            session_id=scenario["session_id"],
+            role=AiMessage.Roles.USER,
+        )
+        .order_by("id")
+        .first()
+    )
+    safety_rules = first_user_message.metadata_json["diagnostic"]["diagnostic_chapter_safety_rules"]
+    assert safety_rules[0]["risk_level"] == "urgent"

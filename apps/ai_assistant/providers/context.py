@@ -29,6 +29,22 @@ def get_latest_diagnostic_selection(session):
     return diagnostic_metadata if isinstance(diagnostic_metadata, dict) else {}
 
 
+def build_safety_rule_context(chapter, latest_selection):
+    if chapter is not None:
+        return [
+            {
+                "title": rule.title,
+                "trigger_terms": rule.trigger_terms_json,
+                "guidance": rule.guidance,
+                "risk_level": rule.risk_level,
+                "escalation_level": rule.escalation_level,
+            }
+            for rule in chapter.safety_rules.filter(is_active=True).order_by("sort_order", "id")
+        ]
+    safety_rules = latest_selection.get("diagnostic_chapter_safety_rules", [])
+    return safety_rules if isinstance(safety_rules, list) else []
+
+
 def build_diagnostic_context(session):
     snapshot = get_diagnostic_snapshot(session)
     latest_selection = get_latest_diagnostic_selection(session)
@@ -43,6 +59,7 @@ def build_diagnostic_context(session):
         "slug": getattr(chapter, "slug", latest_selection.get("diagnostic_chapter_slug", "")),
         "prompt_context": getattr(chapter, "prompt_context", latest_selection.get("diagnostic_chapter_prompt_context", "")),
         "safety_context": getattr(chapter, "safety_context", latest_selection.get("diagnostic_chapter_safety_context", "")),
+        "safety_rules": build_safety_rule_context(chapter, latest_selection),
     }
     option_context = {
         "id": getattr(option, "id", latest_selection.get("diagnostic_chapter_option_id")),
@@ -172,7 +189,7 @@ def build_diagnostic_instructions(session):
     context = build_diagnostic_context(session)
     return (
         "Sei un assistente diagnostico per problemi tecnici domestici. "
-        "Il tuo compito e' porre poche domande sicure, sintetizzare il caso e riconoscere quando serve un professionista. "
+        "Il tuo compito e' porre una sola domanda principale per turno, sintetizzare il caso e riconoscere quando serve un professionista. "
         "Non fornire istruzioni per aprire quadri elettrici, manipolare cavi, smontare componenti o fare misure su circuiti in tensione. "
         "Se emergono odore di bruciato, fumo, scintille, scosse, surriscaldamento o rischio elettrico, raccomanda di fermarsi e coinvolgere un professionista. "
         "Rispondi solo con un oggetto JSON valido con questi campi: "
