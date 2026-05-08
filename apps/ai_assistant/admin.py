@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AiDiagnosticSnapshot, AiMessage, AiSession
+from .models import AiContextDigest, AiDiagnosticSnapshot, AiMessage, AiSession
 
 
 @admin.register(AiSession)
@@ -39,6 +39,8 @@ class AiDiagnosticSnapshotAdmin(admin.ModelAdmin):
     search_fields = ("session__user__email", "session__case__title", "summary", "next_question")
     readonly_fields = (
         "session",
+        "diagnostic_chapter",
+        "diagnostic_chapter_option",
         "source_message",
         "summary",
         "risk_level",
@@ -47,10 +49,53 @@ class AiDiagnosticSnapshotAdmin(admin.ModelAdmin):
         "escalation_reason",
         "recommendation",
         "facts_json",
+        "excluded_facts_json",
+        "asked_questions_json",
         "safety_notes_json",
+        "compacted_summary",
+        "context_version",
+        "context_metadata_json",
         "raw_payload_json",
         "created_at",
         "updated_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AiContextDigest)
+class AiContextDigestAdmin(admin.ModelAdmin):
+    list_display = ("id", "session", "risk_level", "message_count", "estimated_input_tokens", "created_at")
+    list_filter = ("risk_level", "trigger_reason")
+    search_fields = ("session__user__email", "session__case__title", "summary")
+    readonly_fields = (
+        "session",
+        "from_message",
+        "to_message",
+        "source_snapshot",
+        "summary",
+        "risk_level",
+        "facts_json",
+        "excluded_facts_json",
+        "asked_questions_json",
+        "safety_notes_json",
+        "message_count",
+        "total_completed_messages",
+        "estimated_input_tokens",
+        "estimated_output_tokens",
+        "estimated_cost",
+        "provider",
+        "model_name",
+        "trigger_reason",
+        "metadata_json",
+        "created_at",
     )
 
     def has_add_permission(self, request):

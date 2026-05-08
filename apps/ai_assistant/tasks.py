@@ -3,6 +3,7 @@ from celery import shared_task
 from apps.cases.events import create_case_event
 from apps.cases.models import Case, CaseEvent
 
+from .context import compact_ai_context
 from .models import AiDiagnosticSnapshot, AiMessage
 from .provider import (
     AiProviderError,
@@ -184,8 +185,25 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
             "escalation_recommended": snapshot.escalation_recommended,
         },
     )
+    digest = compact_ai_context(assistant_message.session, trigger_reason="threshold")
     return {
         "status": assistant_message.status,
         "assistant_message_id": assistant_message.id,
         "diagnostic_snapshot_id": snapshot.id,
+        "context_digest_id": digest.id if digest is not None else None,
     }
+
+
+@shared_task
+def compact_ai_context_task(session_id, force=False, trigger_reason="manual"):
+    from .models import AiSession
+
+    session = (
+        AiSession.objects.select_related("case", "case__category")
+        .prefetch_related("messages", "context_digests")
+        .get(id=session_id)
+    )
+    digest = compact_ai_context(session, trigger_reason=trigger_reason, force=force)
+    if digest is None:
+        return {"status": "skipped", "session_id": session.id}
+    return {"status": "completed", "session_id": session.id, "context_digest_id": digest.id}

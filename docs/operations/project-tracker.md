@@ -2,17 +2,17 @@
 
 ## Obiettivo Corrente
 
-Validare il routing diagnostico ibrido chat-first su scenari manuali e preparare compattazione periodica dello storico.
+Validare il routing diagnostico ibrido chat-first e la compattazione del contesto su scenari manuali.
 
 ## In Corso
 
-- [ ] Verifica qualitativa dei macro-capitoli diagnostici e del contesto compatto.
+- [ ] Verifica qualitativa dei macro-capitoli, del contesto compatto e dei digest.
 
 ## Todo
 
 - [ ] Valutare utente non-root per il container `worker`.
 - [ ] Decidere criteri di sicurezza non negoziabili per risposte AI.
-- [ ] Definire soglie di compattazione storico e metadati costo/token.
+- [ ] Tarare soglie di compattazione storico e stime costo/token su dati reali.
 - [ ] Definire 5 scenari reali per verifica qualitativa dello spike.
 - [ ] Decidere quali contenuti di `../elettra` usare come corpus di test, non come import.
 - [ ] Decidere se i professionisti seed saranno demo o reali.
@@ -67,6 +67,10 @@ Validare il routing diagnostico ibrido chat-first su scenari manuali e preparare
 - [x] Implementato `build_diagnostic_context(session)`.
 - [x] Limitato il contesto diagnostico agli ultimi messaggi rilevanti.
 - [x] Aggiunto comando `seed_diagnostic_chapters`.
+- [x] Aggiunto modello `AiContextDigest`.
+- [x] Aggiunta compattazione automatica a soglia.
+- [x] Aggiunti endpoint `context`, `context-digests`, `compact-context`.
+- [x] Aggiunte stime token/costo sui digest.
 
 ## Decisioni Confermate
 
@@ -88,3 +92,4 @@ Validare il routing diagnostico ibrido chat-first su scenari manuali e preparare
 - La UX diagnostica prevista e' ibrida, ma prioritariamente chat.
 - Lo spike AI dinamico e' implementato per validazione tecnica, non per generare contenuti pubblici automaticamente.
 - Gli alberi diagnostici estesi non sono il modello principale da implementare in questa fase.
+- La compattazione e' deterministica lato backend: non consuma una chiamata AI aggiuntiva.

@@ -118,9 +118,40 @@ Lo spike e' stato esteso con:
 - contesto AI compatto con ultimi messaggi rilevanti;
 - metadati di contesto nello snapshot;
 - comando seed locale `seed_diagnostic_chapters`.
+- digest periodico `AiContextDigest`;
+- endpoint di debug per contesto e digest;
+- stima token/costo su digest.
 
 Deve ancora evolvere verso:
 
 - chat come interfaccia principale;
-- compattazione periodica dello storico;
-- metriche per costo e qualita' delle risposte.
+- metriche reali provider quando disponibili;
+- valutazione qualita' delle risposte su scenari manuali.
+
+## Endpoint Contesto
+
+Recupero contesto diagnostico compatto:
+
+```http
+GET /api/v1/ai/sessions/{session_id}/context
+```
+
+Lista digest:
+
+```http
+GET /api/v1/ai/sessions/{session_id}/context-digests
+```
+
+Compattazione manuale:
+
+```http
+POST /api/v1/ai/sessions/{session_id}/compact-context
+```
+
+Body:
+
+```json
+{
+  "force": true
+}
+```

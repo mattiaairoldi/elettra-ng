@@ -6,7 +6,7 @@ from apps.cases.models import Case
 from apps.identity.models import User
 from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption
 
-from .models import AiDiagnosticSnapshot, AiMessage, AiSession
+from .models import AiContextDigest, AiDiagnosticSnapshot, AiMessage, AiSession
 
 
 TERMINAL_CASE_STATUSES = {
@@ -59,6 +59,40 @@ class AiDiagnosticSnapshotSerializer(serializers.ModelSerializer):
             "raw_payload_json",
             "created_at",
             "updated_at",
+        )
+        read_only_fields = fields
+
+
+class AiContextDigestSerializer(serializers.ModelSerializer):
+    session_id = serializers.IntegerField(source="session.id", read_only=True)
+    from_message_id = serializers.IntegerField(source="from_message.id", read_only=True, allow_null=True)
+    to_message_id = serializers.IntegerField(source="to_message.id", read_only=True, allow_null=True)
+    source_snapshot_id = serializers.IntegerField(source="source_snapshot.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = AiContextDigest
+        fields = (
+            "id",
+            "session_id",
+            "from_message_id",
+            "to_message_id",
+            "source_snapshot_id",
+            "summary",
+            "risk_level",
+            "facts_json",
+            "excluded_facts_json",
+            "asked_questions_json",
+            "safety_notes_json",
+            "message_count",
+            "total_completed_messages",
+            "estimated_input_tokens",
+            "estimated_output_tokens",
+            "estimated_cost",
+            "provider",
+            "model_name",
+            "trigger_reason",
+            "metadata_json",
+            "created_at",
         )
         read_only_fields = fields
 
@@ -238,3 +272,7 @@ class AiDiagnosticTurnCreateSerializer(AiMessageCreateSerializer):
 class AiMessagesQuerySerializer(serializers.Serializer):
     after_id = serializers.IntegerField(required=False, min_value=1)
     limit = serializers.IntegerField(required=False, min_value=1, max_value=100)
+
+
+class AiContextCompactSerializer(serializers.Serializer):
+    force = serializers.BooleanField(required=False, default=True)

@@ -10,8 +10,12 @@ from rest_framework.exceptions import NotFound, ParseError
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
 
+from .context import compact_ai_context
 from .models import AiDiagnosticSnapshot, AiMessage, AiSession
+from .provider import build_diagnostic_context
 from .serializers import (
+    AiContextCompactSerializer,
+    AiContextDigestSerializer,
     AiDiagnosticSnapshotSerializer,
     AiDiagnosticTurnCreateSerializer,
     AiMessageCreateSerializer,
@@ -174,6 +178,51 @@ class AiSessionViewSet(GenericViewSet):
     def status_snapshot(self, request, pk=None):
         session = self.get_object()
         return Response(AiSessionSerializer(session).data)
+
+    @extend_schema(
+        operation_id="ai_sessions_diagnostic_context_retrieve",
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=True, methods=["get"], permission_classes=[permissions.IsAuthenticated], url_path="context")
+    def diagnostic_context(self, request, pk=None):
+        session = self.get_object()
+        return Response(build_diagnostic_context(session))
+
+    @extend_schema(
+        operation_id="ai_sessions_context_digest_list",
+        responses={200: AiContextDigestSerializer(many=True)},
+    )
+    @action(detail=True, methods=["get"], permission_classes=[permissions.IsAuthenticated], url_path="context-digests")
+    def context_digests(self, request, pk=None):
+        session = self.get_object()
+        serializer = AiContextDigestSerializer(session.context_digests.all(), many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        operation_id="ai_sessions_context_compact",
+        request=AiContextCompactSerializer,
+        responses={
+            200: inline_serializer(
+                name="AiContextCompactResponse",
+                fields={"context_digest": AiContextDigestSerializer(allow_null=True)},
+            )
+        },
+    )
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated], url_path="compact-context")
+    def compact_context(self, request, pk=None):
+        session = self.get_object()
+        serializer = AiContextCompactSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        digest = compact_ai_context(
+            session,
+            trigger_reason="manual",
+            force=serializer.validated_data["force"],
+        )
+        return Response(
+            {
+                "context_digest": AiContextDigestSerializer(digest).data if digest is not None else None,
+            }
+        )
 
     @extend_schema(
         operation_id="ai_sessions_diagnostic_snapshot_retrieve",

@@ -22,6 +22,15 @@ Seed opzionale dei macro-capitoli diagnostici iniziali:
 docker compose run --rm web uv run python manage.py seed_diagnostic_chapters
 ```
 
+Variabili AI utili in locale:
+
+```env
+AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT=4
+AI_CONTEXT_COMPACTION_MESSAGE_THRESHOLD=8
+AI_ESTIMATED_INPUT_COST_PER_1K_TOKENS=0
+AI_ESTIMATED_OUTPUT_COST_PER_1K_TOKENS=0
+```
+
 Verifica:
 
 ```bash
@@ -54,7 +63,7 @@ bucket: app-media
 docker compose run --rm web uv run pytest -q
 ```
 
-Ultima verifica: `66 passed`.
+Ultima verifica: `68 passed`.
 
 ## OpenAPI
 

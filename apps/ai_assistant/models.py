@@ -92,3 +92,54 @@ class AiDiagnosticSnapshot(models.Model):
 
     class Meta:
         ordering = ("-updated_at", "-id")
+
+
+class AiContextDigest(models.Model):
+    class RiskLevels(models.TextChoices):
+        UNKNOWN = "unknown", "Unknown"
+        LOW = "low", "Low"
+        MEDIUM = "medium", "Medium"
+        HIGH = "high", "High"
+        URGENT = "urgent", "Urgent"
+
+    session = models.ForeignKey(AiSession, on_delete=models.CASCADE, related_name="context_digests")
+    from_message = models.ForeignKey(
+        AiMessage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="context_digests_from",
+    )
+    to_message = models.ForeignKey(
+        AiMessage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="context_digests_to",
+    )
+    source_snapshot = models.ForeignKey(
+        AiDiagnosticSnapshot,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="context_digests",
+    )
+    summary = models.TextField(blank=True)
+    risk_level = models.CharField(max_length=16, choices=RiskLevels.choices, default=RiskLevels.UNKNOWN)
+    facts_json = models.JSONField(default=dict, blank=True)
+    excluded_facts_json = models.JSONField(default=dict, blank=True)
+    asked_questions_json = models.JSONField(default=list, blank=True)
+    safety_notes_json = models.JSONField(default=list, blank=True)
+    message_count = models.PositiveIntegerField(default=0)
+    total_completed_messages = models.PositiveIntegerField(default=0)
+    estimated_input_tokens = models.PositiveIntegerField(default=0)
+    estimated_output_tokens = models.PositiveIntegerField(default=0)
+    estimated_cost = models.DecimalField(max_digits=12, decimal_places=6, default=0)
+    provider = models.CharField(max_length=64, blank=True)
+    model_name = models.CharField(max_length=120, blank=True)
+    trigger_reason = models.CharField(max_length=64, blank=True)
+    metadata_json = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")

@@ -7,7 +7,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from apps.cases.models import Case, CaseEvent
-from apps.ai_assistant.models import AiDiagnosticSnapshot, AiMessage
+from apps.ai_assistant.models import AiContextDigest, AiDiagnosticSnapshot, AiMessage
 from apps.ai_assistant.tasks import generate_ai_diagnostic_reply_task, generate_ai_reply_task
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption, DiagnosticFlow, DiagnosticNode
@@ -198,6 +198,79 @@ def test_ai_diagnostic_turn_requires_linked_case(client):
 
     assert turn_response.status_code == 400
     assert turn_response.json() == {"case": ["Diagnostic turns require a linked case."]}
+
+
+@pytest.mark.django_db
+@override_settings(
+    AI_PROVIDER="local",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    CELERY_TASK_EAGER_PROPAGATES=True,
+    AI_CONTEXT_COMPACTION_MESSAGE_THRESHOLD=2,
+    AI_ESTIMATED_INPUT_COST_PER_1K_TOKENS=0.01,
+    AI_ESTIMATED_OUTPUT_COST_PER_1K_TOKENS=0.02,
+)
+def test_ai_diagnostic_turn_auto_compacts_context_when_threshold_is_reached(client):
+    customer = User.objects.create_user(email="customer@example.com", password="Password123!")
+    category = Category.objects.create(name="Elettricita", slug="elettricita-ai-auto-digest")
+    case = Case.objects.create(customer_user=customer, category=category, title="Presa calda")
+    client.force_login(customer)
+
+    session_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-list"),
+        data=json.dumps({"case_id": case.id}),
+        content_type="application/json",
+    )
+    session_id = session_response.json()["id"]
+
+    turn_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-diagnostic-turns", args=[session_id]),
+        data=json.dumps({"content": "La presa e' calda e sento odore di bruciato"}),
+        content_type="application/json",
+    )
+
+    assert turn_response.status_code == 202
+    digest = AiContextDigest.objects.get(session_id=session_id)
+    assert digest.message_count == 2
+    assert digest.total_completed_messages == 2
+    assert digest.estimated_input_tokens > 0
+    assert digest.estimated_output_tokens > 0
+    assert digest.estimated_cost > 0
+    assert digest.trigger_reason == "threshold"
+
+    snapshot = AiDiagnosticSnapshot.objects.get(session_id=session_id)
+    assert snapshot.compacted_summary == digest.summary
+    assert snapshot.context_metadata_json["latest_context_digest_id"] == digest.id
+
+    context_response = client.get(reverse("api_v1:ai_assistant:ai-session-diagnostic-context", args=[session_id]))
+    assert context_response.status_code == 200
+    assert context_response.json()["latest_digest"]["id"] == digest.id
+    assert context_response.json()["recent_messages"] == []
+    assert context_response.json()["metadata"]["compacted_summary_used"] is True
+
+
+@pytest.mark.django_db
+def test_ai_context_digest_endpoints_support_manual_compaction(client):
+    customer = User.objects.create_user(email="customer@example.com", password="Password123!")
+    category = Category.objects.create(name="Clima", slug="clima-ai-manual-digest")
+    case = Case.objects.create(customer_user=customer, category=category, title="Clima rumoroso")
+    session = customer.ai_sessions.create(case=case)
+    AiMessage.objects.create(session=session, role=AiMessage.Roles.USER, content="Il clima fa rumore")
+    AiMessage.objects.create(session=session, role=AiMessage.Roles.ASSISTANT, content="Da quando succede?")
+    client.force_login(customer)
+
+    compact_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-compact-context", args=[session.id]),
+        data=json.dumps({"force": True}),
+        content_type="application/json",
+    )
+
+    assert compact_response.status_code == 200
+    digest_id = compact_response.json()["context_digest"]["id"]
+    assert compact_response.json()["context_digest"]["trigger_reason"] == "manual"
+
+    list_response = client.get(reverse("api_v1:ai_assistant:ai-session-context-digests", args=[session.id]))
+    assert list_response.status_code == 200
+    assert [item["id"] for item in list_response.json()] == [digest_id]
 
 
 @pytest.mark.django_db

@@ -152,6 +152,8 @@ Sono gia' presenti:
 - macro-capitoli diagnostici configurabili;
 - scelte cablate minime per capitolo;
 - contesto AI compatto per ridurre storico inviato al modello;
+- digest periodico dello storico diagnostico;
+- stime token/costo sul contesto sintetizzato;
 - endpoint per turno diagnostico;
 - endpoint per recupero snapshot.
 
@@ -163,8 +165,8 @@ Il prossimo lavoro dovrebbe procedere cosi':
 
 1. validare macro-capitoli e scelte cablate su scenari reali;
 2. raffinare regole di sicurezza per capitolo;
-3. implementare compattazione periodica dello storico;
-4. misurare token, costo, modello e durata delle chiamate;
+3. tarare soglie di compattazione e stime costo/token;
+4. collegare metriche reali del provider quando disponibili;
 5. usare i contenuti storici di `../elettra` come corpus di test, non come import automatico.
 
 La regola operativa resta: niente import massivo di alberi diagnostici prima di aver validato il modello chat-first.

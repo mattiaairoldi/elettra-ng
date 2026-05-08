@@ -6,6 +6,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from apps.appointments.models import Appointment
 from apps.cases.models import Case
 
+from .context import estimate_token_count, get_latest_context_digest
+
 try:
     from openai import OpenAI
 except ImportError:
@@ -126,6 +128,7 @@ def get_latest_diagnostic_selection(session):
 def build_diagnostic_context(session):
     snapshot = get_diagnostic_snapshot(session)
     latest_selection = get_latest_diagnostic_selection(session)
+    latest_digest = get_latest_context_digest(session)
 
     chapter = getattr(snapshot, "diagnostic_chapter", None) if snapshot is not None else None
     option = getattr(snapshot, "diagnostic_chapter_option", None) if snapshot is not None else None
@@ -146,10 +149,13 @@ def build_diagnostic_context(session):
     }
 
     completed_messages = session.messages.filter(status="completed").order_by("created_at", "id")
+    recent_queryset = completed_messages
+    if latest_digest is not None and latest_digest.to_message_id is not None:
+        recent_queryset = recent_queryset.filter(id__gt=latest_digest.to_message_id)
     recent_limit = max(int(getattr(settings, "AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT", 4)), 1)
     recent_messages = [
         {"role": message.role, "content": message.content}
-        for message in completed_messages.reverse()[:recent_limit]
+        for message in recent_queryset.reverse()[:recent_limit]
     ]
     recent_messages.reverse()
 
@@ -165,7 +171,11 @@ def build_diagnostic_context(session):
             "chapter": chapter_context,
             "option": option_context,
             "summary": snapshot.summary if snapshot is not None else "",
-            "compacted_summary": snapshot.compacted_summary if snapshot is not None else "",
+            "compacted_summary": (
+                snapshot.compacted_summary
+                if snapshot is not None and snapshot.compacted_summary
+                else latest_digest.summary if latest_digest is not None else ""
+            ),
             "risk_level": snapshot.risk_level if snapshot is not None else "unknown",
             "facts": snapshot.facts_json if snapshot is not None else {},
             "excluded_facts": snapshot.excluded_facts_json if snapshot is not None else {},
@@ -174,15 +184,36 @@ def build_diagnostic_context(session):
             "next_question": snapshot.next_question if snapshot is not None else "",
             "escalation_recommended": snapshot.escalation_recommended if snapshot is not None else False,
         },
+        "latest_digest": {
+            "id": latest_digest.id if latest_digest is not None else None,
+            "to_message_id": latest_digest.to_message_id if latest_digest is not None else None,
+            "summary": latest_digest.summary if latest_digest is not None else "",
+            "risk_level": latest_digest.risk_level if latest_digest is not None else "unknown",
+            "facts": latest_digest.facts_json if latest_digest is not None else {},
+            "excluded_facts": latest_digest.excluded_facts_json if latest_digest is not None else {},
+            "asked_questions": latest_digest.asked_questions_json if latest_digest is not None else [],
+            "safety_notes": latest_digest.safety_notes_json if latest_digest is not None else [],
+        },
         "recent_messages": recent_messages,
         "metadata": {
             "recent_message_limit": recent_limit,
             "recent_message_count": len(recent_messages),
             "total_completed_messages": completed_messages.count(),
-            "compacted_summary_used": bool(snapshot and snapshot.compacted_summary),
+            "compacted_summary_used": bool(
+                (snapshot and snapshot.compacted_summary) or (latest_digest and latest_digest.summary)
+            ),
+            "latest_context_digest_id": latest_digest.id if latest_digest is not None else None,
             "context_version": snapshot.context_version if snapshot is not None else 1,
         },
     }
+    context["metadata"]["estimated_context_tokens"] = estimate_token_count(
+        {
+            "case": context["case"],
+            "diagnostic": context["diagnostic"],
+            "latest_digest": context["latest_digest"],
+            "recent_messages": context["recent_messages"],
+        }
+    )
     return context
 
 
@@ -424,12 +455,16 @@ def build_provider_messages(session):
 
 def build_diagnostic_provider_messages(session):
     recent_limit = max(int(getattr(settings, "AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT", 4)), 1)
+    latest_digest = get_latest_context_digest(session)
+    queryset = session.messages.filter(
+        role__in={"user", "assistant", "system"},
+        status="completed",
+    )
+    if latest_digest is not None and latest_digest.to_message_id is not None:
+        queryset = queryset.filter(id__gt=latest_digest.to_message_id)
     messages = [
         {"role": message.role, "content": message.content}
-        for message in session.messages.filter(
-            role__in={"user", "assistant", "system"},
-            status="completed",
-        ).order_by("-created_at", "-id")[:recent_limit]
+        for message in queryset.order_by("-created_at", "-id")[:recent_limit]
     ]
     messages.reverse()
     return messages

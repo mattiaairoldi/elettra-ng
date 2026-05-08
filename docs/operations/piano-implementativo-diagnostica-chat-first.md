@@ -349,10 +349,12 @@ La compattazione potra' essere automatica via task, ma e' utile avere un endpoin
 
 ### Fase 5 - Compattazione Periodica
 
-- Aggiungere `AiContextDigest`.
-- Creare task Celery di compattazione.
-- Attivare compattazione per soglia messaggi.
-- Aggiungere test su digest e non ripetizione domande.
+- [x] Aggiungere `AiContextDigest`.
+- [x] Creare task Celery di compattazione.
+- [x] Attivare compattazione per soglia messaggi.
+- [x] Aggiungere endpoint manuale di debug.
+- [x] Aggiungere test su digest e non reinvio dello storico gia' sintetizzato.
+- Collegare metriche reali del provider quando disponibili.
 
 ### Fase 6 - Valutazione Scenari
 
@@ -380,6 +382,7 @@ Ogni fase deve mantenere:
 - test che non si ripetano domande gia' salvate nello stato;
 - test che la compattazione non cancelli storico originale;
 - test che errori provider non rompano la pratica.
+- test su stime token/costo e soglie di compattazione.
 
 ## Criteri Di Successo
 
