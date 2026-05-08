@@ -2,7 +2,85 @@ import pytest
 from django.urls import reverse
 
 from apps.taxonomy.models import Category
-from apps.troubleshooting.models import DiagnosticFlow, DiagnosticNode, DiagnosticOption
+from apps.troubleshooting.models import (
+    DiagnosticChapter,
+    DiagnosticChapterOption,
+    DiagnosticFlow,
+    DiagnosticNode,
+    DiagnosticOption,
+    DiagnosticSafetyRule,
+)
+
+
+@pytest.mark.django_db
+def test_diagnostic_chapters_list_returns_public_published_chapters_with_options_and_safety_rules(client):
+    public_chapter = DiagnosticChapter.objects.create(
+        name="Problemi elettrici",
+        slug="problemi-elettrici",
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+        prompt_context="Ambito elettrico domestico.",
+        safety_context="Non suggerire lavori elettrici rischiosi.",
+    )
+    option = DiagnosticChapterOption.objects.create(
+        chapter=public_chapter,
+        label="Salvavita",
+        slug="salvavita",
+        option_type=DiagnosticChapterOption.OptionTypes.ASSET_TYPE,
+    )
+    DiagnosticSafetyRule.objects.create(
+        chapter=public_chapter,
+        title="Odore di bruciato",
+        trigger_terms_json=["odore di bruciato"],
+        risk_level=DiagnosticSafetyRule.RiskLevels.URGENT,
+        escalation_level=DiagnosticSafetyRule.EscalationLevels.URGENT,
+    )
+    DiagnosticChapter.objects.create(
+        name="Bozza",
+        slug="bozza",
+        status=DiagnosticChapter.Statuses.DRAFT,
+        is_public=True,
+    )
+
+    response = client.get(reverse("api_v1:troubleshooting:chapter-list"))
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()] == [public_chapter.id]
+    assert response.json()[0]["options"][0]["id"] == option.id
+    assert response.json()[0]["safety_rules"][0]["risk_level"] == "urgent"
+
+
+@pytest.mark.django_db
+def test_diagnostic_chapters_support_search_category_and_options_endpoint(client):
+    electricity = Category.objects.create(name="Elettricita", slug="elettricita-chapters")
+    public_chapter = DiagnosticChapter.objects.create(
+        name="Problemi elettrici",
+        slug="problemi-elettrici",
+        category=electricity,
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+    )
+    option = DiagnosticChapterOption.objects.create(
+        chapter=public_chapter,
+        label="Presa",
+        slug="presa",
+        option_type=DiagnosticChapterOption.OptionTypes.ASSET_TYPE,
+    )
+
+    category_response = client.get(
+        reverse("api_v1:troubleshooting:chapter-list"),
+        {"category_id": electricity.id},
+    )
+    assert category_response.status_code == 200
+    assert [item["slug"] for item in category_response.json()] == ["problemi-elettrici"]
+
+    search_response = client.get(reverse("api_v1:troubleshooting:chapter-list"), {"q": "elettrici"})
+    assert search_response.status_code == 200
+    assert [item["id"] for item in search_response.json()] == [public_chapter.id]
+
+    options_response = client.get(reverse("api_v1:troubleshooting:chapter-options", args=[public_chapter.id]))
+    assert options_response.status_code == 200
+    assert [item["id"] for item in options_response.json()] == [option.id]
 
 
 @pytest.mark.django_db

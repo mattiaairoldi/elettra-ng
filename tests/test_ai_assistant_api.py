@@ -10,7 +10,7 @@ from apps.cases.models import Case, CaseEvent
 from apps.ai_assistant.models import AiDiagnosticSnapshot, AiMessage
 from apps.ai_assistant.tasks import generate_ai_diagnostic_reply_task, generate_ai_reply_task
 from apps.taxonomy.models import Category
-from apps.troubleshooting.models import DiagnosticFlow, DiagnosticNode
+from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption, DiagnosticFlow, DiagnosticNode
 
 User = get_user_model()
 
@@ -112,6 +112,21 @@ def test_ai_diagnostic_turn_updates_snapshot_case_status_and_events(client):
     customer = User.objects.create_user(email="customer@example.com", password="Password123!")
     category = Category.objects.create(name="Elettricita", slug="elettricita-ai-diagnostic")
     case = Case.objects.create(customer_user=customer, category=category, title="Odore dal quadro")
+    chapter = DiagnosticChapter.objects.create(
+        name="Problemi elettrici",
+        slug="problemi-elettrici-ai-diagnostic",
+        category=category,
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+        prompt_context="Ambito elettrico domestico.",
+        safety_context="Non suggerire interventi sul quadro.",
+    )
+    option = DiagnosticChapterOption.objects.create(
+        chapter=chapter,
+        label="Quadro elettrico",
+        slug="quadro-elettrico",
+        option_type=DiagnosticChapterOption.OptionTypes.ASSET_TYPE,
+    )
     client.force_login(customer)
 
     session_response = client.post(
@@ -123,7 +138,13 @@ def test_ai_diagnostic_turn_updates_snapshot_case_status_and_events(client):
 
     turn_response = client.post(
         reverse("api_v1:ai_assistant:ai-session-diagnostic-turns", args=[session_id]),
-        data=json.dumps({"content": "Sento odore di bruciato vicino al quadro elettrico"}),
+        data=json.dumps(
+            {
+                "content": "Sento odore di bruciato vicino al quadro elettrico",
+                "diagnostic_chapter_id": chapter.id,
+                "diagnostic_chapter_option_id": option.id,
+            }
+        ),
         content_type="application/json",
     )
 
@@ -132,6 +153,13 @@ def test_ai_diagnostic_turn_updates_snapshot_case_status_and_events(client):
     assert payload["assistant_message"]["status"] == "completed"
     assert payload["assistant_message"]["metadata_json"]["diagnostic"]["risk_level"] == "urgent"
     assert payload["diagnostic_snapshot"]["risk_level"] == "urgent"
+    assert payload["diagnostic_snapshot"]["diagnostic_chapter_id"] == chapter.id
+    assert payload["diagnostic_snapshot"]["diagnostic_chapter_option_id"] == option.id
+    assert payload["diagnostic_snapshot"]["facts_json"]["category"] == "Problemi elettrici / Quadro elettrico"
+    assert payload["diagnostic_snapshot"]["asked_questions_json"] == [
+        "Ci sono fumo, scintille o odore persistente anche dopo aver smesso di usare l'impianto?"
+    ]
+    assert payload["diagnostic_snapshot"]["context_metadata_json"]["strategy"] == "snapshot_recent_messages"
     assert payload["diagnostic_snapshot"]["escalation_recommended"] is True
     assert "professionista" in payload["assistant_message"]["content"]
 
@@ -170,6 +198,56 @@ def test_ai_diagnostic_turn_requires_linked_case(client):
 
     assert turn_response.status_code == 400
     assert turn_response.json() == {"case": ["Diagnostic turns require a linked case."]}
+
+
+@pytest.mark.django_db
+@override_settings(AI_PROVIDER="local", CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPAGATES=True)
+def test_ai_diagnostic_turn_validates_chapter_option_pair(client):
+    customer = User.objects.create_user(email="customer@example.com", password="Password123!")
+    category = Category.objects.create(name="Elettricita", slug="elettricita-ai-diagnostic-option")
+    case = Case.objects.create(customer_user=customer, category=category, title="Presa non funziona")
+    chapter = DiagnosticChapter.objects.create(
+        name="Problemi elettrici",
+        slug="problemi-elettrici-ai-option",
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+    )
+    other_chapter = DiagnosticChapter.objects.create(
+        name="Idraulica",
+        slug="idraulica-ai-option",
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+    )
+    option = DiagnosticChapterOption.objects.create(
+        chapter=other_chapter,
+        label="Perdita",
+        slug="perdita",
+    )
+    client.force_login(customer)
+
+    session_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-list"),
+        data=json.dumps({"case_id": case.id}),
+        content_type="application/json",
+    )
+    session_id = session_response.json()["id"]
+
+    turn_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-diagnostic-turns", args=[session_id]),
+        data=json.dumps(
+            {
+                "content": "La presa non funziona",
+                "diagnostic_chapter_id": chapter.id,
+                "diagnostic_chapter_option_id": option.id,
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert turn_response.status_code == 400
+    assert turn_response.json() == {
+        "diagnostic_chapter_option_id": ["Option does not belong to the selected chapter."]
+    }
 
 
 @pytest.mark.django_db
@@ -485,12 +563,14 @@ def test_generate_ai_reply_task_persists_chunked_content(monkeypatch):
 
 
 @pytest.mark.django_db
-@override_settings(AI_PROVIDER="local")
+@override_settings(AI_PROVIDER="local", AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT=2)
 def test_generate_ai_diagnostic_reply_task_persists_structured_snapshot(monkeypatch):
     customer = User.objects.create_user(email="customer@example.com", password="Password123!")
     category = Category.objects.create(name="Elettricita", slug="elettricita-ai-task-diagnostic")
     case = Case.objects.create(customer_user=customer, category=category, title="Presa calda")
     session = customer.ai_sessions.create(case=case)
+    AiMessage.objects.create(session=session, role=AiMessage.Roles.USER, content="Primo messaggio vecchio")
+    AiMessage.objects.create(session=session, role=AiMessage.Roles.ASSISTANT, content="Prima risposta vecchia")
     AiMessage.objects.create(session=session, role=AiMessage.Roles.USER, content="La presa e' calda")
     assistant_message = AiMessage.objects.create(
         session=session,
@@ -498,9 +578,11 @@ def test_generate_ai_diagnostic_reply_task_persists_structured_snapshot(monkeypa
         content="",
         status=AiMessage.Statuses.QUEUED,
     )
+    captured = {}
 
     class FakeProvider:
         def build_diagnostic_reply(self, session, messages):
+            captured["messages"] = messages
             return {
                 "assistant_response": "Serve cautela e verifica professionale.",
                 "case_summary": "Presa calda segnalata dall'utente.",
@@ -524,8 +606,13 @@ def test_generate_ai_diagnostic_reply_task_persists_structured_snapshot(monkeypa
     assert assistant_message.status == AiMessage.Statuses.COMPLETED
     assert assistant_message.content == "Serve cautela e verifica professionale."
     assert assistant_message.metadata_json["diagnostic"]["risk_level"] == "high"
+    assert [message["content"] for message in captured["messages"]] == [
+        "Prima risposta vecchia",
+        "La presa e' calda",
+    ]
     assert snapshot.risk_level == "high"
     assert snapshot.next_question == "Il calore resta anche senza carichi collegati?"
+    assert snapshot.context_metadata_json["provider_message_count"] == 2
 
 
 @pytest.mark.django_db

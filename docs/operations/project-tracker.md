@@ -2,20 +2,16 @@
 
 ## Obiettivo Corrente
 
-Evolvere lo spike diagnostico verso un modello ibrido chat-first con macro-capitoli, scelte cablate minime e contesto AI ottimizzato.
+Validare il routing diagnostico ibrido chat-first su scenari manuali e preparare compattazione periodica dello storico.
 
 ## In Corso
 
-- [ ] Preparare implementazione macro-capitoli diagnostici e contesto compatto.
+- [ ] Verifica qualitativa dei macro-capitoli diagnostici e del contesto compatto.
 
 ## Todo
 
 - [ ] Valutare utente non-root per il container `worker`.
-- [ ] Definire macro-capitoli iniziali: elettrico, elettrodomestici, idraulica, climatizzazione, domotica, sicurezza, manutenzione generale.
-- [ ] Definire opzioni cablate minime per elettrodomestici e problemi elettrici.
 - [ ] Decidere criteri di sicurezza non negoziabili per risposte AI.
-- [ ] Estendere `AiDiagnosticSnapshot` con macro-capitolo, asset/famiglia tecnica e contesto compatto.
-- [ ] Implementare `build_diagnostic_context(session)` per ridurre storico inviato al provider.
 - [ ] Definire soglie di compattazione storico e metadati costo/token.
 - [ ] Definire 5 scenari reali per verifica qualitativa dello spike.
 - [ ] Decidere quali contenuti di `../elettra` usare come corpus di test, non come import.
@@ -64,6 +60,13 @@ Evolvere lo spike diagnostico verso un modello ibrido chat-first con macro-capit
 - [x] Creato documento operativo `docs/operations/ai-diagnostic-spike.md`.
 - [x] Confermata direzione diagnostica ibrida chat-first.
 - [x] Creato piano `docs/operations/piano-implementativo-diagnostica-chat-first.md`.
+- [x] Creato primo commit Git `3ee9b1c`.
+- [x] Aggiunti modelli `DiagnosticChapter`, `DiagnosticChapterOption`, `DiagnosticSafetyRule`.
+- [x] Aggiunti endpoint pubblici `diagnostic-chapters`.
+- [x] Esteso `AiDiagnosticSnapshot` con capitolo, opzione, domande poste e metadati contesto.
+- [x] Implementato `build_diagnostic_context(session)`.
+- [x] Limitato il contesto diagnostico agli ultimi messaggi rilevanti.
+- [x] Aggiunto comando `seed_diagnostic_chapters`.
 
 ## Decisioni Confermate
 

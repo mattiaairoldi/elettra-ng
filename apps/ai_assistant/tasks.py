@@ -4,7 +4,14 @@ from apps.cases.events import create_case_event
 from apps.cases.models import Case, CaseEvent
 
 from .models import AiDiagnosticSnapshot, AiMessage
-from .provider import AiProviderError, build_provider_messages, get_ai_provider, normalize_diagnostic_payload
+from .provider import (
+    AiProviderError,
+    build_diagnostic_context,
+    build_diagnostic_provider_messages,
+    build_provider_messages,
+    get_ai_provider,
+    normalize_diagnostic_payload,
+)
 
 
 @shared_task
@@ -72,7 +79,8 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
     assistant_message.error_detail = ""
     assistant_message.save(update_fields=["status", "error_detail"])
 
-    provider_messages = build_provider_messages(assistant_message.session)
+    provider_messages = build_diagnostic_provider_messages(assistant_message.session)
+    context = build_diagnostic_context(assistant_message.session)
     try:
         provider = get_ai_provider()
         raw_payload = provider.build_diagnostic_reply(assistant_message.session, provider_messages)
@@ -85,15 +93,61 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
         assistant_message.save(update_fields=["content", "status", "error_detail", "metadata_json"])
         return {"status": assistant_message.status, "error_detail": assistant_message.error_detail}
 
+    try:
+        existing_snapshot = assistant_message.session.diagnostic_snapshot
+    except AiDiagnosticSnapshot.DoesNotExist:
+        existing_snapshot = None
+    previous_facts = existing_snapshot.facts_json if existing_snapshot is not None else {}
+    previous_excluded_facts = existing_snapshot.excluded_facts_json if existing_snapshot is not None else {}
+    previous_asked_questions = existing_snapshot.asked_questions_json if existing_snapshot is not None else []
+    if not isinstance(previous_facts, dict):
+        previous_facts = {}
+    if not isinstance(previous_excluded_facts, dict):
+        previous_excluded_facts = {}
+    if not isinstance(previous_asked_questions, list):
+        previous_asked_questions = []
+
+    facts = {**previous_facts, **payload["facts"]}
+    excluded_facts = {**previous_excluded_facts, **payload["excluded_facts"]}
+    asked_questions = list(previous_asked_questions)
+    for question in [*payload["asked_questions"], payload["next_question"]]:
+        if question and question not in asked_questions:
+            asked_questions.append(question)
+
+    latest_user_message = (
+        assistant_message.session.messages.filter(role=AiMessage.Roles.USER)
+        .order_by("-created_at", "-id")
+        .first()
+    )
+    selection = {}
+    if latest_user_message is not None:
+        selection = latest_user_message.metadata_json.get("diagnostic", {})
+        if not isinstance(selection, dict):
+            selection = {}
+
+    diagnostic_chapter_id = selection.get("diagnostic_chapter_id")
+    diagnostic_chapter_option_id = selection.get("diagnostic_chapter_option_id")
+    if existing_snapshot is not None:
+        diagnostic_chapter_id = diagnostic_chapter_id or existing_snapshot.diagnostic_chapter_id
+        diagnostic_chapter_option_id = diagnostic_chapter_option_id or existing_snapshot.diagnostic_chapter_option_id
+
+    context_metadata = {
+        **context["metadata"],
+        "strategy": "snapshot_recent_messages",
+        "provider_message_count": len(provider_messages),
+    }
+
     assistant_message.content = payload["assistant_response"]
     assistant_message.status = AiMessage.Statuses.COMPLETED
     assistant_message.error_detail = ""
-    assistant_message.metadata_json = {"diagnostic": payload}
+    assistant_message.metadata_json = {"diagnostic": {**payload, "context_metadata": context_metadata}}
     assistant_message.save(update_fields=["content", "status", "error_detail", "metadata_json"])
 
     snapshot, _created = AiDiagnosticSnapshot.objects.update_or_create(
         session=assistant_message.session,
         defaults={
+            "diagnostic_chapter_id": diagnostic_chapter_id,
+            "diagnostic_chapter_option_id": diagnostic_chapter_option_id,
             "source_message": assistant_message,
             "summary": payload["case_summary"],
             "risk_level": payload["risk_level"],
@@ -101,8 +155,11 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
             "escalation_recommended": payload["escalation_recommended"],
             "escalation_reason": payload["escalation_reason"],
             "recommendation": payload["recommendation"],
-            "facts_json": payload["facts"],
+            "facts_json": facts,
+            "excluded_facts_json": excluded_facts,
+            "asked_questions_json": asked_questions,
             "safety_notes_json": payload["safety_notes"],
+            "context_metadata_json": context_metadata,
             "raw_payload_json": payload,
         },
     )

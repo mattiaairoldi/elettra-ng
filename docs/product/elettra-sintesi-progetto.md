@@ -149,6 +149,9 @@ Sono gia' presenti:
 - sessioni e messaggi AI;
 - primo spike di diagnostica AI dinamica;
 - snapshot strutturato `AiDiagnosticSnapshot`;
+- macro-capitoli diagnostici configurabili;
+- scelte cablate minime per capitolo;
+- contesto AI compatto per ridurre storico inviato al modello;
 - endpoint per turno diagnostico;
 - endpoint per recupero snapshot.
 
@@ -158,12 +161,10 @@ Lo spike attuale consente di inviare un messaggio diagnostico, generare una risp
 
 Il prossimo lavoro dovrebbe procedere cosi':
 
-1. estendere lo snapshot con macro-capitolo e contesto compatto;
-2. introdurre catalogo minimo di macro-capitoli;
-3. aggiungere scelte cablate solo dove utili;
-4. costruire `build_diagnostic_context(session)`;
-5. implementare compattazione periodica dello storico;
-6. validare il flusso su pochi scenari reali;
-7. usare i contenuti storici di `../elettra` come corpus di test, non come import automatico.
+1. validare macro-capitoli e scelte cablate su scenari reali;
+2. raffinare regole di sicurezza per capitolo;
+3. implementare compattazione periodica dello storico;
+4. misurare token, costo, modello e durata delle chiamate;
+5. usare i contenuti storici di `../elettra` come corpus di test, non come import automatico.
 
 La regola operativa resta: niente import massivo di alberi diagnostici prima di aver validato il modello chat-first.

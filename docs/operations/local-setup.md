@@ -16,6 +16,12 @@ docker compose run --rm web uv run python manage.py migrate
 docker compose up -d web worker
 ```
 
+Seed opzionale dei macro-capitoli diagnostici iniziali:
+
+```bash
+docker compose run --rm web uv run python manage.py seed_diagnostic_chapters
+```
+
 Verifica:
 
 ```bash
@@ -48,7 +54,7 @@ bucket: app-media
 docker compose run --rm web uv run pytest -q
 ```
 
-Ultima verifica: `60 passed`.
+Ultima verifica: `66 passed`.
 
 ## OpenAPI
 

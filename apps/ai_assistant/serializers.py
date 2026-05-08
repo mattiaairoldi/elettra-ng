@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.cases.models import Case
 from apps.identity.models import User
+from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption
 
 from .models import AiDiagnosticSnapshot, AiMessage, AiSession
 
@@ -27,6 +28,12 @@ class AiMessageSerializer(serializers.ModelSerializer):
 class AiDiagnosticSnapshotSerializer(serializers.ModelSerializer):
     session_id = serializers.IntegerField(source="session.id", read_only=True)
     source_message_id = serializers.IntegerField(source="source_message.id", read_only=True, allow_null=True)
+    diagnostic_chapter_id = serializers.IntegerField(source="diagnostic_chapter.id", read_only=True, allow_null=True)
+    diagnostic_chapter_option_id = serializers.IntegerField(
+        source="diagnostic_chapter_option.id",
+        read_only=True,
+        allow_null=True,
+    )
 
     class Meta:
         model = AiDiagnosticSnapshot
@@ -34,6 +41,8 @@ class AiDiagnosticSnapshotSerializer(serializers.ModelSerializer):
             "id",
             "session_id",
             "source_message_id",
+            "diagnostic_chapter_id",
+            "diagnostic_chapter_option_id",
             "summary",
             "risk_level",
             "next_question",
@@ -41,7 +50,12 @@ class AiDiagnosticSnapshotSerializer(serializers.ModelSerializer):
             "escalation_reason",
             "recommendation",
             "facts_json",
+            "excluded_facts_json",
+            "asked_questions_json",
             "safety_notes_json",
+            "compacted_summary",
+            "context_version",
+            "context_metadata_json",
             "raw_payload_json",
             "created_at",
             "updated_at",
@@ -173,6 +187,9 @@ class AiMessageCreateSerializer(serializers.Serializer):
 
 
 class AiDiagnosticTurnCreateSerializer(AiMessageCreateSerializer):
+    diagnostic_chapter_id = serializers.IntegerField(required=False, allow_null=True)
+    diagnostic_chapter_option_id = serializers.IntegerField(required=False, allow_null=True)
+
     def validate(self, attrs):
         attrs = super().validate(attrs)
         session = self.context["session"]
@@ -180,6 +197,41 @@ class AiDiagnosticTurnCreateSerializer(AiMessageCreateSerializer):
             raise serializers.ValidationError({"case": "Diagnostic turns require a linked case."})
         if session.case.status in TERMINAL_CASE_STATUSES:
             raise serializers.ValidationError({"case": "Diagnostic turns cannot be added to a terminal case."})
+
+        chapter = None
+        option = None
+        chapter_id = attrs.get("diagnostic_chapter_id")
+        option_id = attrs.get("diagnostic_chapter_option_id")
+
+        if chapter_id is not None:
+            try:
+                chapter = DiagnosticChapter.objects.get(
+                    id=chapter_id,
+                    status=DiagnosticChapter.Statuses.PUBLISHED,
+                    is_public=True,
+                )
+            except DiagnosticChapter.DoesNotExist as exc:
+                raise serializers.ValidationError({"diagnostic_chapter_id": "Invalid diagnostic chapter."}) from exc
+
+        if option_id is not None:
+            try:
+                option = DiagnosticChapterOption.objects.select_related("chapter").get(id=option_id, is_active=True)
+            except DiagnosticChapterOption.DoesNotExist as exc:
+                raise serializers.ValidationError(
+                    {"diagnostic_chapter_option_id": "Invalid diagnostic chapter option."}
+                ) from exc
+            if option.chapter.status != DiagnosticChapter.Statuses.PUBLISHED or not option.chapter.is_public:
+                raise serializers.ValidationError(
+                    {"diagnostic_chapter_option_id": "Invalid diagnostic chapter option."}
+                )
+            if chapter is not None and option.chapter_id != chapter.id:
+                raise serializers.ValidationError(
+                    {"diagnostic_chapter_option_id": "Option does not belong to the selected chapter."}
+                )
+            chapter = chapter or option.chapter
+
+        self.context["diagnostic_chapter"] = chapter
+        self.context["diagnostic_chapter_option"] = option
         return attrs
 
 

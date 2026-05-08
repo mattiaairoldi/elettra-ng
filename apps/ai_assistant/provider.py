@@ -1,6 +1,7 @@
 import json
 
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 from apps.appointments.models import Appointment
 from apps.cases.models import Case
@@ -85,6 +86,12 @@ def normalize_diagnostic_payload(raw_payload):
         "escalation_reason": clean_text(payload.get("escalation_reason")),
         "recommendation": clean_text(payload.get("recommendation")),
         "facts": facts,
+        "excluded_facts": payload.get("excluded_facts") if isinstance(payload.get("excluded_facts"), dict) else {},
+        "asked_questions": (
+            [clean_text(item) for item in payload.get("asked_questions", []) if clean_text(item)]
+            if isinstance(payload.get("asked_questions"), list)
+            else []
+        ),
         "safety_notes": safety_notes,
     }
     if not normalized["assistant_response"]:
@@ -94,6 +101,89 @@ def normalize_diagnostic_payload(raw_payload):
             or "Ho aggiornato il riepilogo della pratica."
         )
     return normalized
+
+
+def get_diagnostic_snapshot(session):
+    try:
+        return session.diagnostic_snapshot
+    except ObjectDoesNotExist:
+        return None
+
+
+def get_latest_diagnostic_selection(session):
+    latest_user_message = (
+        session.messages.filter(role="user")
+        .exclude(metadata_json={})
+        .order_by("-created_at", "-id")
+        .first()
+    )
+    if latest_user_message is None:
+        return {}
+    diagnostic_metadata = latest_user_message.metadata_json.get("diagnostic", {})
+    return diagnostic_metadata if isinstance(diagnostic_metadata, dict) else {}
+
+
+def build_diagnostic_context(session):
+    snapshot = get_diagnostic_snapshot(session)
+    latest_selection = get_latest_diagnostic_selection(session)
+
+    chapter = getattr(snapshot, "diagnostic_chapter", None) if snapshot is not None else None
+    option = getattr(snapshot, "diagnostic_chapter_option", None) if snapshot is not None else None
+
+    chapter_context = {
+        "id": getattr(chapter, "id", latest_selection.get("diagnostic_chapter_id")),
+        "name": getattr(chapter, "name", latest_selection.get("diagnostic_chapter_name", "")),
+        "slug": getattr(chapter, "slug", latest_selection.get("diagnostic_chapter_slug", "")),
+        "prompt_context": getattr(chapter, "prompt_context", latest_selection.get("diagnostic_chapter_prompt_context", "")),
+        "safety_context": getattr(chapter, "safety_context", latest_selection.get("diagnostic_chapter_safety_context", "")),
+    }
+    option_context = {
+        "id": getattr(option, "id", latest_selection.get("diagnostic_chapter_option_id")),
+        "label": getattr(option, "label", latest_selection.get("diagnostic_chapter_option_label", "")),
+        "slug": getattr(option, "slug", latest_selection.get("diagnostic_chapter_option_slug", "")),
+        "option_type": getattr(option, "option_type", latest_selection.get("diagnostic_chapter_option_type", "")),
+        "prompt_hint": getattr(option, "prompt_hint", latest_selection.get("diagnostic_chapter_option_prompt_hint", "")),
+    }
+
+    completed_messages = session.messages.filter(status="completed").order_by("created_at", "id")
+    recent_limit = max(int(getattr(settings, "AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT", 4)), 1)
+    recent_messages = [
+        {"role": message.role, "content": message.content}
+        for message in completed_messages.reverse()[:recent_limit]
+    ]
+    recent_messages.reverse()
+
+    context = {
+        "case": {
+            "id": session.case_id,
+            "status": session.case.status if session.case_id is not None else "",
+            "category": session.case.category.name if session.case_id is not None else "",
+            "title": session.case.title if session.case_id is not None else "",
+            "description": session.case.description if session.case_id is not None else "",
+        },
+        "diagnostic": {
+            "chapter": chapter_context,
+            "option": option_context,
+            "summary": snapshot.summary if snapshot is not None else "",
+            "compacted_summary": snapshot.compacted_summary if snapshot is not None else "",
+            "risk_level": snapshot.risk_level if snapshot is not None else "unknown",
+            "facts": snapshot.facts_json if snapshot is not None else {},
+            "excluded_facts": snapshot.excluded_facts_json if snapshot is not None else {},
+            "asked_questions": snapshot.asked_questions_json if snapshot is not None else [],
+            "safety_notes": snapshot.safety_notes_json if snapshot is not None else [],
+            "next_question": snapshot.next_question if snapshot is not None else "",
+            "escalation_recommended": snapshot.escalation_recommended if snapshot is not None else False,
+        },
+        "recent_messages": recent_messages,
+        "metadata": {
+            "recent_message_limit": recent_limit,
+            "recent_message_count": len(recent_messages),
+            "total_completed_messages": completed_messages.count(),
+            "compacted_summary_used": bool(snapshot and snapshot.compacted_summary),
+            "context_version": snapshot.context_version if snapshot is not None else 1,
+        },
+    }
+    return context
 
 
 def build_case_context(session):
@@ -144,16 +234,16 @@ def build_ai_instructions(session):
 
 
 def build_diagnostic_instructions(session):
-    context = build_case_context(session)
+    context = build_diagnostic_context(session)
     return (
         "Sei un assistente diagnostico per problemi tecnici domestici. "
         "Il tuo compito e' porre poche domande sicure, sintetizzare il caso e riconoscere quando serve un professionista. "
         "Non fornire istruzioni per aprire quadri elettrici, manipolare cavi, smontare componenti o fare misure su circuiti in tensione. "
         "Se emergono odore di bruciato, fumo, scintille, scosse, surriscaldamento o rischio elettrico, raccomanda di fermarsi e coinvolgere un professionista. "
         "Rispondi solo con un oggetto JSON valido con questi campi: "
-        "assistant_response, case_summary, risk_level, next_question, escalation_recommended, escalation_reason, recommendation, facts, safety_notes. "
+        "assistant_response, case_summary, risk_level, next_question, escalation_recommended, escalation_reason, recommendation, facts, excluded_facts, asked_questions, safety_notes. "
         "risk_level deve essere uno tra unknown, low, medium, high, urgent. "
-        f"Contesto della pratica: {context}"
+        f"Contesto strutturato: {json.dumps(context, ensure_ascii=True)}"
     )
 
 
@@ -180,7 +270,12 @@ class LocalAiProvider:
     def build_diagnostic_reply(self, session, messages):
         user_message = clean_text(messages[-1]["content"] if messages else "")
         lowered = user_message.lower()
-        category = session.case.category.name if session.case_id is not None else "problema domestico"
+        context = build_diagnostic_context(session)
+        chapter_name = context["diagnostic"]["chapter"]["name"]
+        option_label = context["diagnostic"]["option"]["label"]
+        category = chapter_name or (session.case.category.name if session.case_id is not None else "problema domestico")
+        if option_label:
+            category = f"{category} / {option_label}"
 
         danger_terms = {
             "odore di bruciato",
@@ -205,6 +300,8 @@ class LocalAiProvider:
                 "escalation_reason": "Segnali compatibili con rischio elettrico o surriscaldamento.",
                 "recommendation": "Mettere in sicurezza la situazione e richiedere supporto professionale.",
                 "facts": {"reported_issue": user_message, "category": category},
+                "excluded_facts": {},
+                "asked_questions": [],
                 "safety_notes": ["Non aprire quadri o componenti elettrici.", "Non manipolare cavi o parti in tensione."],
             }
 
@@ -218,6 +315,8 @@ class LocalAiProvider:
                 "escalation_reason": "",
                 "recommendation": "Raccogliere ancora informazioni senza eseguire interventi tecnici.",
                 "facts": {"reported_issue": user_message, "category": category},
+                "excluded_facts": {},
+                "asked_questions": [],
                 "safety_notes": ["Limitarsi a osservazioni esterne e sicure."],
             }
 
@@ -230,6 +329,8 @@ class LocalAiProvider:
             "escalation_reason": "",
             "recommendation": "Continuare la raccolta di informazioni.",
             "facts": {"reported_issue": user_message, "category": category},
+            "excluded_facts": {},
+            "asked_questions": [],
             "safety_notes": [],
         }
 
@@ -319,6 +420,19 @@ def build_provider_messages(session):
         for message in session.messages.order_by("created_at", "id")
         if message.role in {"user", "assistant", "system"} and message.status == message.Statuses.COMPLETED
     ]
+
+
+def build_diagnostic_provider_messages(session):
+    recent_limit = max(int(getattr(settings, "AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT", 4)), 1)
+    messages = [
+        {"role": message.role, "content": message.content}
+        for message in session.messages.filter(
+            role__in={"user", "assistant", "system"},
+            status="completed",
+        ).order_by("-created_at", "-id")[:recent_limit]
+    ]
+    messages.reverse()
+    return messages
 
 
 def get_ai_provider():

@@ -1,8 +1,69 @@
 from django.db.models import Q
 from rest_framework import generics, permissions
 
-from .models import DiagnosticFlow, DiagnosticNode, DiagnosticOption
-from .serializers import DiagnosticFlowSerializer, DiagnosticNodeSerializer, DiagnosticOptionSerializer
+from .models import DiagnosticChapter, DiagnosticChapterOption, DiagnosticFlow, DiagnosticNode, DiagnosticOption
+from .serializers import (
+    DiagnosticChapterOptionSerializer,
+    DiagnosticChapterSerializer,
+    DiagnosticFlowSerializer,
+    DiagnosticNodeSerializer,
+    DiagnosticOptionSerializer,
+)
+
+
+class PublicChapterQuerysetMixin:
+    def get_public_chapters_queryset(self):
+        return (
+            DiagnosticChapter.objects.filter(
+                is_public=True,
+                status=DiagnosticChapter.Statuses.PUBLISHED,
+            )
+            .select_related("category")
+            .prefetch_related("options", "safety_rules")
+        )
+
+
+class ChapterListView(PublicChapterQuerysetMixin, generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = DiagnosticChapterSerializer
+
+    def get_queryset(self):
+        queryset = self.get_public_chapters_queryset()
+
+        category_id = self.request.query_params.get("category_id")
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
+
+        search_query = self.request.query_params.get("q")
+        if search_query:
+            queryset = queryset.filter(
+                Q(name__icontains=search_query)
+                | Q(slug__icontains=search_query)
+                | Q(description__icontains=search_query)
+            )
+
+        return queryset
+
+
+class ChapterDetailView(PublicChapterQuerysetMixin, generics.RetrieveAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = DiagnosticChapterSerializer
+
+    def get_queryset(self):
+        return self.get_public_chapters_queryset()
+
+
+class ChapterOptionsListView(generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = DiagnosticChapterOptionSerializer
+
+    def get_queryset(self):
+        return DiagnosticChapterOption.objects.filter(
+            chapter_id=self.kwargs["pk"],
+            chapter__is_public=True,
+            chapter__status=DiagnosticChapter.Statuses.PUBLISHED,
+            is_active=True,
+        ).select_related("chapter")
 
 
 class PublicFlowQuerysetMixin:

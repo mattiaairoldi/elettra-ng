@@ -271,12 +271,35 @@ class AiSessionViewSet(GenericViewSet):
             },
         )
         serializer.is_valid(raise_exception=True)
+        diagnostic_chapter = serializer.context.get("diagnostic_chapter")
+        diagnostic_chapter_option = serializer.context.get("diagnostic_chapter_option")
+        diagnostic_metadata = {"kind": "user_observation"}
+        if diagnostic_chapter is not None:
+            diagnostic_metadata.update(
+                {
+                    "diagnostic_chapter_id": diagnostic_chapter.id,
+                    "diagnostic_chapter_name": diagnostic_chapter.name,
+                    "diagnostic_chapter_slug": diagnostic_chapter.slug,
+                    "diagnostic_chapter_prompt_context": diagnostic_chapter.prompt_context,
+                    "diagnostic_chapter_safety_context": diagnostic_chapter.safety_context,
+                }
+            )
+        if diagnostic_chapter_option is not None:
+            diagnostic_metadata.update(
+                {
+                    "diagnostic_chapter_option_id": diagnostic_chapter_option.id,
+                    "diagnostic_chapter_option_label": diagnostic_chapter_option.label,
+                    "diagnostic_chapter_option_slug": diagnostic_chapter_option.slug,
+                    "diagnostic_chapter_option_type": diagnostic_chapter_option.option_type,
+                    "diagnostic_chapter_option_prompt_hint": diagnostic_chapter_option.prompt_hint,
+                }
+            )
 
         user_message = AiMessage.objects.create(
             session=session,
             role=AiMessage.Roles.USER,
             content=serializer.validated_data["content"],
-            metadata_json={"diagnostic": {"kind": "user_observation"}},
+            metadata_json={"diagnostic": diagnostic_metadata},
         )
         assistant_message = AiMessage.objects.create(
             session=session,

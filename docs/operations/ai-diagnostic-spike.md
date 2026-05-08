@@ -51,7 +51,9 @@ Body:
 
 ```json
 {
-  "content": "Sento odore di bruciato vicino al quadro elettrico"
+  "content": "Sento odore di bruciato vicino al quadro elettrico",
+  "diagnostic_chapter_id": 1,
+  "diagnostic_chapter_option_id": 4
 }
 ```
 
@@ -109,11 +111,16 @@ L'obiettivo non e' dimostrare che l'AI sia definitiva, ma capire se questo model
 
 La direzione successiva e' descritta in [Piano Implementativo Diagnostica Ibrida Chat-First](piano-implementativo-diagnostica-chat-first.md).
 
-Lo spike deve evolvere verso:
+Lo spike e' stato esteso con:
 
 - macro-capitoli diagnostici;
 - scelte cablate minime;
+- contesto AI compatto con ultimi messaggi rilevanti;
+- metadati di contesto nello snapshot;
+- comando seed locale `seed_diagnostic_chapters`.
+
+Deve ancora evolvere verso:
+
 - chat come interfaccia principale;
-- contesto AI compatto;
 - compattazione periodica dello storico;
 - metriche per costo e qualita' delle risposte.

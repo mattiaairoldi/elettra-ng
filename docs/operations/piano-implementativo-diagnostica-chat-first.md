@@ -315,19 +315,20 @@ La compattazione potra' essere automatica via task, ma e' utile avere un endpoin
 
 ### Fase 1 - Consolidare Spike
 
-- Estendere snapshot con macro-capitolo e campi di contesto.
-- Aggiungere serializer e OpenAPI.
-- Aggiornare provider locale.
-- Aggiungere test sui segnali di rischio.
-- Mantenere compatibilita' con endpoint esistenti.
+- [x] Estendere snapshot con macro-capitolo e campi di contesto.
+- [x] Aggiungere serializer e OpenAPI.
+- [x] Aggiornare provider locale.
+- [x] Aggiungere test sui segnali di rischio e sul contesto compatto.
+- [x] Mantenere compatibilita' con endpoint esistenti.
 
 ### Fase 2 - Routing Ibrido
 
-- Aggiungere catalogo macro-capitoli.
-- Aggiungere opzioni cablate minime.
+- [x] Aggiungere catalogo macro-capitoli.
+- [x] Aggiungere opzioni cablate minime.
+- [x] Aggiungere comando seed locale per macro-capitoli iniziali.
 - Permettere classificazione da testo libero.
 - Permettere scelta manuale del capitolo.
-- Salvare capitolo e opzione scelta nello snapshot.
+- [x] Salvare capitolo e opzione scelta nello snapshot.
 
 ### Fase 3 - Prompt Per Capitolo
 
@@ -339,11 +340,12 @@ La compattazione potra' essere automatica via task, ma e' utile avere un endpoin
 
 ### Fase 4 - Contesto Compatto
 
-- Costruire funzione `build_diagnostic_context(session)`.
-- Inviare al provider solo snapshot, digest e ultimi messaggi rilevanti.
-- Evitare storico completo.
-- Aggiungere limiti configurabili.
-- Salvare metadati del contesto usato.
+- [x] Costruire funzione `build_diagnostic_context(session)`.
+- [x] Inviare al provider solo snapshot e ultimi messaggi rilevanti.
+- [x] Evitare storico completo nel turno diagnostico.
+- [x] Aggiungere limite configurabile `AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT`.
+- [x] Salvare metadati del contesto usato.
+- Includere digest periodico quando sara' disponibile.
 
 ### Fase 5 - Compattazione Periodica
 

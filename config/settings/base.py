@@ -125,6 +125,13 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Elettra API V1",
     "DESCRIPTION": "API V1 schema for Elettra's modular backend.",
     "VERSION": "0.1.0",
+    "ENUM_NAME_OVERRIDES": {
+        "DiagnosticPublicationStatusEnum": [
+            ("draft", "Draft"),
+            ("published", "Published"),
+            ("archived", "Archived"),
+        ],
+    },
 }
 
 REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/0")
@@ -169,6 +176,7 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="noreply@local.test")
 
 AI_PROVIDER = env("AI_PROVIDER", default="local")
 AI_DAILY_MESSAGE_LIMIT_PER_USER = env.int("AI_DAILY_MESSAGE_LIMIT_PER_USER", default=20)
+AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT = env.int("AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT", default=4)
 AI_OPENAI_MODEL = env("AI_OPENAI_MODEL", default="gpt-5.4-mini")
 OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 OPENAI_BASE_URL = env("OPENAI_BASE_URL", default="")
