@@ -7,7 +7,6 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 ## In Corso
 
 - [ ] Verifica manuale del frontend MVP su flusso problema -> diagnostica -> condivisione.
-- [ ] Verifica manuale del frontend Flutter su flusso `La mia casa`.
 
 ## Todo
 
@@ -135,6 +134,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 - [x] Modellate notifiche in-app e `DeviceInstallation` con API lista/summary/mark-read, registrazione dispositivi, task Celery placeholder e hook su condivisioni/conversazioni.
 - [x] Collegato Flutter alle notifiche in-app con badge unread in AppBar, centro notifiche, refresh, mark-read e mark-all-read.
 - [x] Verificato manualmente su Flutter web il centro notifiche in-app: badge unread, lista, `Segna letta` e DB `read_at` aggiornato.
+- [x] Verificato manualmente su Flutter web il flusso `La mia casa` con seed demo reale: immobile, asset, metadati, documenti, ultima attività e promemoria.
 
 ## Decisioni Confermate
 
