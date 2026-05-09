@@ -426,6 +426,9 @@ class CaseViewSet(
                 "share_scope": share_request.share_scope,
             },
         )
+        from apps.notifications.services import notify_case_share_request_created
+
+        notify_case_share_request_created(share_request, actor_user=request.user)
         return Response(CaseShareRequestSerializer(share_request).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated], url_path="troubleshooting/start")

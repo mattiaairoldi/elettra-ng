@@ -73,5 +73,7 @@ class ConversationViewSet(
         )
         serializer.is_valid(raise_exception=True)
         post = serializer.save()
-        return Response(ConversationPostSerializer(post).data, status=status.HTTP_201_CREATED)
+        from apps.notifications.services import notify_conversation_post_created
 
+        notify_conversation_post_created(post)
+        return Response(ConversationPostSerializer(post).data, status=status.HTTP_201_CREATED)

@@ -28,7 +28,7 @@ Già disponibile:
 - organizzazioni e membership;
 - casi/problemi, immobili, asset, allegati;
 - conversazioni;
-- strategia notifiche in-app/push documentata, senza modelli/API ancora implementati;
+- notifiche in-app e `DeviceInstallation` backend, con push native ancora fuori perimetro;
 - richiesta di condivisione caso;
 - diagnostica chat-first;
 - consigli guidati salvati;
@@ -281,12 +281,13 @@ Già implementato nel workstream MVP:
 - scaffold Flutter Android/iOS/web;
 - flusso Flutter autenticato con `La mia casa`, allegati asset, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista;
 - guest tier diagnostico pre-onboarding con sessione opaca, quote basse e UI Flutter pre-login;
-- API e test per storico e promemoria manutenzione asset.
+- API e test per storico e promemoria manutenzione asset;
+- API notifiche in-app e `DeviceInstallation` con hook su condivisioni/conversazioni.
 
 Prossima sequenza:
 
 1. Verificare manualmente il flusso Flutter `La mia casa` su dati demo reali.
 2. Verificare manualmente il flusso problema -> diagnostica -> condivisione.
-3. Modellare notifiche in-app e `DeviceInstallation` prima delle push native.
+3. Preparare centro notifiche Flutter collegato alle API in-app.
 4. Completare promozione guest -> account/caso solo se validata dal percorso ospite.
 5. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.

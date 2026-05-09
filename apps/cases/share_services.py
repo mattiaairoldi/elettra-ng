@@ -2,6 +2,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from apps.conversations.models import Conversation, ConversationParticipant
+from apps.notifications.models import Notification
+from apps.notifications.services import notify_case_share_request_revoked, notify_case_share_request_status_changed
 from apps.organizations.services import get_or_create_personal_organization
 
 from .access import get_active_membership
@@ -78,6 +80,13 @@ def accept_case_share_request(share_request, actor_user):
         actor_user=actor_user,
         payload={"share_request_id": share_request.id, "conversation_id": conversation.id},
     )
+    notify_case_share_request_status_changed(
+        share_request,
+        actor_user=actor_user,
+        notification_type=Notification.Types.CASE_SHARE_REQUEST_ACCEPTED,
+        title="Richiesta accettata",
+        body="Un professionista ha accettato la richiesta di condivisione.",
+    )
     return conversation
 
 
@@ -94,6 +103,13 @@ def reject_case_share_request(share_request, actor_user, reason=""):
         actor_user=actor_user,
         payload={"share_request_id": share_request.id, "reason_provided": bool(reason)},
     )
+    notify_case_share_request_status_changed(
+        share_request,
+        actor_user=actor_user,
+        notification_type=Notification.Types.CASE_SHARE_REQUEST_REJECTED,
+        title="Richiesta rifiutata",
+        body="Un professionista ha rifiutato la richiesta di condivisione.",
+    )
 
 
 @transaction.atomic
@@ -108,10 +124,10 @@ def revoke_case_share_request(share_request, actor_user):
         actor_user=actor_user,
         payload={"share_request_id": share_request.id},
     )
+    notify_case_share_request_revoked(share_request, actor_user=actor_user)
 
 
 def ensure_personal_case_owner(case):
     if case.owner_organization_id:
         return case.owner_organization
     return get_or_create_personal_organization(case.customer_user)
-

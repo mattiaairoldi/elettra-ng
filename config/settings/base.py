@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "apps.appointments",
     "apps.attachments",
     "apps.guests",
+    "apps.notifications",
     "apps.ai_assistant",
 ]
 
@@ -155,6 +156,17 @@ SPECTACULAR_SETTINGS = {
             ("revoked", "Revoked"),
             ("expired", "Expired"),
         ],
+        "CasePriorityEnum": [
+            ("low", "Low"),
+            ("normal", "Normal"),
+            ("high", "High"),
+            ("urgent", "Urgent"),
+        ],
+        "NotificationPriorityEnum": [
+            ("low", "Low"),
+            ("normal", "Normal"),
+            ("high", "High"),
+        ],
     },
 }
 
@@ -235,6 +247,7 @@ GUEST_SESSION_TTL_HOURS = env.int("GUEST_SESSION_TTL_HOURS", default=72)
 GUEST_AI_TURN_LIMIT = env.int("GUEST_AI_TURN_LIMIT", default=2)
 GUEST_MESSAGE_LIMIT = env.int("GUEST_MESSAGE_LIMIT", default=8)
 GUEST_RATE_LIMIT_PER_IP_PER_DAY = env.int("GUEST_RATE_LIMIT_PER_IP_PER_DAY", default=5)
+NOTIFICATIONS_PUSH_DELIVERY_ENABLED = env_bool("NOTIFICATIONS_PUSH_DELIVERY_ENABLED", False)
 
 LOGGING = {
     "version": 1,

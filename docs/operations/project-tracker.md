@@ -7,8 +7,8 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 ## In Corso
 
 - [ ] Verifica manuale del frontend MVP su flusso problema -> diagnostica -> condivisione.
-- [ ] Modellare notifiche in-app e device installation prima delle push native.
 - [ ] Verifica manuale del frontend Flutter su flusso `La mia casa`.
+- [ ] Preparare centro notifiche Flutter su API notifiche in-app.
 
 ## Todo
 
@@ -133,6 +133,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 - [x] Implementato guest tier diagnostico pre-onboarding con `GuestSession`, token opaco hashato, quote basse, endpoint guest separati e CTA di accesso.
 - [x] Collegato Flutter pre-login a `Continua come ospite` con diagnostica leggera, consigli salvati, AI a quota e persistenza token guest.
 - [x] Verificato guest tier: backend `115 passed`, Flutter analyze/test/build web verdi, smoke Flutter web ospite -> diagnostica -> snapshot AI.
+- [x] Modellate notifiche in-app e `DeviceInstallation` con API lista/summary/mark-read, registrazione dispositivi, task Celery placeholder e hook su condivisioni/conversazioni.
 
 ## Decisioni Confermate
 
@@ -163,6 +164,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 - L'accesso AI è limitato da quote backend; la UI deve preferire consigli salvati prima dell'escalation AI.
 - La nuova app Flutter deve supportare Android/iOS come target prodotto e web come target di test/demo.
 - Le notifiche push passeranno da FCM/APNs; Elettra resta broker applicativo e non invia payload sensibili.
+- Le notifiche in-app sono il primo canale implementato; le push native restano disattivate finche non viene configurato un provider.
 - Lo sviluppo può partire da Linux; iOS va validato presto con CI macOS `--no-codesign` e poi con TestFlight/device fisico.
 - `La mia casa` è parte dell'MVP: documentazione asset, allegati, storico e promemoria non devono richiedere un problema aperto.
 - Da un asset documentato si può aprire una nuova problematica già collegata all'asset.

@@ -271,6 +271,7 @@ La base tecnica e prodotto attuale include:
 - endpoint per recupero snapshot;
 - auth token-based per mobile;
 - guest tier diagnostico pre-onboarding con token opaco, quote basse, consigli salvati, AI limitata e nessuna creazione di dati persistenti;
+- notifiche in-app backend con lettura/summary/mark-read e registrazione `DeviceInstallation`;
 - app Flutter mobile-ready con login, accesso ospite, `La mia casa`, apertura problema da asset, dettaglio problema, consigli guidati, AI diagnostica e condivisione professionista collegati ad API reali.
 
 Lo spike attuale consente di inviare un messaggio diagnostico, generare una risposta strutturata, aggiornare rischio, riepilogo, prossima domanda e audit event sul caso.
@@ -281,7 +282,7 @@ Il prossimo lavoro dovrebbe procedere così:
 
 1. verificare manualmente `La mia casa` e apertura problema da asset su Flutter;
 2. verificare manualmente il flusso problema -> diagnostica -> condivisione su Flutter;
-3. modellare notifiche in-app e device installation prima delle push native;
+3. preparare centro notifiche Flutter collegato alle API in-app;
 4. completare promozione guest -> account/caso solo dopo validazione del percorso ospite;
 5. validare macro-capitoli e scelte cablate su scenari reali;
 6. raffinare regole di sicurezza per capitolo;

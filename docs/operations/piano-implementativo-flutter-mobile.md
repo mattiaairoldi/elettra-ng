@@ -201,8 +201,8 @@ L'app deve aprire la schermata corretta e poi scaricare i contenuti reali dalle 
 
 Modelli consigliati quando si implementano le notifiche:
 
-- `DeviceInstallation`: utente, piattaforma, token provider, app version, ultimo uso, stato attivo;
-- `Notification`: evento applicativo, destinatario, titolo sicuro, stato lettura;
+- `DeviceInstallation`: utente, piattaforma, token provider, app version, ultimo uso, stato attivo. Implementato lato backend;
+- `Notification`: evento applicativo, destinatario, titolo sicuro, stato lettura. Implementato lato backend;
 - `NotificationDelivery`: provider, token, tentativi, errore, timestamp consegna;
 - `NotificationPreference`: preferenze per email, push, in-app, conversazioni e pratiche.
 
@@ -539,12 +539,12 @@ Criterio di completamento:
 
 ### Fase 7 - Notifiche In-App E Predisposizione Push
 
-- aggiungere modello notifiche in-app lato backend;
-- registrare eventi applicativi principali;
+- [x] aggiungere modello notifiche in-app lato backend;
+- [x] registrare eventi applicativi principali: richiesta condivisione, accettazione/rifiuto/revoca, nuovo messaggio conversazione;
 - aggiungere preferenze minime utente;
-- esporre endpoint lista notifiche e mark-as-read;
-- predisporre modello `DeviceInstallation`;
-- predisporre task Celery di consegna, anche se provider push non ancora attivo;
+- [x] esporre endpoint lista notifiche, summary, mark-as-read e mark-all-read;
+- [x] predisporre modello `DeviceInstallation`;
+- [x] predisporre task Celery di consegna, anche se provider push non ancora attivo;
 - preparare interfaccia Flutter per centro notifiche.
 
 Criterio di completamento:
@@ -615,12 +615,13 @@ Stato attuale:
 - `La mia casa` è collegata ad API reali per immobili, asset, allegati, storico, promemoria e apertura problema da asset;
 - `Problemi da risolvere` mostra lista casi, dettaglio pratica, diagnostica guidata, chat AI diagnostica e richiesta di condivisione verso professionista tramite API reali;
 - il pre-login Flutter offre `Continua come ospite` con diagnostica leggera, consigli salvati, AI limitata e CTA di accesso;
+- il backend espone notifiche in-app e registrazione `DeviceInstallation`; le push native non sono ancora abilitate;
 - le sezioni `Diagnosi`, `Tecnici` e `Profilo` restano placeholder operativi separati: il flusso MVP end-to-end oggi passa dal dettaglio problema.
 
 Il prossimo passo operativo è:
 
 1. verificare manualmente su Flutter web il flusso `La mia casa` con seed demo;
 2. verificare manualmente su Flutter web il flusso problema -> diagnostica -> condivisione con seed demo;
-3. aggiungere notifiche in-app e `DeviceInstallation` prima delle push native;
+3. preparare il centro notifiche Flutter collegato alle API in-app;
 4. completare promozione guest -> account/caso se serve conservare il riepilogo;
 5. preparare signing/TestFlight solo dopo il primo flusso MVP mobile end-to-end validato manualmente.
