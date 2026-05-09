@@ -93,6 +93,8 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [x] Aggiunto benchmark ripetibile per diagnostica AI chat-first.
 - [x] Eseguita suite test dopo benchmark diagnostico: `94 passed`.
 - [x] Definiti 5 scenari canonici per verifica qualitativa dello spike diagnostico.
+- [x] Normalizzate domande diagnostiche gia' poste per ridurre duplicati nel contesto.
+- [x] Eseguita suite test dopo normalizzazione domande diagnostiche: `96 passed`.
 
 ## Decisioni Confermate
 

@@ -11,6 +11,7 @@ from django.urls import reverse
 from apps.cases.models import Case, CaseEvent
 from apps.ai_assistant.models import AiContextDigest, AiDiagnosticSnapshot, AiMessage
 from apps.ai_assistant.providers import AiProviderError, LocalAiProvider, get_ai_provider
+from apps.ai_assistant.questions import append_unique_diagnostic_questions, normalize_diagnostic_question
 from apps.ai_assistant.tasks import generate_ai_diagnostic_reply_task, generate_ai_reply_task
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption, DiagnosticFlow, DiagnosticNode
@@ -702,6 +703,72 @@ def test_generate_ai_diagnostic_reply_task_persists_structured_snapshot(monkeypa
     assert snapshot.risk_level == "high"
     assert snapshot.next_question == "Il calore resta anche senza carichi collegati?"
     assert snapshot.context_metadata_json["provider_message_count"] == 2
+
+
+def test_diagnostic_question_normalization_deduplicates_text_variants():
+    assert normalize_diagnostic_question("C'e' fumo, scintille o odore persistente?") == (
+        normalize_diagnostic_question("C\u2019e fumo, scintille o odore persistente?")
+    )
+    assert append_unique_diagnostic_questions(
+        ["C'e' fumo, scintille o odore persistente?"],
+        [
+            "C\u2019e fumo, scintille o odore persistente?",
+            "Hai notato calore anomalo nella zona del quadro?",
+        ],
+    ) == [
+        "C'e' fumo, scintille o odore persistente?",
+        "Hai notato calore anomalo nella zona del quadro?",
+    ]
+
+
+@pytest.mark.django_db
+@override_settings(AI_PROVIDER="local", AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT=2)
+def test_generate_ai_diagnostic_reply_task_deduplicates_asked_question_variants(monkeypatch):
+    customer = User.objects.create_user(email="customer-dedupe@example.com", password="Password123!")
+    category = Category.objects.create(name="Elettricita", slug="elettricita-ai-question-dedupe")
+    case = Case.objects.create(customer_user=customer, category=category, title="Odore dal quadro")
+    session = customer.ai_sessions.create(case=case)
+    existing_assistant_message = AiMessage.objects.create(
+        session=session,
+        role=AiMessage.Roles.ASSISTANT,
+        content="Prima risposta",
+    )
+    AiDiagnosticSnapshot.objects.create(
+        session=session,
+        source_message=existing_assistant_message,
+        summary="Odore di bruciato.",
+        risk_level=AiDiagnosticSnapshot.RiskLevels.URGENT,
+        asked_questions_json=["C'e' anche fumo, scintille o calore anomalo?"],
+    )
+    AiMessage.objects.create(session=session, role=AiMessage.Roles.USER, content="Non vedo fumo")
+    assistant_message = AiMessage.objects.create(
+        session=session,
+        role=AiMessage.Roles.ASSISTANT,
+        content="",
+        status=AiMessage.Statuses.QUEUED,
+    )
+
+    class FakeProvider:
+        def build_diagnostic_reply(self, session, messages):
+            return {
+                "assistant_response": "Resta una situazione urgente.",
+                "case_summary": "Odore di bruciato senza fumo visibile.",
+                "risk_level": "urgent",
+                "next_question": "C\u2019e anche fumo, scintille o calore anomalo?",
+                "escalation_recommended": True,
+                "escalation_reason": "Odore di bruciato vicino al quadro.",
+                "recommendation": "Coinvolgere un professionista.",
+                "facts": {"visible_smoke": False},
+                "asked_questions": ["C\u2019e anche fumo, scintille o calore anomalo?"],
+                "safety_notes": ["Non aprire il quadro."],
+            }
+
+    monkeypatch.setattr("apps.ai_assistant.tasks.get_ai_provider", lambda: FakeProvider())
+
+    generate_ai_diagnostic_reply_task(assistant_message.id)
+
+    snapshot = AiDiagnosticSnapshot.objects.get(session=session)
+    assert snapshot.asked_questions_json == ["C'e' anche fumo, scintille o calore anomalo?"]
 
 
 @pytest.mark.django_db

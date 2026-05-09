@@ -13,6 +13,7 @@ from .providers import (
     get_ai_provider,
     normalize_diagnostic_payload,
 )
+from .questions import append_unique_diagnostic_questions
 
 
 @shared_task
@@ -110,10 +111,10 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
 
     facts = {**previous_facts, **payload["facts"]}
     excluded_facts = {**previous_excluded_facts, **payload["excluded_facts"]}
-    asked_questions = list(previous_asked_questions)
-    for question in [*payload["asked_questions"], payload["next_question"]]:
-        if question and question not in asked_questions:
-            asked_questions.append(question)
+    asked_questions = append_unique_diagnostic_questions(
+        previous_asked_questions,
+        [*payload["asked_questions"], payload["next_question"]],
+    )
 
     latest_user_message = (
         assistant_message.session.messages.filter(role=AiMessage.Roles.USER)
