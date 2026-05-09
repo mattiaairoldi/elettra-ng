@@ -100,6 +100,66 @@ class DiagnosticSafetyRule(models.Model):
         return self.title
 
 
+def default_advice_next_actions():
+    return [
+        {"code": "continue_guided", "label": "Continua percorso guidato"},
+        {"code": "start_ai_diagnostic", "label": "Chiedi all'assistente AI"},
+        {"code": "share_with_professional", "label": "Condividi con un professionista"},
+    ]
+
+
+class DiagnosticAdviceStep(models.Model):
+    class StepTypes(models.TextChoices):
+        OBSERVATION = "observation", "Observation"
+        SAFE_CHECK = "safe_check", "Safe check"
+        PREVENTION = "prevention", "Prevention"
+        ESCALATION = "escalation", "Escalation"
+
+    class SafetyLevels(models.TextChoices):
+        NONE = "none", "None"
+        CAUTION = "caution", "Caution"
+        STOP = "stop", "Stop"
+
+    chapter = models.ForeignKey(DiagnosticChapter, on_delete=models.CASCADE, related_name="advice_steps")
+    chapter_option = models.ForeignKey(
+        DiagnosticChapterOption,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="advice_steps",
+    )
+    title = models.CharField(max_length=200)
+    slug = models.SlugField()
+    body = models.TextField()
+    step_type = models.CharField(max_length=32, choices=StepTypes.choices, default=StepTypes.SAFE_CHECK)
+    safety_level = models.CharField(max_length=16, choices=SafetyLevels.choices, default=SafetyLevels.CAUTION)
+    resolution_prompt = models.CharField(max_length=200, default="Hai risolto?")
+    next_actions_json = models.JSONField(default=default_advice_next_actions, blank=True)
+    sort_order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    metadata_json = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("sort_order", "title", "id")
+        constraints = [
+            models.UniqueConstraint(fields=("chapter", "slug"), name="unique_diagnostic_advice_step_slug"),
+        ]
+
+    def __str__(self):
+        return self.title
+
+    def clean(self):
+        super().clean()
+        if self.chapter_option_id is not None and self.chapter_option.chapter_id != self.chapter_id:
+            raise ValidationError({"chapter_option": "Option must belong to the selected chapter."})
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+
 class DiagnosticFlow(models.Model):
     class Statuses(models.TextChoices):
         DRAFT = "draft", "Draft"

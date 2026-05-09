@@ -6,7 +6,9 @@ from apps.cases.models import Case
 from apps.identity.models import User
 from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption
 
+from .context import estimate_token_count
 from .models import AiContextDigest, AiDiagnosticSnapshot, AiMessage, AiSession
+from .usage import AiUsageLimitExceeded, enforce_ai_usage_limits
 
 
 TERMINAL_CASE_STATUSES = {
@@ -217,6 +219,15 @@ class AiMessageCreateSerializer(serializers.Serializer):
         if used_messages >= daily_limit:
             raise serializers.ValidationError({"limit": "Daily AI message limit reached."})
 
+        try:
+            enforce_ai_usage_limits(
+                session,
+                purpose="chat",
+                estimated_input_tokens=estimate_token_count(attrs["content"]),
+            )
+        except AiUsageLimitExceeded as exc:
+            raise serializers.ValidationError({"limit": str(exc)}) from exc
+
         return attrs
 
 
@@ -231,6 +242,16 @@ class AiDiagnosticTurnCreateSerializer(AiMessageCreateSerializer):
             raise serializers.ValidationError({"case": "Diagnostic turns require a linked case."})
         if session.case.status in TERMINAL_CASE_STATUSES:
             raise serializers.ValidationError({"case": "Diagnostic turns cannot be added to a terminal case."})
+
+        try:
+            enforce_ai_usage_limits(
+                session,
+                purpose="diagnostic",
+                estimated_input_tokens=estimate_token_count(attrs["content"]),
+                check_case_turn_limit=True,
+            )
+        except AiUsageLimitExceeded as exc:
+            raise serializers.ValidationError({"limit": str(exc)}) from exc
 
         chapter = None
         option = None

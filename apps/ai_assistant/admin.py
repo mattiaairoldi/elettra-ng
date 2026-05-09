@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AiContextDigest, AiDiagnosticSnapshot, AiMessage, AiSession
+from .models import AiContextDigest, AiDiagnosticSnapshot, AiMessage, AiSession, AiUsageLedger
 
 
 @admin.register(AiSession)
@@ -94,6 +94,49 @@ class AiContextDigestAdmin(admin.ModelAdmin):
         "provider",
         "model_name",
         "trigger_reason",
+        "metadata_json",
+        "created_at",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(AiUsageLedger)
+class AiUsageLedgerAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "user",
+        "organization",
+        "case",
+        "purpose",
+        "provider",
+        "model_name",
+        "total_tokens",
+        "estimated_cost",
+        "created_at",
+    )
+    list_filter = ("purpose", "provider", "created_at")
+    search_fields = ("user__email", "case__title", "organization__name")
+    readonly_fields = (
+        "session",
+        "message",
+        "user",
+        "organization",
+        "case",
+        "purpose",
+        "provider",
+        "model_name",
+        "input_tokens",
+        "output_tokens",
+        "total_tokens",
+        "estimated_cost",
         "metadata_json",
         "created_at",
     )

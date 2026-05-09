@@ -152,6 +152,10 @@ Il backend deve mantenere uno stato diagnostico compatto:
 Ogni chiamata AI deve usare questo contesto sintetico piu' poche interazioni recenti.
 Periodicamente lo storico viene compattato in un digest, mantenendo comunque i messaggi originali.
 
+L'accesso AI e' inoltre limitato da quote configurabili.
+Prima dell'escalation AI l'app puo' proporre consigli salvati per macro-capitolo e chiedere `Hai risolto?`.
+Se il problema non e' risolto, la UI puo' proporre prosecuzione guidata, chat AI o condivisione con un professionista.
+
 Questo serve a:
 
 - ridurre token;
@@ -180,6 +184,8 @@ Sono gia' presenti:
 - contesto AI compatto per ridurre storico inviato al modello;
 - digest periodico dello storico diagnostico;
 - stime token/costo sul contesto sintetizzato;
+- ledger uso AI con limiti messaggi/token/turni;
+- consigli guidati salvati per macro-capitolo;
 - endpoint per turno diagnostico;
 - endpoint per recupero snapshot.
 

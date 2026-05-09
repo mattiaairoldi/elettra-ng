@@ -1,8 +1,13 @@
+import json
+
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
+from apps.cases.models import Case, CaseEvent
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import (
+    DiagnosticAdviceStep,
     DiagnosticChapter,
     DiagnosticChapterOption,
     DiagnosticFlow,
@@ -10,6 +15,8 @@ from apps.troubleshooting.models import (
     DiagnosticOption,
     DiagnosticSafetyRule,
 )
+
+User = get_user_model()
 
 
 @pytest.mark.django_db
@@ -81,6 +88,132 @@ def test_diagnostic_chapters_support_search_category_and_options_endpoint(client
     options_response = client.get(reverse("api_v1:troubleshooting:chapter-options", args=[public_chapter.id]))
     assert options_response.status_code == 200
     assert [item["id"] for item in options_response.json()] == [option.id]
+
+
+@pytest.mark.django_db
+def test_diagnostic_advice_steps_support_generic_and_option_specific_guidance(client):
+    chapter = DiagnosticChapter.objects.create(
+        name="Problemi elettrici",
+        slug="problemi-elettrici-advice",
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+    )
+    option = DiagnosticChapterOption.objects.create(
+        chapter=chapter,
+        label="Presa",
+        slug="presa",
+        option_type=DiagnosticChapterOption.OptionTypes.ASSET_TYPE,
+    )
+    generic_step = DiagnosticAdviceStep.objects.create(
+        chapter=chapter,
+        title="Verifica sicura",
+        slug="verifica-sicura",
+        body="Osserva solo elementi esterni.",
+        sort_order=10,
+    )
+    option_step = DiagnosticAdviceStep.objects.create(
+        chapter=chapter,
+        chapter_option=option,
+        title="Controllo presa",
+        slug="controllo-presa",
+        body="Non smontare la presa.",
+        sort_order=20,
+    )
+    other_option = DiagnosticChapterOption.objects.create(
+        chapter=chapter,
+        label="Luce",
+        slug="luce",
+    )
+    DiagnosticAdviceStep.objects.create(
+        chapter=chapter,
+        chapter_option=other_option,
+        title="Controllo luce",
+        slug="controllo-luce",
+        body="Controllo non pertinente.",
+        sort_order=30,
+    )
+
+    response = client.get(
+        reverse("api_v1:troubleshooting:chapter-advice-steps", args=[chapter.id]),
+        {"option_id": option.id},
+    )
+
+    assert response.status_code == 200
+    assert [item["id"] for item in response.json()] == [generic_step.id, option_step.id]
+    assert response.json()[0]["resolution_prompt"] == "Hai risolto?"
+
+
+@pytest.mark.django_db
+def test_diagnostic_advice_feedback_updates_case_and_suggests_next_actions(client):
+    customer = User.objects.create_user(email="customer@example.com", password="Password123!")
+    category = Category.objects.create(name="Elettricita", slug="elettricita-advice-feedback")
+    case = Case.objects.create(customer_user=customer, category=category, title="Presa non funziona")
+    chapter = DiagnosticChapter.objects.create(
+        name="Problemi elettrici",
+        slug="problemi-elettrici-feedback",
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+    )
+    step = DiagnosticAdviceStep.objects.create(
+        chapter=chapter,
+        title="Verifica sicura",
+        slug="verifica-sicura",
+        body="Osserva solo elementi esterni.",
+    )
+    client.force_login(customer)
+
+    response = client.post(
+        reverse("api_v1:troubleshooting:advice-step-feedback", args=[step.id]),
+        data=json.dumps({"case_id": case.id, "resolved": False, "note": "Non e' cambiato nulla"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["case_status"] == Case.Statuses.IN_DIAGNOSIS
+    assert [item["code"] for item in payload["next_actions"]] == [
+        "continue_guided",
+        "start_ai_diagnostic",
+        "share_with_professional",
+    ]
+    case.refresh_from_db()
+    assert case.status == Case.Statuses.IN_DIAGNOSIS
+    progress_event = CaseEvent.objects.get(case=case, event_type=CaseEvent.EventTypes.TROUBLESHOOTING_PROGRESS)
+    assert progress_event.payload_json["diagnostic_advice_step_id"] == step.id
+    assert progress_event.payload_json["resolved"] is False
+
+
+@pytest.mark.django_db
+def test_diagnostic_advice_feedback_can_resolve_case(client):
+    customer = User.objects.create_user(email="customer-resolved@example.com", password="Password123!")
+    category = Category.objects.create(name="Idraulica", slug="idraulica-advice-feedback")
+    case = Case.objects.create(customer_user=customer, category=category, title="Scarico lento")
+    chapter = DiagnosticChapter.objects.create(
+        name="Idraulica",
+        slug="idraulica-feedback",
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+    )
+    step = DiagnosticAdviceStep.objects.create(
+        chapter=chapter,
+        title="Controllo scarico",
+        slug="controllo-scarico",
+        body="Verifica se l'acqua defluisce lentamente.",
+    )
+    client.force_login(customer)
+
+    response = client.post(
+        reverse("api_v1:troubleshooting:advice-step-feedback", args=[step.id]),
+        data=json.dumps({"case_id": case.id, "resolved": True}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    assert response.json()["case_status"] == Case.Statuses.RESOLVED
+    assert response.json()["next_actions"] == []
+    case.refresh_from_db()
+    assert case.status == Case.Statuses.RESOLVED
+    assert case.closed_at is not None
 
 
 @pytest.mark.django_db

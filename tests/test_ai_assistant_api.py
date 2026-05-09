@@ -9,7 +9,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from apps.cases.models import Case, CaseEvent
-from apps.ai_assistant.models import AiContextDigest, AiDiagnosticSnapshot, AiMessage
+from apps.ai_assistant.models import AiContextDigest, AiDiagnosticSnapshot, AiMessage, AiUsageLedger
 from apps.ai_assistant.providers import AiProviderError, LocalAiProvider, get_ai_provider
 from apps.ai_assistant.questions import append_unique_diagnostic_questions, normalize_diagnostic_question
 from apps.ai_assistant.tasks import generate_ai_diagnostic_reply_task, generate_ai_reply_task
@@ -122,6 +122,18 @@ def test_ai_message_flow_returns_contextual_reply_and_history(client):
     assert [item["role"] for item in history_response.json()] == ["user", "assistant"]
     assert [item["status"] for item in history_response.json()] == ["completed", "completed"]
 
+    usage = AiUsageLedger.objects.get(session_id=session_id)
+    assert usage.purpose == AiUsageLedger.Purposes.CHAT
+    assert usage.provider == "local"
+    assert usage.input_tokens > 0
+    assert usage.output_tokens > 0
+    assert usage.total_tokens == usage.input_tokens + usage.output_tokens
+
+    usage_response = client.get(reverse("api_v1:ai_assistant:ai-session-usage", args=[session_id]))
+    assert usage_response.status_code == 200
+    assert usage_response.json()["daily_user"]["messages_used"] == 1
+    assert usage_response.json()["daily_user"]["tokens_used"] == usage.total_tokens
+
 
 @pytest.mark.django_db
 @override_settings(AI_PROVIDER="local", CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPAGATES=True)
@@ -180,6 +192,11 @@ def test_ai_diagnostic_turn_updates_snapshot_case_status_and_events(client):
     assert payload["diagnostic_snapshot"]["escalation_recommended"] is True
     assert "professionista" in payload["assistant_message"]["content"]
 
+    usage = AiUsageLedger.objects.get(session_id=session_id)
+    assert usage.purpose == AiUsageLedger.Purposes.DIAGNOSTIC
+    assert usage.provider == "local"
+    assert usage.case_id == case.id
+
     snapshot_response = client.get(
         reverse("api_v1:ai_assistant:ai-session-diagnostic-snapshot", args=[session_id])
     )
@@ -192,6 +209,7 @@ def test_ai_diagnostic_turn_updates_snapshot_case_status_and_events(client):
     assert event.actor_user_id == customer.id
     assert event.payload_json["risk_level"] == "urgent"
     assert event.payload_json["escalation_recommended"] is True
+    assert event.payload_json["ai_usage_ledger_id"] == usage.id
 
 
 @pytest.mark.django_db
@@ -369,6 +387,73 @@ def test_ai_daily_message_limit_is_enforced(client):
     )
     assert second_message_response.status_code == 400
     assert second_message_response.json() == {"limit": ["Daily AI message limit reached."]}
+
+
+@pytest.mark.django_db
+@override_settings(
+    AI_DAILY_TOKEN_LIMIT_PER_USER=1,
+    CELERY_TASK_ALWAYS_EAGER=True,
+    CELERY_TASK_EAGER_PROPAGATES=True,
+)
+def test_ai_daily_token_limit_is_enforced_before_provider_call(client):
+    customer = User.objects.create_user(email="customer@example.com", password="Password123!")
+    category = Category.objects.create(name="Elettricita", slug="elettricita-ai-token-limit")
+    case = Case.objects.create(customer_user=customer, category=category, title="Salvavita abbassato")
+    client.force_login(customer)
+
+    session_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-list"),
+        data=json.dumps({"case_id": case.id}),
+        content_type="application/json",
+    )
+    session_id = session_response.json()["id"]
+
+    response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-messages", args=[session_id]),
+        data=json.dumps({"content": "Questo messaggio supera il limite stimato"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {"limit": ["Daily AI token limit reached."]}
+    assert AiUsageLedger.objects.count() == 0
+
+
+@pytest.mark.django_db
+@override_settings(
+    AI_PROVIDER="local",
+    AI_CASE_DIAGNOSTIC_TURN_LIMIT=1,
+    CELERY_TASK_ALWAYS_EAGER=True,
+    CELERY_TASK_EAGER_PROPAGATES=True,
+)
+def test_ai_case_diagnostic_turn_limit_is_enforced(client):
+    customer = User.objects.create_user(email="customer@example.com", password="Password123!")
+    category = Category.objects.create(name="Elettricita", slug="elettricita-ai-turn-limit")
+    case = Case.objects.create(customer_user=customer, category=category, title="Presa non funziona")
+    client.force_login(customer)
+
+    session_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-list"),
+        data=json.dumps({"case_id": case.id}),
+        content_type="application/json",
+    )
+    session_id = session_response.json()["id"]
+
+    first_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-diagnostic-turns", args=[session_id]),
+        data=json.dumps({"content": "La presa non funziona"}),
+        content_type="application/json",
+    )
+    assert first_response.status_code == 202
+
+    second_response = client.post(
+        reverse("api_v1:ai_assistant:ai-session-diagnostic-turns", args=[session_id]),
+        data=json.dumps({"content": "Succede ancora"}),
+        content_type="application/json",
+    )
+
+    assert second_response.status_code == 400
+    assert second_response.json() == {"limit": ["Case AI diagnostic turn limit reached."]}
 
 
 @pytest.mark.django_db

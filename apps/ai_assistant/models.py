@@ -143,3 +143,51 @@ class AiContextDigest(models.Model):
 
     class Meta:
         ordering = ("-created_at", "-id")
+
+
+class AiUsageLedger(models.Model):
+    class Purposes(models.TextChoices):
+        CHAT = "chat", "Chat"
+        DIAGNOSTIC = "diagnostic", "Diagnostic"
+        CONTEXT_COMPACTION = "context_compaction", "Context compaction"
+
+    session = models.ForeignKey(AiSession, on_delete=models.CASCADE, related_name="usage_ledger")
+    message = models.ForeignKey(
+        AiMessage,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="usage_ledger",
+    )
+    user = models.ForeignKey("identity.User", on_delete=models.CASCADE, related_name="ai_usage_ledger")
+    organization = models.ForeignKey(
+        "organizations.Organization",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ai_usage_ledger",
+    )
+    case = models.ForeignKey(
+        "cases.Case",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="ai_usage_ledger",
+    )
+    purpose = models.CharField(max_length=32, choices=Purposes.choices)
+    provider = models.CharField(max_length=64, blank=True)
+    model_name = models.CharField(max_length=120, blank=True)
+    input_tokens = models.PositiveIntegerField(default=0)
+    output_tokens = models.PositiveIntegerField(default=0)
+    total_tokens = models.PositiveIntegerField(default=0)
+    estimated_cost = models.DecimalField(max_digits=12, decimal_places=6, default=0)
+    metadata_json = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at", "-id")
+        indexes = [
+            models.Index(fields=("user", "created_at"), name="ai_usage_user_created_idx"),
+            models.Index(fields=("organization", "created_at"), name="ai_usage_org_created_idx"),
+            models.Index(fields=("case", "purpose"), name="ai_usage_case_purpose_idx"),
+        ]

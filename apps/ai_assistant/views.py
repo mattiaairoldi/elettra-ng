@@ -26,6 +26,7 @@ from .serializers import (
     AiSessionSerializer,
 )
 from .tasks import generate_ai_diagnostic_reply_task, generate_ai_reply_task
+from .usage import build_ai_usage_summary
 
 
 def build_ai_session_queryset(user):
@@ -179,6 +180,15 @@ class AiSessionViewSet(GenericViewSet):
     def status_snapshot(self, request, pk=None):
         session = self.get_object()
         return Response(AiSessionSerializer(session).data)
+
+    @extend_schema(
+        operation_id="ai_sessions_usage_retrieve",
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    @action(detail=True, methods=["get"], permission_classes=[permissions.IsAuthenticated], url_path="usage")
+    def usage(self, request, pk=None):
+        session = self.get_object()
+        return Response(build_ai_usage_summary(session))
 
     @extend_schema(
         operation_id="ai_sessions_diagnostic_context_retrieve",

@@ -1,6 +1,11 @@
 from django.core.management.base import BaseCommand
 
-from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption, DiagnosticSafetyRule
+from apps.troubleshooting.models import (
+    DiagnosticAdviceStep,
+    DiagnosticChapter,
+    DiagnosticChapterOption,
+    DiagnosticSafetyRule,
+)
 
 
 CHAPTERS = [
@@ -26,6 +31,18 @@ CHAPTERS = [
                 "escalation_level": "urgent",
             }
         ],
+        "advice_steps": [
+            {
+                "slug": "verifica-sicura-iniziale",
+                "title": "Verifica sicura iniziale",
+                "body": (
+                    "Osserva solo elementi esterni: quali zone sono senza corrente, se il salvavita e' abbassato "
+                    "e se ci sono odori, fumo, scintille o parti calde. Non aprire quadri o prese."
+                ),
+                "step_type": "safe_check",
+                "safety_level": "caution",
+            }
+        ],
     },
     {
         "name": "Elettrodomestici",
@@ -42,6 +59,18 @@ CHAPTERS = [
             ("asciugatrice", "Asciugatrice", "asset_type"),
         ],
         "safety_rules": [],
+        "advice_steps": [
+            {
+                "slug": "controllo-apparecchio",
+                "title": "Controllo apparecchio",
+                "body": (
+                    "Annota marca/modello se visibile, messaggi di errore, spie accese e quando compare il problema. "
+                    "Verifica solo alimentazione esterna e impostazioni accessibili senza smontare l'apparecchio."
+                ),
+                "step_type": "observation",
+                "safety_level": "caution",
+            }
+        ],
     },
     {
         "name": "Idraulica",
@@ -57,6 +86,18 @@ CHAPTERS = [
             ("pressione-acqua", "Pressione acqua", "symptom"),
         ],
         "safety_rules": [],
+        "advice_steps": [
+            {
+                "slug": "contenimento-perdita",
+                "title": "Contenimento perdita",
+                "body": (
+                    "Se c'e' acqua libera, limita i danni con contenitori o asciugatura e chiudi l'acqua solo se il "
+                    "rubinetto o la valvola sono facilmente raggiungibili e sicuri."
+                ),
+                "step_type": "safe_check",
+                "safety_level": "caution",
+            }
+        ],
     },
     {
         "name": "Climatizzazione",
@@ -72,6 +113,18 @@ CHAPTERS = [
             ("rumore", "Rumore", "symptom"),
         ],
         "safety_rules": [],
+        "advice_steps": [
+            {
+                "slug": "raccolta-sintomi-clima",
+                "title": "Raccolta sintomi clima",
+                "body": (
+                    "Registra modalita' impostata, temperatura, eventuali rumori, perdite o codici errore. "
+                    "Non aprire unita' interne o esterne e non intervenire sul circuito refrigerante."
+                ),
+                "step_type": "observation",
+                "safety_level": "caution",
+            }
+        ],
     },
     {
         "name": "Domotica",
@@ -87,6 +140,18 @@ CHAPTERS = [
             ("rete", "Rete", "asset_type"),
         ],
         "safety_rules": [],
+        "advice_steps": [
+            {
+                "slug": "verifica-connettivita",
+                "title": "Verifica connettivita'",
+                "body": (
+                    "Controlla se il problema riguarda un solo dispositivo o piu' dispositivi, se la rete e' attiva "
+                    "e se ci sono stati aggiornamenti, blackout o cambi password recenti."
+                ),
+                "step_type": "safe_check",
+                "safety_level": "none",
+            }
+        ],
     },
     {
         "name": "Sicurezza domestica",
@@ -96,6 +161,18 @@ CHAPTERS = [
         "safety_context": "Non suggerire disattivazioni permanenti di dispositivi di sicurezza.",
         "options": [],
         "safety_rules": [],
+        "advice_steps": [
+            {
+                "slug": "raccolta-evento-sicurezza",
+                "title": "Raccolta evento sicurezza",
+                "body": (
+                    "Annota orario, dispositivo coinvolto, messaggio mostrato e frequenza dell'evento. "
+                    "Evita disattivazioni permanenti prima di aver capito la causa."
+                ),
+                "step_type": "observation",
+                "safety_level": "caution",
+            }
+        ],
     },
     {
         "name": "Manutenzione generale",
@@ -105,6 +182,18 @@ CHAPTERS = [
         "safety_context": "Evitare istruzioni operative specialistiche.",
         "options": [],
         "safety_rules": [],
+        "advice_steps": [
+            {
+                "slug": "descrivi-manutenzione",
+                "title": "Descrivi manutenzione",
+                "body": (
+                    "Raccogli posizione, data dell'ultimo controllo, manuali o foto disponibili e indica se ci sono "
+                    "segnali anomali o solo una scadenza da pianificare."
+                ),
+                "step_type": "prevention",
+                "safety_level": "none",
+            }
+        ],
     },
 ]
 
@@ -119,6 +208,8 @@ class Command(BaseCommand):
         updated_options = 0
         created_rules = 0
         updated_rules = 0
+        created_advice_steps = 0
+        updated_advice_steps = 0
 
         for sort_order, chapter_data in enumerate(CHAPTERS, start=10):
             chapter, created = DiagnosticChapter.objects.update_or_create(
@@ -136,8 +227,9 @@ class Command(BaseCommand):
             created_chapters += int(created)
             updated_chapters += int(not created)
 
+            options_by_slug = {}
             for option_order, (slug, label, option_type) in enumerate(chapter_data["options"], start=10):
-                _option, option_created = DiagnosticChapterOption.objects.update_or_create(
+                option, option_created = DiagnosticChapterOption.objects.update_or_create(
                     chapter=chapter,
                     slug=slug,
                     defaults={
@@ -147,6 +239,7 @@ class Command(BaseCommand):
                         "is_active": True,
                     },
                 )
+                options_by_slug[slug] = option
                 created_options += int(option_created)
                 updated_options += int(not option_created)
 
@@ -166,11 +259,30 @@ class Command(BaseCommand):
                 created_rules += int(rule_created)
                 updated_rules += int(not rule_created)
 
+            for advice_order, advice_data in enumerate(chapter_data["advice_steps"], start=10):
+                chapter_option = options_by_slug.get(advice_data.get("option_slug"))
+                _advice_step, advice_created = DiagnosticAdviceStep.objects.update_or_create(
+                    chapter=chapter,
+                    slug=advice_data["slug"],
+                    defaults={
+                        "chapter_option": chapter_option,
+                        "title": advice_data["title"],
+                        "body": advice_data["body"],
+                        "step_type": advice_data["step_type"],
+                        "safety_level": advice_data["safety_level"],
+                        "sort_order": advice_order,
+                        "is_active": True,
+                    },
+                )
+                created_advice_steps += int(advice_created)
+                updated_advice_steps += int(not advice_created)
+
         self.stdout.write(
             self.style.SUCCESS(
                 "Diagnostic chapters seeded: "
                 f"{created_chapters} created/{updated_chapters} updated chapters, "
                 f"{created_options} created/{updated_options} updated options, "
-                f"{created_rules} created/{updated_rules} updated safety rules."
+                f"{created_rules} created/{updated_rules} updated safety rules, "
+                f"{created_advice_steps} created/{updated_advice_steps} updated advice steps."
             )
         )

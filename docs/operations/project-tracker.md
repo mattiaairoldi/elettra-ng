@@ -95,6 +95,8 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [x] Definiti 5 scenari canonici per verifica qualitativa dello spike diagnostico.
 - [x] Normalizzate domande diagnostiche gia' poste per ridurre duplicati nel contesto.
 - [x] Eseguita suite test dopo normalizzazione domande diagnostiche: `96 passed`.
+- [x] Aggiunti ledger uso AI, limiti token/turni e percorso guidato salvato con feedback `Hai risolto?`.
+- [x] Eseguita suite test dopo limiti AI e consigli guidati: `101 passed`.
 
 ## Decisioni Confermate
 
@@ -121,3 +123,4 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - Lo spike AI dinamico e' implementato per validazione tecnica, non per generare contenuti pubblici automaticamente.
 - Gli alberi diagnostici estesi non sono il modello principale da implementare in questa fase.
 - La compattazione e' deterministica lato backend: non consuma una chiamata AI aggiuntiva.
+- L'accesso AI e' limitato da quote backend; la UI deve preferire consigli salvati prima dell'escalation AI.

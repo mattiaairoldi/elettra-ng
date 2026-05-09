@@ -1,8 +1,20 @@
 from django.db.models import Q
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from rest_framework import generics, permissions
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from .models import DiagnosticChapter, DiagnosticChapterOption, DiagnosticFlow, DiagnosticNode, DiagnosticOption
+from .models import (
+    DiagnosticAdviceStep,
+    DiagnosticChapter,
+    DiagnosticChapterOption,
+    DiagnosticFlow,
+    DiagnosticNode,
+    DiagnosticOption,
+)
 from .serializers import (
+    DiagnosticAdviceFeedbackSerializer,
+    DiagnosticAdviceStepSerializer,
     DiagnosticChapterOptionSerializer,
     DiagnosticChapterSerializer,
     DiagnosticFlowSerializer,
@@ -64,6 +76,70 @@ class ChapterOptionsListView(generics.ListAPIView):
             chapter__status=DiagnosticChapter.Statuses.PUBLISHED,
             is_active=True,
         ).select_related("chapter")
+
+
+class ChapterAdviceStepsListView(generics.ListAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = DiagnosticAdviceStepSerializer
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("option_id", OpenApiTypes.INT, OpenApiParameter.QUERY),
+        ],
+        responses={200: DiagnosticAdviceStepSerializer(many=True)},
+    )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        queryset = DiagnosticAdviceStep.objects.filter(
+            chapter_id=self.kwargs["pk"],
+            chapter__is_public=True,
+            chapter__status=DiagnosticChapter.Statuses.PUBLISHED,
+            is_active=True,
+        ).select_related("chapter", "chapter_option")
+
+        option_id = self.request.query_params.get("option_id")
+        if option_id:
+            queryset = queryset.filter(Q(chapter_option_id=option_id) | Q(chapter_option__isnull=True))
+        else:
+            queryset = queryset.filter(chapter_option__isnull=True)
+
+        return queryset
+
+
+class AdviceStepDetailView(generics.RetrieveAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = DiagnosticAdviceStepSerializer
+    queryset = DiagnosticAdviceStep.objects.filter(
+        chapter__is_public=True,
+        chapter__status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_active=True,
+    ).select_related("chapter", "chapter_option")
+
+
+class AdviceStepFeedbackView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=DiagnosticAdviceFeedbackSerializer,
+        responses={200: OpenApiTypes.OBJECT},
+    )
+    def post(self, request, pk):
+        advice_step = generics.get_object_or_404(
+            DiagnosticAdviceStep.objects.filter(
+                chapter__is_public=True,
+                chapter__status=DiagnosticChapter.Statuses.PUBLISHED,
+                is_active=True,
+            ).select_related("chapter", "chapter_option"),
+            pk=pk,
+        )
+        serializer = DiagnosticAdviceFeedbackSerializer(
+            data=request.data,
+            context={"request": request, "advice_step": advice_step},
+        )
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.save_feedback())
 
 
 class PublicFlowQuerysetMixin:

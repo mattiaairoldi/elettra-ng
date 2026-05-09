@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    DiagnosticAdviceStep,
     DiagnosticChapter,
     DiagnosticChapterOption,
     DiagnosticFlow,
@@ -23,6 +24,13 @@ class DiagnosticSafetyRuleInline(admin.TabularInline):
     fields = ("title", "risk_level", "escalation_level", "sort_order", "is_active")
 
 
+class DiagnosticAdviceStepInline(admin.TabularInline):
+    model = DiagnosticAdviceStep
+    extra = 0
+    fields = ("title", "slug", "chapter_option", "step_type", "safety_level", "sort_order", "is_active")
+    prepopulated_fields = {"slug": ("title",)}
+
+
 @admin.register(DiagnosticChapter)
 class DiagnosticChapterAdmin(admin.ModelAdmin):
     list_display = ("name", "slug", "category", "status", "is_public", "sort_order")
@@ -30,7 +38,7 @@ class DiagnosticChapterAdmin(admin.ModelAdmin):
     search_fields = ("name", "slug", "description")
     readonly_fields = ("created_at", "updated_at")
     prepopulated_fields = {"slug": ("name",)}
-    inlines = (DiagnosticChapterOptionInline, DiagnosticSafetyRuleInline)
+    inlines = (DiagnosticChapterOptionInline, DiagnosticSafetyRuleInline, DiagnosticAdviceStepInline)
 
 
 @admin.register(DiagnosticChapterOption)
@@ -48,6 +56,15 @@ class DiagnosticSafetyRuleAdmin(admin.ModelAdmin):
     list_filter = ("risk_level", "escalation_level", "is_active", "chapter")
     search_fields = ("title", "chapter__name", "guidance")
     readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(DiagnosticAdviceStep)
+class DiagnosticAdviceStepAdmin(admin.ModelAdmin):
+    list_display = ("title", "chapter", "chapter_option", "step_type", "safety_level", "sort_order", "is_active")
+    list_filter = ("step_type", "safety_level", "is_active", "chapter")
+    search_fields = ("title", "slug", "body", "chapter__name", "chapter_option__label")
+    readonly_fields = ("created_at", "updated_at")
+    prepopulated_fields = {"slug": ("title",)}
 
 
 @admin.register(DiagnosticFlow)

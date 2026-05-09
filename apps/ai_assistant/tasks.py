@@ -14,6 +14,7 @@ from .providers import (
     normalize_diagnostic_payload,
 )
 from .questions import append_unique_diagnostic_questions
+from .usage import AiUsageLimitExceeded, enforce_ai_usage_limits, record_ai_usage
 
 
 @shared_task
@@ -35,6 +36,7 @@ def generate_ai_reply_task(assistant_message_id):
 
     provider_messages = build_provider_messages(assistant_message.session)
     try:
+        enforce_ai_usage_limits(assistant_message.session, purpose="chat")
         provider = get_ai_provider()
         reply_parts = []
         if hasattr(provider, "stream_reply"):
@@ -49,7 +51,7 @@ def generate_ai_reply_task(assistant_message_id):
             reply = provider.build_reply(assistant_message.session, provider_messages)
         if not reply:
             raise AiProviderError("AI provider returned an empty response.")
-    except AiProviderError as exc:
+    except (AiProviderError, AiUsageLimitExceeded) as exc:
         assistant_message.content = ""
         assistant_message.status = AiMessage.Statuses.FAILED
         assistant_message.error_detail = str(exc)
@@ -60,6 +62,15 @@ def generate_ai_reply_task(assistant_message_id):
     assistant_message.status = AiMessage.Statuses.COMPLETED
     assistant_message.error_detail = ""
     assistant_message.save(update_fields=["content", "status", "error_detail"])
+    record_ai_usage(
+        session=assistant_message.session,
+        message=assistant_message,
+        purpose="chat",
+        provider=provider,
+        input_payload=provider_messages,
+        output_payload=reply,
+        metadata={"provider_message_count": len(provider_messages)},
+    )
     return {"status": assistant_message.status, "assistant_message_id": assistant_message.id}
 
 
@@ -84,10 +95,15 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
     provider_messages = build_diagnostic_provider_messages(assistant_message.session)
     context = build_diagnostic_context(assistant_message.session)
     try:
+        enforce_ai_usage_limits(
+            assistant_message.session,
+            purpose="diagnostic",
+            check_case_turn_limit=False,
+        )
         provider = get_ai_provider()
         raw_payload = provider.build_diagnostic_reply(assistant_message.session, provider_messages)
         payload = normalize_diagnostic_payload(raw_payload)
-    except AiProviderError as exc:
+    except (AiProviderError, AiUsageLimitExceeded) as exc:
         assistant_message.content = ""
         assistant_message.status = AiMessage.Statuses.FAILED
         assistant_message.error_detail = str(exc)
@@ -144,6 +160,18 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
     assistant_message.error_detail = ""
     assistant_message.metadata_json = {"diagnostic": {**payload, "context_metadata": context_metadata}}
     assistant_message.save(update_fields=["content", "status", "error_detail", "metadata_json"])
+    usage = record_ai_usage(
+        session=assistant_message.session,
+        message=assistant_message,
+        purpose="diagnostic",
+        provider=provider,
+        input_payload=provider_messages,
+        output_payload=payload,
+        metadata={
+            "provider_message_count": len(provider_messages),
+            "context_strategy": context_metadata["strategy"],
+        },
+    )
 
     snapshot, _created = AiDiagnosticSnapshot.objects.update_or_create(
         session=assistant_message.session,
@@ -184,6 +212,7 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
             "status": case.status,
             "risk_level": snapshot.risk_level,
             "escalation_recommended": snapshot.escalation_recommended,
+            "ai_usage_ledger_id": usage.id,
         },
     )
     digest = compact_ai_context(assistant_message.session, trigger_reason="threshold")

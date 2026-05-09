@@ -151,6 +151,60 @@ Non dovrebbe ricevere:
 - contenuti di altri capitoli;
 - grandi alberi diagnostici.
 
+## Accesso AI Limitato
+
+L'AI non e' un canale libero.
+Il flusso preferito e':
+
+1. mostrare capitolo e, se utile, opzione cablata;
+2. proporre uno o piu' consigli salvati e sicuri;
+3. chiedere `Hai risolto?`;
+4. se non risolto, proporre azioni successive:
+   - continuare con guida salvata;
+   - avviare chat diagnostica AI;
+   - condividere il caso con un professionista.
+
+Il backend mantiene un ledger `AiUsageLedger` per ogni risposta AI completata.
+Il ledger salva:
+
+- utente, organizzazione e pratica se presenti;
+- sessione e messaggio AI;
+- scopo della chiamata;
+- provider e modello;
+- token input/output stimati;
+- costo stimato;
+- metadati del contesto usato.
+
+I limiti iniziali sono configurabili via env:
+
+- `AI_DAILY_MESSAGE_LIMIT_PER_USER`;
+- `AI_DAILY_TOKEN_LIMIT_PER_USER`;
+- `AI_DAILY_ESTIMATED_COST_LIMIT_PER_USER`;
+- `AI_MONTHLY_ESTIMATED_COST_LIMIT_PER_ORGANIZATION`;
+- `AI_CASE_DIAGNOSTIC_TURN_LIMIT`.
+
+Il valore `0` sui limiti economici disabilita quel limite.
+I limiti vanno mostrati alla UI tramite endpoint di usage, non dedotti dal client.
+
+## Percorso Guidato Salvato
+
+`DiagnosticAdviceStep` rappresenta consigli editoriali brevi collegati a un macro-capitolo e, opzionalmente, a una scelta cablata.
+Non e' un nuovo albero diagnostico esteso: e' una prima barriera economica e di sicurezza prima dell'AI.
+
+Endpoint iniziali:
+
+```http
+GET /api/v1/diagnostic-chapters/{id}/advice-steps
+GET /api/v1/diagnostic-advice-steps/{id}
+POST /api/v1/diagnostic-advice-steps/{id}/feedback
+GET /api/v1/ai/sessions/{id}/usage
+```
+
+Il feedback aggiorna la pratica:
+
+- se l'utente ha risolto, la pratica viene marcata `resolved`;
+- se non ha risolto, la pratica passa a `in_diagnosis` e vengono restituite le azioni successive.
+
 ## Compattazione Dello Storico
 
 Servono due livelli di sintesi.
@@ -193,7 +247,7 @@ Soglie iniziali consigliate, da misurare:
 - massimo 1 elenco breve di domande gia' poste;
 - compattazione ogni 6-8 turni o quando il contesto supera la soglia configurata.
 
-Metriche da salvare in futuro:
+Metriche salvate o da collegare a metriche reali del provider:
 
 - provider;
 - modello;
@@ -356,14 +410,24 @@ La compattazione potra' essere automatica via task, ma e' utile avere un endpoin
 - [x] Aggiungere test su digest e non reinvio dello storico gia' sintetizzato.
 - Collegare metriche reali del provider quando disponibili.
 
-### Fase 6 - Valutazione Scenari
+### Fase 6 - Accesso AI Controllato
+
+- [x] Aggiungere `AiUsageLedger`.
+- [x] Tracciare uso AI per chat e diagnostica.
+- [x] Esporre endpoint usage per sessione.
+- [x] Bloccare richieste oltre soglia messaggi/token/turni diagnostici.
+- [x] Introdurre `DiagnosticAdviceStep` come percorso guidato salvato.
+- [x] Aggiungere feedback `Hai risolto?` con aggiornamento pratica.
+- Tarare soglie economiche su uso reale OpenAI.
+
+### Fase 7 - Valutazione Scenari
 
 - Creare 5-10 scenari manuali.
 - Eseguire sessioni guidate.
 - Misurare numero domande, pertinenza, ripetizioni, rischio, escalation.
 - Decidere cosa resta cablato e cosa resta dinamico.
 
-### Fase 7 - Revisione Contenuti
+### Fase 8 - Revisione Contenuti
 
 - Usare `../elettra` come corpus editoriale e test set.
 - Estrarre scenari e warning, non alberi completi.
