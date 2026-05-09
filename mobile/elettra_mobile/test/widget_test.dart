@@ -9,6 +9,8 @@ import 'package:elettra_mobile/features/guest/data/guest_repository.dart';
 import 'package:elettra_mobile/features/health/data/health_repository.dart';
 import 'package:elettra_mobile/features/home/data/home_models.dart';
 import 'package:elettra_mobile/features/home/data/home_repository.dart';
+import 'package:elettra_mobile/features/notifications/data/notification_models.dart';
+import 'package:elettra_mobile/features/notifications/data/notification_repository.dart';
 import 'package:elettra_mobile/features/problems/data/problem_models.dart';
 import 'package:elettra_mobile/features/problems/data/problems_repository.dart';
 import 'package:flutter/material.dart';
@@ -419,6 +421,87 @@ class _FakeHomeRepository implements HomeRepository {
   }
 }
 
+class _FakeNotificationsRepository implements NotificationsRepository {
+  _FakeNotificationsRepository({List<AppNotification>? initialNotifications})
+    : _notifications = [...?initialNotifications];
+
+  final List<AppNotification> _notifications;
+
+  @override
+  Future<List<AppNotification>> fetchNotifications({
+    bool unreadOnly = false,
+  }) async {
+    return [
+      for (final item in _notifications)
+        if (!unreadOnly || !item.isRead) item,
+    ];
+  }
+
+  @override
+  Future<NotificationSummary> fetchSummary() async {
+    return NotificationSummary(
+      unreadCount: _notifications.where((item) => !item.isRead).length,
+    );
+  }
+
+  @override
+  Future<AppNotification> markRead(int notificationId) async {
+    final index = _notifications.indexWhere(
+      (item) => item.id == notificationId,
+    );
+    if (index < 0) {
+      throw StateError('Notification not found');
+    }
+    _notifications[index] = _copyNotification(
+      _notifications[index],
+      isRead: true,
+      readAt: DateTime(2026, 5, 9, 18, 45),
+    );
+    return _notifications[index];
+  }
+
+  @override
+  Future<int> markAllRead() async {
+    var updatedCount = 0;
+    for (var index = 0; index < _notifications.length; index += 1) {
+      if (_notifications[index].isRead) {
+        continue;
+      }
+      updatedCount += 1;
+      _notifications[index] = _copyNotification(
+        _notifications[index],
+        isRead: true,
+        readAt: DateTime(2026, 5, 9, 18, 45),
+      );
+    }
+    return updatedCount;
+  }
+
+  AppNotification _copyNotification(
+    AppNotification notification, {
+    required bool isRead,
+    required DateTime readAt,
+  }) {
+    return AppNotification(
+      id: notification.id,
+      recipientUserId: notification.recipientUserId,
+      actorUserId: notification.actorUserId,
+      type: notification.type,
+      title: notification.title,
+      body: notification.body,
+      priority: notification.priority,
+      targetType: notification.targetType,
+      targetId: notification.targetId,
+      deepLink: notification.deepLink,
+      metadata: notification.metadata,
+      isRead: isRead,
+      readAt: readAt,
+      createdAt: notification.createdAt,
+      updatedAt: DateTime(2026, 5, 9, 18, 45),
+    );
+  }
+}
+
 class _AuthenticatedSessionNotifier extends AuthSessionNotifier {
   @override
   AuthSession? build() {
@@ -466,6 +549,9 @@ void main() {
         overrides: [
           healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
           homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          notificationsRepositoryProvider.overrideWithValue(
+            _FakeNotificationsRepository(),
+          ),
           problemsRepositoryProvider.overrideWithValue(
             _FakeProblemsRepository(),
           ),
@@ -492,6 +578,9 @@ void main() {
         overrides: [
           healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
           homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          notificationsRepositoryProvider.overrideWithValue(
+            _FakeNotificationsRepository(),
+          ),
           problemsRepositoryProvider.overrideWithValue(
             _FakeProblemsRepository(),
           ),
@@ -513,6 +602,66 @@ void main() {
     expect(find.text('AI diagnostica'), findsOneWidget);
     expect(find.text('Tecnici disponibili'), findsOneWidget);
     expect(find.text('Mario Rossi'), findsOneWidget);
+  });
+
+  testWidgets('opens notification center and marks notification read', (
+    tester,
+  ) async {
+    final notificationsRepository = _FakeNotificationsRepository(
+      initialNotifications: [
+        AppNotification(
+          id: 1,
+          recipientUserId: 1,
+          actorUserId: 2,
+          type: 'conversation_post_created',
+          title: 'Nuovo messaggio',
+          body: 'Hai un nuovo messaggio in una conversazione.',
+          priority: 'normal',
+          targetType: 'conversation',
+          targetId: '1',
+          deepLink: 'elettra://conversations/1',
+          metadata: const {},
+          isRead: false,
+          readAt: null,
+          createdAt: DateTime(2026, 5, 9, 18, 30),
+          updatedAt: DateTime(2026, 5, 9, 18, 30),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          notificationsRepositoryProvider.overrideWithValue(
+            notificationsRepository,
+          ),
+          problemsRepositoryProvider.overrideWithValue(
+            _FakeProblemsRepository(),
+          ),
+          authSessionProvider.overrideWith(_AuthenticatedSessionNotifier.new),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Notifiche'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Notifiche'), findsOneWidget);
+    expect(find.text('1 notifica da leggere'), findsOneWidget);
+    expect(find.text('Nuovo messaggio'), findsOneWidget);
+    expect(
+      find.text('Hai un nuovo messaggio in una conversazione.'),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byTooltip('Segna letta'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 notifiche da leggere'), findsOneWidget);
   });
 
   testWidgets('starts guest diagnostic from login', (tester) async {

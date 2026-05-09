@@ -8,7 +8,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 
 - [ ] Verifica manuale del frontend MVP su flusso problema -> diagnostica -> condivisione.
 - [ ] Verifica manuale del frontend Flutter su flusso `La mia casa`.
-- [ ] Preparare centro notifiche Flutter su API notifiche in-app.
+- [ ] Verifica manuale Flutter web del centro notifiche in-app.
 
 ## Todo
 
@@ -134,6 +134,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 - [x] Collegato Flutter pre-login a `Continua come ospite` con diagnostica leggera, consigli salvati, AI a quota e persistenza token guest.
 - [x] Verificato guest tier: backend `115 passed`, Flutter analyze/test/build web verdi, smoke Flutter web ospite -> diagnostica -> snapshot AI.
 - [x] Modellate notifiche in-app e `DeviceInstallation` con API lista/summary/mark-read, registrazione dispositivi, task Celery placeholder e hook su condivisioni/conversazioni.
+- [x] Collegato Flutter alle notifiche in-app con badge unread in AppBar, centro notifiche, refresh, mark-read e mark-all-read.
 
 ## Decisioni Confermate
 

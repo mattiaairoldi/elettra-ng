@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../health/presentation/api_status_card.dart';
 import '../../home/presentation/home_screen.dart';
+import '../../notifications/data/notification_repository.dart';
+import '../../notifications/presentation/notifications_screen.dart';
 import '../../problems/presentation/problems_screen.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
@@ -15,6 +17,7 @@ class ShellScreen extends ConsumerStatefulWidget {
 
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   int _selectedIndex = 0;
+  bool _showNotifications = false;
 
   static const _destinations = [
     _Destination(
@@ -35,11 +38,23 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   @override
   Widget build(BuildContext context) {
     final destination = _destinations[_selectedIndex];
+    final title = _showNotifications ? 'Notifiche' : destination.title;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Elettra'),
         actions: [
+          _NotificationAction(
+            selected: _showNotifications,
+            onPressed: () {
+              if (_showNotifications) {
+                ref.invalidate(notificationsProvider);
+                ref.invalidate(notificationSummaryProvider);
+                return;
+              }
+              setState(() => _showNotifications = true);
+            },
+          ),
           IconButton(
             tooltip: 'Esci',
             onPressed: () => ref.read(authActionsProvider).logout(),
@@ -52,7 +67,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
           children: [
             Text(
-              destination.title,
+              title,
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
@@ -60,7 +75,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             const SizedBox(height: 12),
             const ApiStatusCard(),
             const SizedBox(height: 16),
-            if (_selectedIndex == 0)
+            if (_showNotifications)
+              const NotificationsScreen()
+            else if (_selectedIndex == 0)
               const HomeScreen()
             else if (_selectedIndex == 1)
               const ProblemsScreen()
@@ -72,7 +89,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) {
-          setState(() => _selectedIndex = index);
+          setState(() {
+            _selectedIndex = index;
+            _showNotifications = false;
+          });
         },
         destinations: [
           for (final item in _destinations)
@@ -83,6 +103,34 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _NotificationAction extends ConsumerWidget {
+  const _NotificationAction({required this.selected, required this.onPressed});
+
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(notificationSummaryProvider);
+    final unreadCount =
+        summary.whenOrNull(data: (data) => data.unreadCount) ?? 0;
+    final icon = Icon(
+      selected ? Icons.notifications : Icons.notifications_outlined,
+    );
+
+    return IconButton(
+      tooltip: 'Notifiche',
+      onPressed: onPressed,
+      icon: unreadCount > 0
+          ? Badge(
+              label: Text(unreadCount > 99 ? '99+' : '$unreadCount'),
+              child: icon,
+            )
+          : icon,
     );
   }
 }

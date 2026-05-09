@@ -282,12 +282,13 @@ Già implementato nel workstream MVP:
 - flusso Flutter autenticato con `La mia casa`, allegati asset, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista;
 - guest tier diagnostico pre-onboarding con sessione opaca, quote basse e UI Flutter pre-login;
 - API e test per storico e promemoria manutenzione asset;
-- API notifiche in-app e `DeviceInstallation` con hook su condivisioni/conversazioni.
+- API notifiche in-app e `DeviceInstallation` con hook su condivisioni/conversazioni;
+- centro notifiche Flutter con badge unread, lista notifiche e azioni mark-read.
 
 Prossima sequenza:
 
 1. Verificare manualmente il flusso Flutter `La mia casa` su dati demo reali.
 2. Verificare manualmente il flusso problema -> diagnostica -> condivisione.
-3. Preparare centro notifiche Flutter collegato alle API in-app.
+3. Verificare manualmente il centro notifiche Flutter su notifiche reali.
 4. Completare promozione guest -> account/caso solo se validata dal percorso ospite.
 5. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.

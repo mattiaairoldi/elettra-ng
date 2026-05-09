@@ -230,14 +230,14 @@ La base backend è già impostata:
 - guest tier diagnostico pre-onboarding con quote AI molto basse;
 - notifiche in-app backend e registrazione dispositivi predisposta;
 - auth token-based per mobile;
-- app Flutter mobile-ready con accesso ospite, `La mia casa`, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista collegate ad API reali;
+- app Flutter mobile-ready con accesso ospite, `La mia casa`, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI, condivisione professionista e centro notifiche collegate ad API reali;
 - test automatici e OpenAPI.
 
 Il prossimo lavoro dovrebbe concentrarsi su:
 
 1. verifica manuale del flusso Flutter `La mia casa`;
 2. verifica manuale del flusso Flutter problema -> diagnostica -> condivisione;
-3. centro notifiche Flutter sulle API in-app;
+3. verifica manuale del centro notifiche Flutter su notifiche reali;
 4. promozione guest -> account/caso se il percorso ospite risulta utile;
 5. validazione dei flussi MVP con scenari reali;
 6. taratura dei limiti AI su uso reale.
