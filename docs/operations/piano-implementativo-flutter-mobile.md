@@ -616,13 +616,12 @@ Stato attuale:
 - `Problemi da risolvere` mostra lista casi, dettaglio pratica, diagnostica guidata, chat AI diagnostica e richiesta di condivisione verso professionista tramite API reali;
 - il pre-login Flutter offre `Continua come ospite` con diagnostica leggera, consigli salvati, AI limitata e CTA di accesso;
 - il backend espone notifiche in-app e registrazione `DeviceInstallation`; le push native non sono ancora abilitate;
-- Flutter mostra badge unread e centro notifiche in-app collegati alle API backend;
+- Flutter mostra badge unread e centro notifiche in-app collegati alle API backend, verificati su web con notifica reale e mark-read;
 - le sezioni `Diagnosi`, `Tecnici` e `Profilo` restano placeholder operativi separati: il flusso MVP end-to-end oggi passa dal dettaglio problema.
 
 Il prossimo passo operativo è:
 
 1. verificare manualmente su Flutter web il flusso `La mia casa` con seed demo;
 2. verificare manualmente su Flutter web il flusso problema -> diagnostica -> condivisione con seed demo;
-3. verificare manualmente su Flutter web il centro notifiche in-app;
-4. completare promozione guest -> account/caso se serve conservare il riepilogo;
-5. preparare signing/TestFlight solo dopo il primo flusso MVP mobile end-to-end validato manualmente.
+3. completare promozione guest -> account/caso se serve conservare il riepilogo;
+4. preparare signing/TestFlight solo dopo il primo flusso MVP mobile end-to-end validato manualmente.

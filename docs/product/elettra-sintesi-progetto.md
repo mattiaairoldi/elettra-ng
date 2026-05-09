@@ -282,11 +282,10 @@ Il prossimo lavoro dovrebbe procedere così:
 
 1. verificare manualmente `La mia casa` e apertura problema da asset su Flutter;
 2. verificare manualmente il flusso problema -> diagnostica -> condivisione su Flutter;
-3. verificare manualmente centro notifiche Flutter su notifiche reali;
-4. completare promozione guest -> account/caso solo dopo validazione del percorso ospite;
-5. validare macro-capitoli e scelte cablate su scenari reali;
-6. raffinare regole di sicurezza per capitolo;
-7. tarare soglie di compattazione e stime costo/token;
+3. completare promozione guest -> account/caso solo dopo validazione del percorso ospite;
+4. validare macro-capitoli e scelte cablate su scenari reali;
+5. raffinare regole di sicurezza per capitolo;
+6. tarare soglie di compattazione e stime costo/token;
 8. usare i contenuti storici di `../elettra` come corpus di test, non come import automatico.
 
 La regola operativa resta: niente import massivo di alberi diagnostici prima di aver validato il modello chat-first.
