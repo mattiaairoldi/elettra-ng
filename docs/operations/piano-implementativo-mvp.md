@@ -279,7 +279,7 @@ Già implementato nel workstream MVP:
 - seed demo ripetibile con casa, asset, allegati placeholder, manutenzione e promemoria;
 - auth mobile token-based;
 - scaffold Flutter Android/iOS/web;
-- flusso Flutter autenticato con `La mia casa`, `Problemi da risolvere`, allegati asset e apertura problema da asset;
+- flusso Flutter autenticato con `La mia casa`, allegati asset, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista;
 - API e test per storico e promemoria manutenzione asset.
 
 Prossima sequenza:

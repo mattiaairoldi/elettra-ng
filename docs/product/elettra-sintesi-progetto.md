@@ -270,7 +270,7 @@ La base tecnica e prodotto attuale include:
 - endpoint per turno diagnostico;
 - endpoint per recupero snapshot;
 - auth token-based per mobile;
-- app Flutter mobile-ready con login, `La mia casa` e lista problemi collegate ad API reali.
+- app Flutter mobile-ready con login, `La mia casa`, apertura problema da asset, dettaglio problema, consigli guidati, AI diagnostica e condivisione professionista collegati ad API reali.
 
 Lo spike attuale consente di inviare un messaggio diagnostico, generare una risposta strutturata, aggiornare rischio, riepilogo, prossima domanda e audit event sul caso.
 
@@ -279,7 +279,7 @@ Lo spike attuale consente di inviare un messaggio diagnostico, generare una risp
 Il prossimo lavoro dovrebbe procedere così:
 
 1. verificare manualmente `La mia casa` e apertura problema da asset su Flutter;
-2. completare dettaglio problema, diagnostica guidata/AI e condivisione nel client Flutter;
+2. verificare manualmente il flusso problema -> diagnostica -> condivisione su Flutter;
 3. implementare il tier guest come diagnosi temporanea a quote basse;
 4. modellare notifiche in-app e device installation prima delle push native;
 5. validare macro-capitoli e scelte cablate su scenari reali;

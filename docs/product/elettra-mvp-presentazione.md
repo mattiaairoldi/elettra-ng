@@ -229,17 +229,16 @@ La base backend è già impostata:
 - limiti di utilizzo AI;
 - architettura predisposta per quote guest molto basse;
 - auth token-based per mobile;
-- app Flutter mobile-ready con `La mia casa` e lista `Problemi da risolvere` collegate ad API reali;
+- app Flutter mobile-ready con `La mia casa`, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista collegate ad API reali;
 - test automatici e OpenAPI.
 
 Il prossimo lavoro dovrebbe concentrarsi su:
 
 1. verifica manuale del flusso Flutter `La mia casa`;
-2. dettaglio problema e diagnostica guidata/AI nel client Flutter;
-3. condivisione selettiva con professionisti;
-4. flusso guest temporaneo per diagnosi esplorativa;
-5. notifiche in-app e predisposizione push;
-6. validazione dei flussi MVP con scenari reali;
-7. taratura dei limiti AI su uso reale.
+2. verifica manuale del flusso Flutter problema -> diagnostica -> condivisione;
+3. flusso guest temporaneo per diagnosi esplorativa;
+4. notifiche in-app e predisposizione push;
+5. validazione dei flussi MVP con scenari reali;
+6. taratura dei limiti AI su uso reale.
 
 L'obiettivo del primo MVP è dimostrare che la casa può essere documentata senza complessità e che un problema tecnico può nascere in modo semplice, sicuro e ordinato, arrivando al professionista solo quando serve e con informazioni migliori.

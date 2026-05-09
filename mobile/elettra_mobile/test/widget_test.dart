@@ -39,6 +39,9 @@ class _FakeProblemsRepository implements ProblemsRepository {
     return const [
       CustomerProblem(
         id: 1,
+        categoryId: 1,
+        propertyId: 1,
+        assetId: 1,
         title: 'Salvavita abbassato',
         description: 'Il quadro elettrico scatta quando accendo il forno.',
         status: 'open',
@@ -47,6 +50,146 @@ class _FakeProblemsRepository implements ProblemsRepository {
         updatedAt: null,
       ),
     ];
+  }
+
+  @override
+  Future<CustomerProblem> fetchProblem(int problemId) async {
+    return (await fetchProblems()).single;
+  }
+
+  @override
+  Future<List<DiagnosticChapter>> fetchDiagnosticChapters({
+    int? categoryId,
+  }) async {
+    return const [
+      DiagnosticChapter(
+        id: 1,
+        name: 'Controlli iniziali',
+        description: 'Verifiche sicure prima del tecnico.',
+        categoryId: 1,
+        options: [
+          DiagnosticChapterOption(
+            id: 1,
+            chapterId: 1,
+            label: 'Scatta subito',
+            description: '',
+            promptHint: '',
+          ),
+        ],
+      ),
+    ];
+  }
+
+  @override
+  Future<List<DiagnosticAdviceStep>> fetchAdviceSteps({
+    required int chapterId,
+    int? optionId,
+  }) async {
+    return const [
+      DiagnosticAdviceStep(
+        id: 1,
+        chapterId: 1,
+        chapterOptionId: null,
+        title: 'Scollega il forno',
+        body: 'Prova a riarmare il quadro con il forno scollegato.',
+        safetyLevel: 'low',
+        resolutionPrompt: 'Il problema e risolto?',
+        nextActions: ['Continua con la diagnosi'],
+      ),
+    ];
+  }
+
+  @override
+  Future<DiagnosticFeedbackResult> sendAdviceFeedback({
+    required int stepId,
+    required int caseId,
+    required bool resolved,
+    required String note,
+  }) async {
+    return DiagnosticFeedbackResult(
+      caseId: caseId,
+      resolved: resolved,
+      caseStatus: resolved ? 'resolved' : 'in_diagnosis',
+      nextActions: const ['Diagnostica aggiornata'],
+    );
+  }
+
+  @override
+  Future<AiSessionSummary> createAiSession({required int caseId}) async {
+    return AiSessionSummary(id: 1, caseId: caseId, status: 'active');
+  }
+
+  @override
+  Future<List<AiMessage>> fetchAiMessages(int sessionId) async {
+    return const [
+      AiMessage(
+        id: 2,
+        role: 'assistant',
+        content: 'Il forno potrebbe avere una dispersione.',
+        status: 'completed',
+      ),
+    ];
+  }
+
+  @override
+  Future<DiagnosticTurnResult> sendDiagnosticTurn({
+    required int sessionId,
+    required String content,
+    int? chapterId,
+    int? optionId,
+  }) async {
+    return const DiagnosticTurnResult(
+      userMessage: AiMessage(
+        id: 1,
+        role: 'user',
+        content: 'Succede con il forno acceso.',
+        status: 'completed',
+      ),
+      assistantMessage: AiMessage(
+        id: 2,
+        role: 'assistant',
+        content: 'Il forno potrebbe avere una dispersione.',
+        status: 'completed',
+      ),
+      snapshot: AiDiagnosticSnapshot(
+        summary: 'Scatto collegato al forno.',
+        riskLevel: 'medium',
+        nextQuestion: '',
+        escalationRecommended: true,
+        escalationReason: 'Serve verifica elettrica.',
+        recommendation: 'Condividi il caso con un tecnico.',
+      ),
+    );
+  }
+
+  @override
+  Future<List<ProfessionalProfileSummary>> fetchProfessionals({
+    int? categoryId,
+  }) async {
+    return const [
+      ProfessionalProfileSummary(
+        id: 1,
+        displayName: 'Mario Rossi',
+        bio: 'Elettricista abilitato.',
+        serviceAreaText: 'Milano',
+        recipientOrganizationId: 2,
+        recipientMembershipId: 3,
+      ),
+    ];
+  }
+
+  @override
+  Future<CaseShareRequestSummary> shareCase({
+    required int caseId,
+    required ProfessionalProfileSummary professional,
+    required String title,
+    required String summary,
+  }) async {
+    return const CaseShareRequestSummary(
+      id: 1,
+      status: 'pending',
+      shareScope: 'summary',
+    );
   }
 }
 
@@ -236,5 +379,36 @@ void main() {
     expect(find.text('API online'), findsOneWidget);
     expect(find.text('Casa Demo'), findsOneWidget);
     expect(find.text('Lavatrice'), findsOneWidget);
+  });
+
+  testWidgets('opens problem detail with diagnostics and sharing', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          problemsRepositoryProvider.overrideWithValue(
+            _FakeProblemsRepository(),
+          ),
+          authSessionProvider.overrideWith(_AuthenticatedSessionNotifier.new),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Problemi'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salvavita abbassato'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Diagnostica guidata'), findsOneWidget);
+    expect(find.text('Controlli iniziali'), findsOneWidget);
+    expect(find.text('Scollega il forno'), findsOneWidget);
+    expect(find.text('AI diagnostica'), findsOneWidget);
+    expect(find.text('Tecnici disponibili'), findsOneWidget);
+    expect(find.text('Mario Rossi'), findsOneWidget);
   });
 }
