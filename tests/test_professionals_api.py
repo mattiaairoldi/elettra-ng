@@ -4,6 +4,7 @@ from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from apps.professionals.models import ProfessionalProfile
+from apps.organizations.models import Organization, OrganizationMembership, OrganizationPlan
 from apps.taxonomy.models import Category, Tag
 
 User = get_user_model()
@@ -77,6 +78,40 @@ def test_professional_detail_returns_available_profile(client):
 
     assert response.status_code == 200
     assert response.json()["display_name"] == "Tecnico Casa"
+
+
+@pytest.mark.django_db
+def test_professional_profile_exposes_case_share_recipient_ids_when_available(client):
+    user = User.objects.create_user(
+        email="pro@example.com",
+        password="Password123!",
+        role=User.Roles.PROFESSIONAL,
+    )
+    plan = OrganizationPlan.objects.create(
+        slug="professional-demo",
+        name="Professional demo",
+        kind=OrganizationPlan.Kinds.PROFESSIONAL,
+        can_receive_cases=True,
+    )
+    organization = Organization.objects.create(
+        name="Tecnici Demo",
+        kind=Organization.Kinds.PROFESSIONAL,
+        plan=plan,
+    )
+    membership = OrganizationMembership.objects.create(
+        user=user,
+        organization=organization,
+        role=OrganizationMembership.Roles.OWNER,
+        scope=OrganizationMembership.Scopes.ORGANIZATION,
+        status=OrganizationMembership.Statuses.ACTIVE,
+    )
+    profile = ProfessionalProfile.objects.create(user=user, display_name="Tecnico Casa")
+
+    response = client.get(reverse("api_v1:professionals:professional-detail", args=[profile.id]))
+
+    assert response.status_code == 200
+    assert response.json()["recipient_organization_id"] == organization.id
+    assert response.json()["recipient_membership_id"] == membership.id
 
 
 @pytest.mark.django_db

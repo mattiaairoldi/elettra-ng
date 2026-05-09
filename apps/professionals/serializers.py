@@ -2,6 +2,7 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from apps.common.serializers import GeoPointField
+from apps.organizations.models import Organization, OrganizationMembership
 
 from .models import ProfessionalProfile
 
@@ -12,6 +13,8 @@ class ProfessionalProfileSerializer(serializers.ModelSerializer):
     tag_ids = serializers.SerializerMethodField()
     location = GeoPointField(read_only=True)
     distance_km = serializers.SerializerMethodField()
+    recipient_organization_id = serializers.SerializerMethodField()
+    recipient_membership_id = serializers.SerializerMethodField()
 
     class Meta:
         model = ProfessionalProfile
@@ -26,6 +29,8 @@ class ProfessionalProfileSerializer(serializers.ModelSerializer):
             "service_area_text",
             "location",
             "distance_km",
+            "recipient_organization_id",
+            "recipient_membership_id",
             "category_ids",
             "tag_ids",
             "created_at",
@@ -47,3 +52,32 @@ class ProfessionalProfileSerializer(serializers.ModelSerializer):
         if distance is None:
             return None
         return round(distance.km, 2)
+
+    def get_recipient_membership(self, obj):
+        if hasattr(obj, "_recipient_membership"):
+            return obj._recipient_membership
+
+        membership = (
+            OrganizationMembership.objects.filter(
+                user=obj.user,
+                status=OrganizationMembership.Statuses.ACTIVE,
+                organization__kind=Organization.Kinds.PROFESSIONAL,
+                organization__status=Organization.Statuses.ACTIVE,
+                organization__plan__can_receive_cases=True,
+            )
+            .select_related("organization")
+            .order_by("organization__name", "id")
+            .first()
+        )
+        obj._recipient_membership = membership
+        return membership
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_recipient_organization_id(self, obj) -> int | None:
+        membership = self.get_recipient_membership(obj)
+        return membership.organization_id if membership is not None else None
+
+    @extend_schema_field(serializers.IntegerField(allow_null=True))
+    def get_recipient_membership_id(self, obj) -> int | None:
+        membership = self.get_recipient_membership(obj)
+        return membership.id if membership is not None else None

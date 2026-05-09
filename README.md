@@ -12,6 +12,17 @@ docker compose up -d web worker
 
 API locale: `http://127.0.0.1:8000/api/v1/`
 
+Frontend MVP:
+
+```bash
+docker compose run --rm web uv run python manage.py seed_mvp_demo
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend locale: `http://127.0.0.1:5173`
+
 ## Documenti Principali
 
 - [Progetto Elettra canonico](docs/product/progetto-elettra-canonico.md)

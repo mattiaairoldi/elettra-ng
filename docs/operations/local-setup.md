@@ -66,6 +66,7 @@ docker compose ps
 ## URL Locali
 
 - API: `http://127.0.0.1:8000/api/v1/`
+- Frontend MVP: `http://127.0.0.1:5173`
 - Health: `http://127.0.0.1:8000/api/v1/health`
 - OpenAPI schema: `http://127.0.0.1:8000/api/v1/schema/`
 - Swagger docs: `http://127.0.0.1:8000/api/v1/docs/`
@@ -88,7 +89,15 @@ bucket: app-media
 docker compose run --rm web uv run pytest -q
 ```
 
-Ultima verifica: `102 passed`.
+Ultima verifica: `104 passed`.
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
 
 ## OpenAPI
 
@@ -130,6 +139,14 @@ docker compose ps
 docker compose logs -f web
 docker compose logs -f worker
 docker compose down
+```
+
+Avvio frontend MVP:
+
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
 Generazione PDF da Markdown:

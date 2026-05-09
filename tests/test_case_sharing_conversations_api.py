@@ -84,6 +84,36 @@ def test_case_share_request_acceptance_opens_conversation(client):
 
 
 @pytest.mark.django_db
+def test_case_share_requests_can_be_listed_by_recipient_status(client):
+    customer = User.objects.create_user(email="customer@example.com", password="Password123!")
+    professional = User.objects.create_user(
+        email="pro@example.com",
+        password="Password123!",
+        role=User.Roles.PROFESSIONAL,
+    )
+    professional_organization, _membership = create_professional_organization(professional)
+    category = Category.objects.create(name="Elettricita", slug="elettricita")
+    case = Case.objects.create(customer_user=customer, category=category, title="Salvavita abbassato")
+    CaseShareRequest.objects.create(
+        case=case,
+        requester_user=customer,
+        recipient_organization=professional_organization,
+        status=CaseShareRequest.Statuses.PENDING,
+        visible_title=case.title,
+    )
+
+    client.force_login(professional)
+    response = client.get(
+        reverse("api_v1:cases:case-share-request-list"),
+        {"status": CaseShareRequest.Statuses.PENDING},
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 1
+    assert response.json()[0]["visible_title"] == "Salvavita abbassato"
+
+
+@pytest.mark.django_db
 def test_conversation_posts_remain_visible_after_case_share_revocation(client):
     customer = User.objects.create_user(email="customer@example.com", password="Password123!")
     professional = User.objects.create_user(

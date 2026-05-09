@@ -306,7 +306,7 @@ class CaseViewSet(
         return Response({"case": CaseSerializer(case).data})
 
 
-class CaseShareRequestViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet):
+class CaseShareRequestViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = CaseShareRequestSerializer
     queryset = CaseShareRequest.objects.all()
@@ -324,23 +324,29 @@ class CaseShareRequestViewSet(mixins.RetrieveModelMixin, viewsets.GenericViewSet
             "revoked_by_user",
         )
         if user.role == "admin":
-            return queryset
-        return queryset.filter(
-            Q(case__customer_user=user)
-            | Q(
-                case__owner_organization__memberships__user=user,
-                case__owner_organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
-            )
-            | Q(
-                recipient_membership__user=user,
-                recipient_membership__status=OrganizationMembership.Statuses.ACTIVE,
-            )
-            | Q(
-                recipient_organization__memberships__user=user,
-                recipient_organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
-                recipient_organization__memberships__scope=OrganizationMembership.Scopes.ORGANIZATION,
-            )
-        ).distinct()
+            visible_queryset = queryset
+        else:
+            visible_queryset = queryset.filter(
+                Q(case__customer_user=user)
+                | Q(
+                    case__owner_organization__memberships__user=user,
+                    case__owner_organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+                )
+                | Q(
+                    recipient_membership__user=user,
+                    recipient_membership__status=OrganizationMembership.Statuses.ACTIVE,
+                )
+                | Q(
+                    recipient_organization__memberships__user=user,
+                    recipient_organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+                    recipient_organization__memberships__scope=OrganizationMembership.Scopes.ORGANIZATION,
+                )
+            ).distinct()
+
+        status_value = self.request.query_params.get("status")
+        if status_value:
+            visible_queryset = visible_queryset.filter(status=status_value)
+        return visible_queryset
 
     @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
     def accept(self, request, pk=None):

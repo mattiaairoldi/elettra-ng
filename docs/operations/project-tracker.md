@@ -6,7 +6,7 @@ Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend 
 
 ## In Corso
 
-- [ ] Avvio frontend minimo per flusso pratica -> diagnostica -> condivisione.
+- [ ] Verifica manuale del frontend MVP su flusso pratica -> diagnostica -> condivisione.
 
 ## Todo
 
@@ -101,6 +101,9 @@ Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend 
 - [x] Creato piano implementativo MVP.
 - [x] Aggiunto comando `seed_mvp_demo` per dati demo ripetibili.
 - [x] Eseguita suite test dopo seed demo MVP: `102 passed`.
+- [x] Avviato frontend MVP React/Vite collegato ad API reali.
+- [x] Aggiunti id destinatario su profili professionisti e lista richieste di condivisione.
+- [x] Eseguita suite test dopo frontend/API MVP: `104 passed`.
 
 ## Decisioni Confermate
 
