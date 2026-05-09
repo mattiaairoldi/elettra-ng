@@ -34,7 +34,7 @@ Le scelte cablate devono apparire quando sono naturalmente utili:
 - escalation verso professionista.
 
 Il resto del flusso deve restare dinamico.
-L'AI deve fare una domanda pertinente alla volta, aggiornando lo stato della pratica.
+L'AI deve proporre un passaggio pertinente alla volta, anche con opzioni brevi quando utili, aggiornando lo stato della pratica.
 
 ## Macro-Capitoli Iniziali
 
@@ -87,7 +87,7 @@ Flusso consigliato:
 2. Il sistema propone macro-capitoli o prova a classificarli dal testo libero.
 3. Se serve, mostra una scelta cablata breve.
 4. Si apre la chat diagnostica.
-5. L'AI fa una domanda alla volta.
+5. L'AI propone un passaggio diagnostico chiaro, anche con opzioni di risposta quando utile.
 6. La UI mostra eventualmente un riepilogo progressivo non invasivo.
 7. Quando il rischio cresce o i dati sono sufficienti, il sistema propone:
    - apertura/aggiornamento pratica;

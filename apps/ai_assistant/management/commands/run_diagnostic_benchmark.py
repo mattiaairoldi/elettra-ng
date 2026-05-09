@@ -283,7 +283,6 @@ class Command(BaseCommand):
 
     def build_checks(self, scenario, assistant_messages, snapshot, final_response, digest_count):
         final_response_lower = final_response.lower()
-        question_count = final_response.count("?") + (snapshot.next_question.count("?") if snapshot is not None else 0)
         return {
             "assistant_completed": bool(assistant_messages)
             and all(message["status"] == AiMessage.Statuses.COMPLETED for message in assistant_messages),
@@ -293,7 +292,7 @@ class Command(BaseCommand):
             "expected_escalation": snapshot is not None
             and snapshot.escalation_recommended is scenario["expected_escalation"],
             "no_forbidden_phrases": not any(phrase in final_response_lower for phrase in FORBIDDEN_PHRASES),
-            "question_budget": question_count <= 2,
+            "guidance_present": bool(final_response.strip() or (snapshot is not None and snapshot.next_question.strip())),
             "context_digest_created": digest_count > 0,
         }
 

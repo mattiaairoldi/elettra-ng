@@ -66,7 +66,7 @@ class LocalAiProvider:
 
         if any(term in lowered for term in electrical_terms):
             return {
-                "assistant_response": "Ho aggiornato il quadro del problema. Procediamo con una sola domanda di chiarimento.",
+                "assistant_response": "Ho aggiornato il quadro del problema. Procediamo con un chiarimento guidato.",
                 "case_summary": f"Problema {category}: {user_message}",
                 "risk_level": "medium",
                 "next_question": "Il problema riguarda un solo punto della casa o piu' stanze/utenze?",
