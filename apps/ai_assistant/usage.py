@@ -37,6 +37,8 @@ def get_ai_provider_model_name(provider) -> str:
 
 
 def get_daily_message_count(user) -> int:
+    if user is None:
+        return 0
     return AiMessage.objects.filter(
         session__user=user,
         role=AiMessage.Roles.USER,
@@ -66,6 +68,8 @@ def _totals(queryset) -> dict:
 
 
 def get_daily_user_usage_totals(user) -> dict:
+    if user is None:
+        return {"total_tokens": 0, "estimated_cost": Decimal("0")}
     return _totals(
         AiUsageLedger.objects.filter(
             user=user,
@@ -94,6 +98,9 @@ def enforce_ai_usage_limits(
     estimated_output_tokens: int = 0,
     check_case_turn_limit: bool = False,
 ) -> None:
+    if session.guest_session_id is not None:
+        return
+
     daily_token_limit = _positive_int_setting("AI_DAILY_TOKEN_LIMIT_PER_USER", 20000)
     daily_cost_limit = _positive_decimal_setting("AI_DAILY_ESTIMATED_COST_LIMIT_PER_USER", 0)
     organization_monthly_cost_limit = _positive_decimal_setting(
@@ -156,6 +163,7 @@ def record_ai_usage(
         session=session,
         message=message,
         user=session.user,
+        guest_session=session.guest_session,
         organization=get_session_organization(session),
         case=session.case,
         purpose=purpose,

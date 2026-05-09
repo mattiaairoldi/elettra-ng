@@ -101,7 +101,8 @@ class AiContextDigestSerializer(serializers.ModelSerializer):
 
 class AiSessionSerializer(serializers.ModelSerializer):
     case_id = serializers.IntegerField(source="case.id", read_only=True, allow_null=True)
-    user_id = serializers.IntegerField(source="user.id", read_only=True)
+    user_id = serializers.IntegerField(source="user.id", read_only=True, allow_null=True)
+    guest_session_id = serializers.UUIDField(source="guest_session.public_id", read_only=True, allow_null=True)
     message_count = serializers.SerializerMethodField()
     pending_assistant_messages = serializers.SerializerMethodField()
     latest_message_id = serializers.SerializerMethodField()
@@ -114,6 +115,7 @@ class AiSessionSerializer(serializers.ModelSerializer):
             "id",
             "case_id",
             "user_id",
+            "guest_session_id",
             "status",
             "started_at",
             "ended_at",

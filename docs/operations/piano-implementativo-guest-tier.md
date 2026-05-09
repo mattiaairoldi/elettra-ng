@@ -44,7 +44,7 @@ Il messaggio deve essere chiaro: la registrazione serve a proteggere dati, stori
 
 ### GuestSession
 
-Nuovo modello proposto, in app `identity` o nuova app `guests`.
+Modello implementato nella app `guests`.
 
 Campi:
 
@@ -71,7 +71,7 @@ Regole:
 
 ### AI E Diagnostica
 
-Strada consigliata:
+Strada implementata nella prima iterazione:
 
 - estendere `AiSession` con `guest_session` opzionale;
 - rendere `AiSession.user` opzionale;
@@ -82,11 +82,16 @@ Strada consigliata:
 
 Motivo: evita un secondo sistema parallelo di messaggi AI e mantiene compattazione, snapshot e provider abstraction riutilizzabili.
 
-Per sicurezza, creare endpoint guest separati invece di aprire quelli autenticati:
+Per sicurezza, gli endpoint guest sono separati da quelli autenticati:
 
 - `POST /api/v1/guest/sessions`;
 - `GET /api/v1/guest/sessions/current`;
 - `POST /api/v1/guest/diagnostic-turns`;
+- `GET /api/v1/guest/messages/{message_id}`;
+- `GET /api/v1/guest/diagnostic-snapshot`.
+
+Endpoint previsto ma non implementato nella prima iterazione:
+
 - `POST /api/v1/guest/promote`.
 
 Gli endpoint autenticati restano sotto JWT utente.
@@ -205,14 +210,19 @@ Output:
 - token JWT;
 - eventuale `case_id` creato.
 
+Stato: endpoint non implementato nella prima iterazione. La UI mostra CTA di accesso, ma la conversione automatica guest -> account/caso resta un passo separato.
+
 ## Flutter
 
-Schermate:
+Schermate implementate:
 
 - scelta iniziale: `Accedi`, `Registrati`, `Continua come ospite`;
 - diagnostica guest;
 - quota residua o limite raggiunto;
-- call to action `Salva e continua`;
+- call to action `Salva e continua`.
+
+Schermate previste per una iterazione successiva:
+
 - promozione ad account;
 - passaggio da guest ad area autenticata.
 
@@ -227,63 +237,73 @@ La UI può mostrare teaser o call to action, ma non funzioni operative.
 
 ## Backend Fasi
 
+Stato implementazione corrente:
+
+- [x] `GuestSession` in app `guests` con `public_id`, token hashato, scadenza, stato, hash IP/user-agent e metadati.
+- [x] Endpoint pubblici separati: `POST /guest/sessions`, `GET /guest/sessions/current`, `POST /guest/diagnostic-turns`, `GET /guest/messages/{id}`, `GET /guest/diagnostic-snapshot`.
+- [x] `AiSession` e `AiUsageLedger` supportano esattamente uno tra utente autenticato e guest session.
+- [x] Quote guest configurabili: TTL, turni AI, messaggi e rate limit IP giornaliero.
+- [x] Diagnostica guest riusa macro-capitoli, consigli salvati, messaggi AI e `AiDiagnosticSnapshot` senza creare `Case`, `Organization`, allegati o conversazioni.
+- [x] Flutter pre-login espone `Continua come ospite`, salva token guest, mostra quote, consigli, risposta AI, snapshot e CTA di accesso.
+- [ ] Promozione guest -> account/caso.
+
 ### Fase 1 - GuestSession
 
-- creare modello;
-- creare token service;
-- creare endpoint sessione;
-- aggiungere test token, scadenza e revoca.
+- [x] creare modello;
+- [x] creare token service;
+- [x] creare endpoint sessione;
+- [x] aggiungere test token, scadenza e revoca.
 
 ### Fase 2 - Quote Guest
 
-- estendere ledger o creare ledger guest;
-- aggiungere configurazioni;
-- bloccare turni oltre limite;
-- aggiungere test su quote.
+- [x] estendere ledger o creare ledger guest;
+- [x] aggiungere configurazioni;
+- [x] bloccare turni oltre limite;
+- [x] aggiungere test su quote.
 
 ### Fase 3 - Diagnostica Guest
 
-- creare endpoint guest diagnostico;
-- riusare macro-capitoli, consigli salvati e snapshot;
-- permettere AI solo se quota disponibile;
-- non creare `Case`.
+- [x] creare endpoint guest diagnostico;
+- [x] riusare macro-capitoli, consigli salvati e snapshot;
+- [x] permettere AI solo se quota disponibile;
+- [x] non creare `Case`.
 
 ### Fase 4 - Promozione
 
-- collegare registrazione;
-- creare user e organization personal;
-- creare eventuale caso da riepilogo;
-- invalidare o marcare promossa la sessione guest.
+- [ ] collegare registrazione;
+- [ ] creare user e organization personal;
+- [ ] creare eventuale caso da riepilogo;
+- [ ] invalidare o marcare promossa la sessione guest.
 
 ### Fase 5 - Flutter
 
-- aggiungere entrypoint guest;
-- salvare token guest;
-- costruire UI diagnostica leggera;
-- aggiungere call to action di registrazione;
-- collegare promozione.
+- [x] aggiungere entrypoint guest;
+- [x] salvare token guest;
+- [x] costruire UI diagnostica leggera;
+- [x] aggiungere call to action di registrazione;
+- [ ] collegare promozione.
 
 ## Test
 
 Backend:
 
-- creazione guest session;
-- token non in chiaro;
-- token invalido rifiutato;
-- sessione scaduta rifiutata;
-- quote AI applicate;
-- endpoint guest non crea organization;
-- guest non accede ad asset/property/case autenticati;
-- promozione crea user e organization;
-- promozione opzionale crea case da snapshot.
+- [x] creazione guest session;
+- [x] token non in chiaro;
+- [x] token invalido rifiutato;
+- [x] sessione scaduta rifiutata;
+- [x] quote AI applicate;
+- [x] endpoint guest non crea organization;
+- [x] guest non accede ad asset/property/case autenticati;
+- [ ] promozione crea user e organization;
+- [ ] promozione opzionale crea case da snapshot.
 
 Flutter:
 
-- accesso come ospite;
-- persistenza token guest;
-- diagnostica guest con repository fake;
-- limite quota mostrato;
-- promozione cancella token guest e passa a sessione autenticata.
+- [x] accesso come ospite;
+- [x] persistenza token guest;
+- [x] diagnostica guest con repository fake;
+- [x] limite quota mostrato;
+- [ ] promozione cancella token guest e passa a sessione autenticata.
 
 ## Fuori Perimetro Iniziale
 
@@ -304,5 +324,5 @@ La feature è completa per MVP quando:
 - un utente può provare una diagnosi senza registrarsi;
 - il backend applica quote e scadenza;
 - il guest riceve una call to action naturale alla registrazione;
-- la registrazione conserva il riepilogo utile;
+- la registrazione conserva il riepilogo utile, se viene attivata la promozione automatica;
 - nessun dato guest apre accesso a funzioni persistenti senza account.

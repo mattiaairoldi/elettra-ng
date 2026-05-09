@@ -5,13 +5,14 @@ import 'token_store_base.dart';
 
 class SecureTokenStore implements TokenStore {
   SecureTokenStore({FlutterSecureStorage? storage})
-      : _storage = storage ?? const FlutterSecureStorage();
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const _accessTokenKey = 'auth.access_token';
   static const _refreshTokenKey = 'auth.refresh_token';
   static const _tokenTypeKey = 'auth.token_type';
   static const _accessExpiresInKey = 'auth.access_expires_in';
   static const _refreshExpiresInKey = 'auth.refresh_expires_in';
+  static const _guestTokenKey = 'guest.token';
 
   final FlutterSecureStorage _storage;
   AuthTokens? _tokens;
@@ -32,8 +33,12 @@ class SecureTokenStore implements TokenStore {
       access: access,
       refresh: refresh,
       tokenType: await _storage.read(key: _tokenTypeKey) ?? 'Bearer',
-      accessExpiresIn: int.tryParse(await _storage.read(key: _accessExpiresInKey) ?? '') ?? 0,
-      refreshExpiresIn: int.tryParse(await _storage.read(key: _refreshExpiresInKey) ?? '') ?? 0,
+      accessExpiresIn:
+          int.tryParse(await _storage.read(key: _accessExpiresInKey) ?? '') ??
+          0,
+      refreshExpiresIn:
+          int.tryParse(await _storage.read(key: _refreshExpiresInKey) ?? '') ??
+          0,
     );
     return _tokens;
   }
@@ -50,8 +55,14 @@ class SecureTokenStore implements TokenStore {
       _storage.write(key: _accessTokenKey, value: tokens.access),
       _storage.write(key: _refreshTokenKey, value: tokens.refresh),
       _storage.write(key: _tokenTypeKey, value: tokens.tokenType),
-      _storage.write(key: _accessExpiresInKey, value: tokens.accessExpiresIn.toString()),
-      _storage.write(key: _refreshExpiresInKey, value: tokens.refreshExpiresIn.toString()),
+      _storage.write(
+        key: _accessExpiresInKey,
+        value: tokens.accessExpiresIn.toString(),
+      ),
+      _storage.write(
+        key: _refreshExpiresInKey,
+        value: tokens.refreshExpiresIn.toString(),
+      ),
     ]);
   }
 
@@ -65,5 +76,20 @@ class SecureTokenStore implements TokenStore {
       _storage.delete(key: _accessExpiresInKey),
       _storage.delete(key: _refreshExpiresInKey),
     ]);
+  }
+
+  @override
+  Future<String?> readGuestToken() async {
+    return _storage.read(key: _guestTokenKey);
+  }
+
+  @override
+  Future<void> saveGuestToken(String token) async {
+    await _storage.write(key: _guestTokenKey, value: token);
+  }
+
+  @override
+  Future<void> clearGuestToken() async {
+    await _storage.delete(key: _guestTokenKey);
   }
 }

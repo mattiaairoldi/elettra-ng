@@ -8,7 +8,14 @@ class AiSession(models.Model):
         ENDED = "ended", "Ended"
 
     case = models.ForeignKey("cases.Case", on_delete=models.CASCADE, null=True, blank=True, related_name="ai_sessions")
-    user = models.ForeignKey("identity.User", on_delete=models.CASCADE, related_name="ai_sessions")
+    user = models.ForeignKey("identity.User", on_delete=models.CASCADE, null=True, blank=True, related_name="ai_sessions")
+    guest_session = models.ForeignKey(
+        "guests.GuestSession",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="ai_sessions",
+    )
     status = models.CharField(max_length=16, choices=Statuses.choices, default=Statuses.ACTIVE)
     started_at = models.DateTimeField(default=timezone.now)
     ended_at = models.DateTimeField(null=True, blank=True)
@@ -17,6 +24,15 @@ class AiSession(models.Model):
 
     class Meta:
         ordering = ("-started_at", "-id")
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    (models.Q(user__isnull=False) & models.Q(guest_session__isnull=True))
+                    | (models.Q(user__isnull=True) & models.Q(guest_session__isnull=False))
+                ),
+                name="ai_session_requires_user_or_guest",
+            ),
+        ]
 
 
 class AiMessage(models.Model):
@@ -159,7 +175,20 @@ class AiUsageLedger(models.Model):
         blank=True,
         related_name="usage_ledger",
     )
-    user = models.ForeignKey("identity.User", on_delete=models.CASCADE, related_name="ai_usage_ledger")
+    user = models.ForeignKey(
+        "identity.User",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="ai_usage_ledger",
+    )
+    guest_session = models.ForeignKey(
+        "guests.GuestSession",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="ai_usage_ledger",
+    )
     organization = models.ForeignKey(
         "organizations.Organization",
         on_delete=models.SET_NULL,
@@ -188,6 +217,7 @@ class AiUsageLedger(models.Model):
         ordering = ("-created_at", "-id")
         indexes = [
             models.Index(fields=("user", "created_at"), name="ai_usage_user_created_idx"),
+            models.Index(fields=("guest_session", "created_at"), name="ai_usage_guest_created_idx"),
             models.Index(fields=("organization", "created_at"), name="ai_usage_org_created_idx"),
             models.Index(fields=("case", "purpose"), name="ai_usage_case_purpose_idx"),
         ]

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../guest/presentation/guest_diagnostic_screen.dart';
 import '../../health/presentation/api_status_card.dart';
 import '../data/auth_repository.dart';
 
@@ -17,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   bool _isSubmitting = false;
+  bool _showGuestDiagnostic = false;
   String? _error;
 
   @override
@@ -48,7 +50,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      await ref.read(authActionsProvider).login(
+      await ref
+          .read(authActionsProvider)
+          .login(
             email: _emailController.text.trim(),
             password: _passwordController.text,
           );
@@ -67,6 +71,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
+    if (_showGuestDiagnostic) {
+      return GuestDiagnosticScreen(
+        onBackToLogin: () => setState(() => _showGuestDiagnostic = false),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text('Elettra')),
       body: SafeArea(
@@ -75,9 +85,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           children: [
             Text(
               'Accedi',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 12),
             const ApiStatusCard(),
@@ -110,10 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                     if (_error != null) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        _error!,
-                        style: TextStyle(color: scheme.error),
-                      ),
+                      Text(_error!, style: TextStyle(color: scheme.error)),
                     ],
                     const SizedBox(height: 16),
                     FilledButton.icon(
@@ -126,6 +133,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             )
                           : const Icon(Icons.login),
                       label: const Text('Accedi'),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => setState(() => _showGuestDiagnostic = true),
+                      icon: const Icon(Icons.manage_search_outlined),
+                      label: const Text('Continua come ospite'),
                     ),
                   ],
                 ),

@@ -97,15 +97,15 @@ L'AI viene usata quando aggiunge valore, non come primo passaggio obbligatorio.
 ## Accesso Senza Registrazione
 
 È utile prevedere una modalità non registrata, ma solo per provare il valore iniziale.
-Nel codice attuale questa è una decisione di prodotto e un piano implementativo, non ancora una feature disponibile.
+Nel codice attuale è disponibile come diagnostica guest pre-onboarding a quota bassa.
 
-Quando implementata, l'utente potrà entrare come ospite e fare una diagnosi leggera:
+L'utente può entrare come ospite e fare una diagnosi leggera:
 
 - sceglie un capitolo diagnostico;
 - descrive il problema;
 - riceve consigli salvati;
-- se previsto dal tier, usa pochissimi turni AI;
-- può trasformare la sessione in account registrato.
+- usa pochissimi turni AI;
+- riceve una CTA per accedere quando vuole salvare o continuare.
 
 La modalità ospite non sostituisce l'account.
 Per salvare casa, asset, documenti, storico, promemoria, allegati persistenti, condivisione con professionisti o conversazioni serve registrarsi.
@@ -227,17 +227,17 @@ La base backend è già impostata:
 - diagnostica AI chat-first;
 - consigli guidati salvati;
 - limiti di utilizzo AI;
-- architettura predisposta per quote guest molto basse;
+- guest tier diagnostico pre-onboarding con quote AI molto basse;
 - auth token-based per mobile;
-- app Flutter mobile-ready con `La mia casa`, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista collegate ad API reali;
+- app Flutter mobile-ready con accesso ospite, `La mia casa`, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista collegate ad API reali;
 - test automatici e OpenAPI.
 
 Il prossimo lavoro dovrebbe concentrarsi su:
 
 1. verifica manuale del flusso Flutter `La mia casa`;
 2. verifica manuale del flusso Flutter problema -> diagnostica -> condivisione;
-3. flusso guest temporaneo per diagnosi esplorativa;
-4. notifiche in-app e predisposizione push;
+3. notifiche in-app e predisposizione push;
+4. promozione guest -> account/caso se il percorso ospite risulta utile;
 5. validazione dei flussi MVP con scenari reali;
 6. taratura dei limiti AI su uso reale.
 

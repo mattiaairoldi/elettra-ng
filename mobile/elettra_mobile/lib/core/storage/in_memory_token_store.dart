@@ -3,6 +3,7 @@ import 'token_store_base.dart';
 
 class InMemoryTokenStore implements TokenStore {
   AuthTokens? _tokens;
+  String? _guestToken;
 
   @override
   Future<AuthTokens?> readTokens() async => _tokens;
@@ -18,5 +19,18 @@ class InMemoryTokenStore implements TokenStore {
   @override
   Future<void> clearTokens() async {
     _tokens = null;
+  }
+
+  @override
+  Future<String?> readGuestToken() async => _guestToken;
+
+  @override
+  Future<void> saveGuestToken(String token) async {
+    _guestToken = token;
+  }
+
+  @override
+  Future<void> clearGuestToken() async {
+    _guestToken = null;
   }
 }

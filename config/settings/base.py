@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 
 import environ
+from corsheaders.defaults import default_headers
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -55,6 +56,7 @@ INSTALLED_APPS = [
     "apps.professionals",
     "apps.appointments",
     "apps.attachments",
+    "apps.guests",
     "apps.ai_assistant",
 ]
 
@@ -197,6 +199,7 @@ STORAGES = {
 
 CORS_ALLOWED_ORIGINS = []
 CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_HEADERS = (*default_headers, "x-guest-token")
 
 SENTRY_DSN = env("SENTRY_DSN", default="")
 
@@ -228,6 +231,10 @@ OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 OPENAI_BASE_URL = env("OPENAI_BASE_URL", default="")
 AI_STREAM_POLL_INTERVAL_SECONDS = env.float("AI_STREAM_POLL_INTERVAL_SECONDS", default=0.5)
 AI_STREAM_TIMEOUT_SECONDS = env.float("AI_STREAM_TIMEOUT_SECONDS", default=30.0)
+GUEST_SESSION_TTL_HOURS = env.int("GUEST_SESSION_TTL_HOURS", default=72)
+GUEST_AI_TURN_LIMIT = env.int("GUEST_AI_TURN_LIMIT", default=2)
+GUEST_MESSAGE_LIMIT = env.int("GUEST_MESSAGE_LIMIT", default=8)
+GUEST_RATE_LIMIT_PER_IP_PER_DAY = env.int("GUEST_RATE_LIMIT_PER_IP_PER_DAY", default=5)
 
 LOGGING = {
     "version": 1,

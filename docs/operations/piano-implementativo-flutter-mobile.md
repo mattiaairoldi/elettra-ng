@@ -614,6 +614,7 @@ Stato attuale:
 - auth token-based, scaffold Flutter, CI mobile, health check e login sono già implementati;
 - `La mia casa` è collegata ad API reali per immobili, asset, allegati, storico, promemoria e apertura problema da asset;
 - `Problemi da risolvere` mostra lista casi, dettaglio pratica, diagnostica guidata, chat AI diagnostica e richiesta di condivisione verso professionista tramite API reali;
+- il pre-login Flutter offre `Continua come ospite` con diagnostica leggera, consigli salvati, AI limitata e CTA di accesso;
 - le sezioni `Diagnosi`, `Tecnici` e `Profilo` restano placeholder operativi separati: il flusso MVP end-to-end oggi passa dal dettaglio problema.
 
 Il prossimo passo operativo è:
@@ -621,5 +622,5 @@ Il prossimo passo operativo è:
 1. verificare manualmente su Flutter web il flusso `La mia casa` con seed demo;
 2. verificare manualmente su Flutter web il flusso problema -> diagnostica -> condivisione con seed demo;
 3. aggiungere notifiche in-app e `DeviceInstallation` prima delle push native;
-4. implementare il guest tier diagnostico a quote basse;
+4. completare promozione guest -> account/caso se serve conservare il riepilogo;
 5. preparare signing/TestFlight solo dopo il primo flusso MVP mobile end-to-end validato manualmente.

@@ -114,15 +114,15 @@ Il modello completo è descritto in [Modello Organizzazioni E Permessi](../archi
 ## Accesso Guest
 
 È prevista una modalità non registrata, ma solo come pre-onboarding.
-Nel codice attuale è documentata e pianificata, ma non ancora implementata.
+Nel codice attuale è implementata come diagnostica temporanea con token opaco e quote basse.
 
 L'utente guest può:
 
 - avviare una diagnosi leggera;
 - usare macro-capitoli e consigli salvati;
-- consumare quote AI molto basse, se l'AI viene abilitata nel tier guest;
+- consumare quote AI molto basse;
 - mantenere una sessione temporanea per riprendere il flusso a breve termine;
-- trasformare la sessione in account registrato.
+- ricevere una CTA per accedere quando vuole salvare o continuare.
 
 L'utente guest non può:
 
@@ -270,7 +270,8 @@ La base tecnica e prodotto attuale include:
 - endpoint per turno diagnostico;
 - endpoint per recupero snapshot;
 - auth token-based per mobile;
-- app Flutter mobile-ready con login, `La mia casa`, apertura problema da asset, dettaglio problema, consigli guidati, AI diagnostica e condivisione professionista collegati ad API reali.
+- guest tier diagnostico pre-onboarding con token opaco, quote basse, consigli salvati, AI limitata e nessuna creazione di dati persistenti;
+- app Flutter mobile-ready con login, accesso ospite, `La mia casa`, apertura problema da asset, dettaglio problema, consigli guidati, AI diagnostica e condivisione professionista collegati ad API reali.
 
 Lo spike attuale consente di inviare un messaggio diagnostico, generare una risposta strutturata, aggiornare rischio, riepilogo, prossima domanda e audit event sul caso.
 
@@ -280,8 +281,8 @@ Il prossimo lavoro dovrebbe procedere così:
 
 1. verificare manualmente `La mia casa` e apertura problema da asset su Flutter;
 2. verificare manualmente il flusso problema -> diagnostica -> condivisione su Flutter;
-3. implementare il tier guest come diagnosi temporanea a quote basse;
-4. modellare notifiche in-app e device installation prima delle push native;
+3. modellare notifiche in-app e device installation prima delle push native;
+4. completare promozione guest -> account/caso solo dopo validazione del percorso ospite;
 5. validare macro-capitoli e scelte cablate su scenari reali;
 6. raffinare regole di sicurezza per capitolo;
 7. tarare soglie di compattazione e stime costo/token;

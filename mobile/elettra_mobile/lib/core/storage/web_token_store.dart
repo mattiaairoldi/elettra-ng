@@ -9,6 +9,7 @@ class WebTokenStore implements TokenStore {
   static const _tokenTypeKey = 'auth.token_type';
   static const _accessExpiresInKey = 'auth.access_expires_in';
   static const _refreshExpiresInKey = 'auth.refresh_expires_in';
+  static const _guestTokenKey = 'guest.token';
 
   AuthTokens? _tokens;
 
@@ -29,8 +30,10 @@ class WebTokenStore implements TokenStore {
       access: access,
       refresh: refresh,
       tokenType: storage.getItem(_tokenTypeKey) ?? 'Bearer',
-      accessExpiresIn: int.tryParse(storage.getItem(_accessExpiresInKey) ?? '') ?? 0,
-      refreshExpiresIn: int.tryParse(storage.getItem(_refreshExpiresInKey) ?? '') ?? 0,
+      accessExpiresIn:
+          int.tryParse(storage.getItem(_accessExpiresInKey) ?? '') ?? 0,
+      refreshExpiresIn:
+          int.tryParse(storage.getItem(_refreshExpiresInKey) ?? '') ?? 0,
     );
     return _tokens;
   }
@@ -60,5 +63,20 @@ class WebTokenStore implements TokenStore {
     storage.removeItem(_tokenTypeKey);
     storage.removeItem(_accessExpiresInKey);
     storage.removeItem(_refreshExpiresInKey);
+  }
+
+  @override
+  Future<String?> readGuestToken() async {
+    return web.window.localStorage.getItem(_guestTokenKey);
+  }
+
+  @override
+  Future<void> saveGuestToken(String token) async {
+    web.window.localStorage.setItem(_guestTokenKey, token);
+  }
+
+  @override
+  Future<void> clearGuestToken() async {
+    web.window.localStorage.removeItem(_guestTokenKey);
   }
 }

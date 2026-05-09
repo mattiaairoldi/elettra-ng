@@ -21,6 +21,7 @@ api_v1_patterns = [
     path("", include(("apps.professionals.urls", "professionals"), namespace="professionals")),
     path("", include(("apps.appointments.urls", "appointments"), namespace="appointments")),
     path("", include(("apps.attachments.urls", "attachments"), namespace="attachments")),
+    path("", include(("apps.guests.urls", "guests"), namespace="guests")),
     path("", include(("apps.ai_assistant.urls", "ai_assistant"), namespace="ai_assistant")),
 ]
 

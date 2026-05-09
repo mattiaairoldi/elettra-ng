@@ -80,6 +80,7 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
         AiMessage.objects.select_related(
             "session",
             "session__user",
+            "session__guest_session",
             "session__case",
             "session__case__category",
             "session__case__assigned_professional",
@@ -195,26 +196,27 @@ def generate_ai_diagnostic_reply_task(assistant_message_id):
     )
 
     case = assistant_message.session.case
-    previous_status = case.status
-    if case.status == Case.Statuses.OPEN:
-        case.status = Case.Statuses.IN_DIAGNOSIS
-        case.save(update_fields=["status", "updated_at"])
+    if case is not None:
+        previous_status = case.status
+        if case.status == Case.Statuses.OPEN:
+            case.status = Case.Statuses.IN_DIAGNOSIS
+            case.save(update_fields=["status", "updated_at"])
 
-    create_case_event(
-        case=case,
-        event_type=CaseEvent.EventTypes.AI_DIAGNOSTIC_PROGRESS,
-        actor_user=assistant_message.session.user,
-        payload={
-            "ai_session_id": assistant_message.session_id,
-            "assistant_message_id": assistant_message.id,
-            "diagnostic_snapshot_id": snapshot.id,
-            "previous_status": previous_status,
-            "status": case.status,
-            "risk_level": snapshot.risk_level,
-            "escalation_recommended": snapshot.escalation_recommended,
-            "ai_usage_ledger_id": usage.id,
-        },
-    )
+        create_case_event(
+            case=case,
+            event_type=CaseEvent.EventTypes.AI_DIAGNOSTIC_PROGRESS,
+            actor_user=assistant_message.session.user,
+            payload={
+                "ai_session_id": assistant_message.session_id,
+                "assistant_message_id": assistant_message.id,
+                "diagnostic_snapshot_id": snapshot.id,
+                "previous_status": previous_status,
+                "status": case.status,
+                "risk_level": snapshot.risk_level,
+                "escalation_recommended": snapshot.escalation_recommended,
+                "ai_usage_ledger_id": usage.id,
+            },
+        )
     digest = compact_ai_context(assistant_message.session, trigger_reason="threshold")
     return {
         "status": assistant_message.status,

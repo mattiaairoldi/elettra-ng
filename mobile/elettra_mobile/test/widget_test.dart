@@ -4,11 +4,14 @@ import 'package:elettra_mobile/app/elettra_app.dart';
 import 'package:elettra_mobile/core/storage/token_store.dart';
 import 'package:elettra_mobile/features/auth/data/auth_models.dart';
 import 'package:elettra_mobile/features/auth/data/auth_repository.dart';
+import 'package:elettra_mobile/features/guest/data/guest_models.dart';
+import 'package:elettra_mobile/features/guest/data/guest_repository.dart';
 import 'package:elettra_mobile/features/health/data/health_repository.dart';
 import 'package:elettra_mobile/features/home/data/home_models.dart';
 import 'package:elettra_mobile/features/home/data/home_repository.dart';
 import 'package:elettra_mobile/features/problems/data/problem_models.dart';
 import 'package:elettra_mobile/features/problems/data/problems_repository.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -20,14 +23,29 @@ class _FakeHealthRepository implements HealthRepository {
 }
 
 class _FakeTokenStore implements TokenStore {
+  String? _guestToken;
+
   @override
   Future<void> clearTokens() async {}
+
+  @override
+  Future<void> clearGuestToken() async {
+    _guestToken = null;
+  }
 
   @override
   Future<String?> readAccessToken() async => null;
 
   @override
+  Future<String?> readGuestToken() async => _guestToken;
+
+  @override
   Future<AuthTokens?> readTokens() async => null;
+
+  @override
+  Future<void> saveGuestToken(String token) async {
+    _guestToken = token;
+  }
 
   @override
   Future<void> saveTokens(AuthTokens tokens) async {}
@@ -189,6 +207,91 @@ class _FakeProblemsRepository implements ProblemsRepository {
       id: 1,
       status: 'pending',
       shareScope: 'summary',
+    );
+  }
+}
+
+class _FakeGuestRepository implements GuestRepository {
+  @override
+  Future<void> clearSession() async {}
+
+  @override
+  Future<GuestSessionSummary> currentOrStartSession() async {
+    return startSession();
+  }
+
+  @override
+  Future<GuestDiagnosticResult> sendDiagnosticTurn({
+    required String message,
+    int? chapterId,
+    int? optionId,
+    bool useAi = true,
+  }) async {
+    return const GuestDiagnosticResult(
+      adviceSteps: [
+        DiagnosticAdviceStep(
+          id: 1,
+          chapterId: 1,
+          chapterOptionId: null,
+          title: 'Scollega il forno',
+          body: 'Prova a riarmare il quadro con il forno scollegato.',
+          safetyLevel: 'low',
+          resolutionPrompt: 'Il problema e risolto?',
+          nextActions: ['Continua con la diagnosi'],
+        ),
+      ],
+      userMessage: AiMessage(
+        id: 1,
+        role: 'user',
+        content: 'Il salvavita scatta.',
+        status: 'completed',
+      ),
+      assistantMessage: AiMessage(
+        id: 2,
+        role: 'assistant',
+        content: 'Ho registrato la descrizione.',
+        status: 'completed',
+      ),
+      snapshot: AiDiagnosticSnapshot(
+        summary: 'Problema elettrico.',
+        riskLevel: 'medium',
+        nextQuestion: 'Succede in una sola stanza?',
+        escalationRecommended: false,
+        escalationReason: '',
+        recommendation: 'Continua con verifiche sicure.',
+      ),
+      quotas: GuestQuota(
+        aiTurnLimit: 2,
+        aiTurnsUsed: 1,
+        aiTurnsRemaining: 1,
+        messageLimit: 8,
+        messagesUsed: 2,
+        messagesRemaining: 6,
+      ),
+      callToAction: GuestCallToAction(
+        code: '',
+        title: '',
+        message: '',
+        actionLabel: 'Accedi',
+      ),
+    );
+  }
+
+  @override
+  Future<GuestSessionSummary> startSession() async {
+    return const GuestSessionSummary(
+      id: 'guest-id',
+      token: 'guest-token',
+      status: 'active',
+      expiresAt: null,
+      quotas: GuestQuota(
+        aiTurnLimit: 2,
+        aiTurnsUsed: 0,
+        aiTurnsRemaining: 2,
+        messageLimit: 8,
+        messagesUsed: 0,
+        messagesRemaining: 8,
+      ),
     );
   }
 }
@@ -410,5 +513,43 @@ void main() {
     expect(find.text('AI diagnostica'), findsOneWidget);
     expect(find.text('Tecnici disponibili'), findsOneWidget);
     expect(find.text('Mario Rossi'), findsOneWidget);
+  });
+
+  testWidgets('starts guest diagnostic from login', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          tokenStoreProvider.overrideWithValue(_FakeTokenStore()),
+          problemsRepositoryProvider.overrideWithValue(
+            _FakeProblemsRepository(),
+          ),
+          guestRepositoryProvider.overrideWithValue(_FakeGuestRepository()),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Continua come ospite'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Diagnosi ospite'), findsOneWidget);
+    expect(find.text('Controlli iniziali'), findsOneWidget);
+    expect(find.text('AI 2/2'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Descrivi il problema'),
+      'Il salvavita scatta.',
+    );
+    await tester.ensureVisible(find.text('Avvia diagnosi'));
+    await tester.tap(find.text('Avvia diagnosi'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -500));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Consigli guidati'), findsOneWidget);
+    expect(find.text('Scollega il forno'), findsOneWidget);
+    expect(find.text('Ho registrato la descrizione.'), findsOneWidget);
   });
 }

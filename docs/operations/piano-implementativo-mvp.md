@@ -101,7 +101,7 @@ Schermate minime:
 
 - login/register;
 - accesso ospite;
-- promozione guest ad account;
+- promozione guest ad account, in una iterazione successiva;
 - `La mia casa`;
 - elenco immobili;
 - elenco asset;
@@ -228,7 +228,7 @@ Criterio di completamento:
 - un utente può entrare senza account, ricevere consigli salvati e arrivare a una call to action di registrazione;
 - le quote guest sono applicate lato backend;
 - una sessione guest scaduta non è più utilizzabile;
-- la promozione crea account e conserva solo il riepilogo utile, non dati non consentiti.
+- la promozione, quando attivata, crea account e conserva solo il riepilogo utile, non dati non consentiti.
 
 Piano dettagliato: [Piano Implementativo Guest Tier](piano-implementativo-guest-tier.md).
 
@@ -280,12 +280,13 @@ Già implementato nel workstream MVP:
 - auth mobile token-based;
 - scaffold Flutter Android/iOS/web;
 - flusso Flutter autenticato con `La mia casa`, allegati asset, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista;
+- guest tier diagnostico pre-onboarding con sessione opaca, quote basse e UI Flutter pre-login;
 - API e test per storico e promemoria manutenzione asset.
 
 Prossima sequenza:
 
 1. Verificare manualmente il flusso Flutter `La mia casa` su dati demo reali.
 2. Verificare manualmente il flusso problema -> diagnostica -> condivisione.
-3. Implementare il guest tier secondo `piano-implementativo-guest-tier.md`.
-4. Modellare notifiche in-app e `DeviceInstallation` prima delle push native.
+3. Modellare notifiche in-app e `DeviceInstallation` prima delle push native.
+4. Completare promozione guest -> account/caso solo se validata dal percorso ospite.
 5. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.
