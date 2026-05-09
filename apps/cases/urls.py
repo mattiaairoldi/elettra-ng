@@ -1,6 +1,13 @@
 from rest_framework.routers import DefaultRouter
 
-from .views import AssetViewSet, CaseShareRequestViewSet, CaseViewSet, PropertyViewSet
+from .views import (
+    AssetMaintenanceEventViewSet,
+    AssetMaintenanceReminderViewSet,
+    AssetViewSet,
+    CaseShareRequestViewSet,
+    CaseViewSet,
+    PropertyViewSet,
+)
 
 
 app_name = "cases"
@@ -8,6 +15,8 @@ app_name = "cases"
 router = DefaultRouter(trailing_slash=False)
 router.register("properties", PropertyViewSet, basename="property")
 router.register("assets", AssetViewSet, basename="asset")
+router.register("asset-maintenance-events", AssetMaintenanceEventViewSet, basename="asset-maintenance-event")
+router.register("asset-maintenance-reminders", AssetMaintenanceReminderViewSet, basename="asset-maintenance-reminder")
 router.register("cases", CaseViewSet, basename="case")
 router.register("case-share-requests", CaseShareRequestViewSet, basename="case-share-request")
 

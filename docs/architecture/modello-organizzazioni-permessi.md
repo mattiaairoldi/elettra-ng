@@ -1,6 +1,6 @@
 # Modello Organizzazioni E Permessi
 
-> Decisione architetturale per identita', organizzazioni, ruoli, visibilita' casi e condivisione con professionisti.
+> Decisione architetturale per identità, organizzazioni, ruoli, visibilità casi e condivisione con professionisti.
 
 ## Sintesi
 
@@ -12,18 +12,20 @@ Questo permette di partire con due casi prodotto semplici e mantenere spazio per
 
 ## Principi
 
-- `User` e' una identita' globale della piattaforma.
-- `Organization` e' il soggetto operativo.
+- `GuestSession` è una sessione temporanea anonima o pseudonima, non una identità stabile.
+- `User` è una identità globale della piattaforma.
+- `Organization` è il soggetto operativo.
 - `OrganizationMembership` collega un utente a una organizzazione.
-- Un utente puo' appartenere a piu' organizzazioni.
+- Un utente può appartenere a più organizzazioni.
 - Le autorizzazioni non dipendono solo dal tipo utente, ma da ruolo, scope, capability e assegnazioni.
 - Il concetto di organizzazione deve restare invisibile o quasi per l'utente finale privato.
+- Una sessione guest non crea `Organization`, `OrganizationMembership` o dati permanenti di casa.
 
 ## Modelli Concettuali
 
 ### Organization
 
-Entita' concreta: persona privata, professionista singolo, ditta, studio, team operativo o futura struttura gestionale.
+Entità concreta: persona privata, professionista singolo, ditta, studio, team operativo o futura struttura gestionale.
 
 Campi concettuali:
 
@@ -37,7 +39,7 @@ Campi concettuali:
 
 Piano commerciale/funzionale applicato alla organizzazione.
 
-Responsabilita':
+Responsabilità:
 
 - limite utenti attivabili;
 - capability abilitate;
@@ -78,7 +80,7 @@ Ruoli iniziali:
 
 Scope iniziali:
 
-- `organization`: vede cio' che appartiene alla organizzazione, secondo ruolo e capability;
+- `organization`: vede ciò che appartiene alla organizzazione, secondo ruolo e capability;
 - `assigned`: vede solo casi/task assegnati direttamente alla membership.
 
 Stati iniziali:
@@ -90,6 +92,25 @@ Stati iniziali:
 
 ## Due Profili Iniziali
 
+### Guest
+
+Il guest non è una organizzazione e non è un utente registrato.
+
+Serve solo per provare una diagnosi leggera prima della registrazione.
+
+Caratteristiche:
+
+- sessione temporanea con token opaco o firmato;
+- scadenza breve;
+- quote molto basse;
+- diagnostica limitata;
+- niente `La mia casa`;
+- niente allegati persistenti, salvo sperimentazione dedicata a scadenza;
+- niente condivisione con professionisti;
+- promozione possibile ad account registrato.
+
+Quando il guest si registra, il sistema crea il normale `User`, la `Organization` personal e può migrare il riepilogo diagnostico utile in un nuovo `Case`.
+
 ### Personal
 
 Profilo creato automaticamente per l'utente finale privato.
@@ -98,11 +119,11 @@ Caratteristiche:
 
 - organizzazione personale nascosta o quasi nella UI;
 - massimo un membro;
-- il primo e unico membro e' admin/owner;
-- puo' aprire casi;
-- puo' gestire immobili, impianti, documenti e scadenze;
-- puo' condividere casi con professionisti;
-- non puo' ricevere casi da terzi come professionista.
+- il primo e unico membro è admin/owner;
+- può aprire casi;
+- può gestire immobili, impianti, documenti e scadenze;
+- può condividere casi con professionisti;
+- non può ricevere casi da terzi come professionista.
 
 Questo profilo rappresenta il caso atomico: singolo utente che si registra e usa Elettra per la propria casa.
 
@@ -112,46 +133,46 @@ Profilo per professionista singolo, studio, ditta o team operativo.
 
 Caratteristiche:
 
-- puo' avere uno o piu' membri in base al tier;
-- il primo membro e' admin/owner;
-- puo' ricevere richieste di condivisione casi;
-- puo' accettare o rifiutare richieste;
-- puo' gestire conversazioni e interventi;
-- puo' assegnare casi internamente alla organizzazione o a un tecnico specifico;
+- può avere uno o più membri in base al tier;
+- il primo membro è admin/owner;
+- può ricevere richieste di condivisione casi;
+- può accettare o rifiutare richieste;
+- può gestire conversazioni e interventi;
+- può assegnare casi internamente alla organizzazione o a un tecnico specifico;
 - i membri vedono tutta l'organizzazione o solo gli assegnati, in base allo scope.
 
-Il piccolo professionista e' una `Organization` professional con un solo membro, che e' sia admin sia tecnico.
+Il piccolo professionista è una `Organization` professional con un solo membro, che è sia admin sia tecnico.
 
 ## Appartenenze Multiple
 
-Un utente puo' appartenere a piu' organizzazioni.
+Un utente può appartenere a più organizzazioni.
 
 Regola iniziale:
 
-- la gestione ordinaria degli utenti di una singola organizzazione e' responsabilita' degli admin della organizzazione;
-- l'admin puo' invitare utenti entro i limiti del piano;
+- la gestione ordinaria degli utenti di una singola organizzazione è responsabilità degli admin della organizzazione;
+- l'admin può invitare utenti entro i limiti del piano;
 - l'attivazione avviene via link/token email, dettaglio implementativo da decidere;
 - una appartenenza operativa multi-organizzazione richiede approvazione piattaforma;
-- gli admin delle singole organizzazioni non possono abilitare liberamente un utente a lavorare per piu' organizzazioni operative.
+- gli admin delle singole organizzazioni non possono abilitare liberamente un utente a lavorare per più organizzazioni operative.
 
 L'approvazione piattaforma deve essere riservata a ruoli elevati del prodotto, non agli admin delle singole organizzazioni.
 
 ## Tecnici Preferiti
 
-L'utente finale puo' salvare tecnici preferiti per condividere rapidamente un caso.
+L'utente finale può salvare tecnici preferiti per condividere rapidamente un caso.
 
-La preferenza deve puntare alla membership organizzativa del tecnico, cioe':
+La preferenza deve puntare alla membership organizzativa del tecnico, cioè:
 
 `tecnico presso Organizzazione X`
 
-Non deve puntare solo all'account utente del tecnico, perche' lo stesso tecnico puo' appartenere a piu' organizzazioni.
+Non deve puntare solo all'account utente del tecnico, perché lo stesso tecnico può appartenere a più organizzazioni.
 
 Regola UX:
 
 - se il tecnico appartiene a una sola organizzazione, non si mostra la scelta;
-- se appartiene a piu' organizzazioni, l'utente deve selezionare il contesto organizzativo.
+- se appartiene a più organizzazioni, l'utente deve selezionare il contesto organizzativo.
 
-## Case E Visibilita'
+## Case E Visibilità
 
 Il `Case` nasce personale e non assegnato.
 
@@ -160,18 +181,18 @@ Il caso deve anche conservare il riferimento all'utente richiedente/creatore, pe
 
 Motivazione:
 
-- il problema puo' essere risolto in autonomia;
-- la diagnostica AI puo' bastare;
-- l'utente puo' decidere solo dopo se coinvolgere un professionista.
+- il problema può essere risolto in autonomia;
+- la diagnostica AI può bastare;
+- l'utente può decidere solo dopo se coinvolgere un professionista.
 
-Il caso puo' poi essere condiviso con:
+Il caso può poi essere condiviso con:
 
 - un tecnico preferito;
 - una organizzazione professionale;
 - un tecnico trovato tramite geolocalizzazione;
 - un professionista compatibile per categoria/competenza.
 
-La visibilita' deve derivare da:
+La visibilità deve derivare da:
 
 - richiedente del caso;
 - `owner_organization` del caso;
@@ -180,15 +201,15 @@ La visibilita' deve derivare da:
 - assegnazioni;
 - membership, ruolo e scope.
 
-Un `Case` puo' nascere senza `Property`.
+Un `Case` può nascere senza `Property`.
 L'utente va invitato a collegare un immobile quando utile, ma non deve essere bloccato nella diagnosi rapida.
 
 ## Condivisione Caso
 
 La condivisione non trasferisce ownership del caso.
 
-E' una richiesta di accesso o collaborazione.
-Il modello concettuale minimo e':
+È una richiesta di accesso o collaborazione.
+Il modello concettuale minimo è:
 
 - `CaseShareRequest`: richiesta iniziale, con destinatario, riepilogo visibile prima dell'accettazione e stato;
 - partecipazione o assegnazione stabile dopo accettazione, per esempio `CaseParticipant` o `CaseAssignment`;
@@ -206,7 +227,7 @@ Azioni possibili:
 
 - accettare con click semplice;
 - rifiutare senza motivazione;
-- rifiutare con motivazione opzionale, per esempio indisponibilita' o carico di lavoro.
+- rifiutare con motivazione opzionale, per esempio indisponibilità o carico di lavoro.
 
 Dopo accettazione, si apre una chat semplice utente-professionista dentro il caso.
 
@@ -226,7 +247,7 @@ La revoca blocca da quel momento l'accesso a:
 - documenti;
 - dettagli condivisi.
 
-Il professionista puo' mantenere la visibilita' dei messaggi gia' scambiati nella conversazione utente-professionista.
+Il professionista può mantenere la visibilità dei messaggi già scambiati nella conversazione utente-professionista.
 Questo serve come traccia storica/amministrativa della relazione, senza mantenere accesso al materiale tecnico revocato.
 Nuovi messaggi non sono possibili dopo revoca, salvo nuova condivisione o nuovo contesto autorizzato.
 
@@ -253,7 +274,7 @@ Esempi:
 - geolocalizzazione;
 - data, dispositivo o informazioni incorporate negli allegati.
 
-Il sistema non deve rimuovere automaticamente i metadati, perche' possono essere utili alla diagnosi o alla gestione di piu' immobili.
+Il sistema non deve rimuovere automaticamente i metadati, perché possono essere utili alla diagnosi o alla gestione di più immobili.
 
 Potranno essere aggiunti in futuro strumenti opzionali per anteprima o pulizia metadati.
 
@@ -267,22 +288,22 @@ Nel caso devono essere distinti almeno tre flussi:
 
 La comunicazione utente-professionista non deve essere modellata come chat rigida 1:1 interna al caso.
 
-Il modello concettuale e':
+Il modello concettuale è:
 
 - `Conversation`: thread con subject/topic;
 - `ConversationPost`: messaggio/post dentro la conversazione;
 - `ConversationParticipant`: partecipante flessibile, con utente reale e, se necessario, membership/organizzazione rappresentata.
 
-Una conversazione puo':
+Una conversazione può:
 
 - essere collegata a un `Case`;
 - esistere fuori da un caso specifico;
 - essere collegata in futuro a `Property`, `Asset` o altro contesto operativo;
-- includere piu' utenti;
+- includere più utenti;
 - includere utenti della stessa organizzazione;
 - includere utenti di organizzazioni diverse.
 
-La struttura del database non deve decidere da sola chi puo' entrare in una conversazione.
+La struttura del database non deve decidere da sola chi può entrare in una conversazione.
 Accesso e partecipazione devono essere governati dalle policy applicative, dal contesto operativo, dalle membership, dagli scope e dal flusso che ha aperto la conversazione.
 
 Gli allegati caricati durante la diagnosi possono essere:
@@ -290,7 +311,7 @@ Gli allegati caricati durante la diagnosi possono essere:
 - documentazione del caso;
 - documentazione stabile dell'immobile;
 - materiale utile alla chat;
-- materiale che l'AI puo' usare solo se esplicitamente consentito.
+- materiale che l'AI può usare solo se esplicitamente consentito.
 
 Caricare un allegato non significa inviarlo automaticamente all'AI.
 
@@ -299,14 +320,14 @@ Caricare un allegato non significa inviarlo automaticamente all'AI.
 Il modello `Property` deve essere introdotto subito.
 Ogni `Property` appartiene a una `Organization`, non direttamente a un `User`.
 
-Per l'utente finale privato questa organizzazione e' la sua `Organization` personal.
-Nella UI puo' continuare a essere mostrato come "mio immobile".
+Per l'utente finale privato questa organizzazione è la sua `Organization` personal.
+Nella UI può continuare a essere mostrato come "mio immobile".
 
 Motivazione:
 
 - molti problemi sono legati a un immobile specifico;
 - gli allegati possono descrivere impianti, locali, documenti o scadenze non limitati al singolo caso;
-- la geolocalizzazione puo' essere utile quando l'utente gestisce piu' immobili;
+- la geolocalizzazione può essere utile quando l'utente gestisce più immobili;
 - futuri soggetti gestionali potranno usare lo stesso modello senza cambio architetturale.
 
 Per il primo rilascio, l'utente finale usa `Property` come "Immobile".
@@ -315,7 +336,7 @@ Per il primo rilascio, l'utente finale usa `Property` come "Immobile".
 
 Un `Asset` deve appartenere sempre a una `Property`.
 
-Se una organizzazione ha asset generali non legati a un immobile specifico, puo' creare una `Property` generica/convenzionale.
+Se una organizzazione ha asset generali non legati a un immobile specifico, può creare una `Property` generica/convenzionale.
 Questo mantiene il modello semplice e riduce eccezioni autorizzative.
 
 ## Allegati E Ownership A Cascata
@@ -332,7 +353,7 @@ L'owner deve essere risolto a cascata dal contesto proprietario:
 Regola tecnica: non devono esistere allegati orfani.
 
 Ogni allegato deve avere almeno un contesto proprietario risolvibile.
-Se in futuro servira' un'area temporanea di upload, dovra' avere una scadenza o un owner provvisorio esplicito.
+Se in futuro servirà un'area temporanea di upload, dovrà avere una scadenza o un owner provvisorio esplicito.
 
 ## Tipologie Future
 
@@ -344,7 +365,7 @@ Non implementare subito flussi prodotto dedicati per:
 - organizzazioni ibride;
 - team misti utente/professionista.
 
-Il modello deve pero' permetterli in futuro tramite nuovi piani, capability e UI dedicate, senza cambiare l'architettura di base.
+Il modello deve però permetterli in futuro tramite nuovi piani, capability e UI dedicate, senza cambiare l'architettura di base.
 
 ## Direttiva Implementativa
 
@@ -360,7 +381,7 @@ Implementare una sola struttura organizzativa:
 Evitare modelli paralleli come `CustomerOrganization` e `ProfessionalOrganization`.
 
 Evitare anche conversazioni vincolate rigidamente a una sola coppia utente-professionista.
-Le conversazioni devono essere thread contestuali, con partecipanti e visibilita' gestiti dalle policy applicative.
+Le conversazioni devono essere thread contestuali, con partecipanti e visibilità gestiti dalle policy applicative.
 
 Le prime API devono coprire solo i due profili iniziali:
 

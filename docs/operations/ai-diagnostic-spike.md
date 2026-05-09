@@ -7,15 +7,15 @@ Non sostituisce ancora i `DiagnosticFlow` statici e non autorizza import da `../
 
 ## Obiettivo
 
-Verificare se Elettra puo' gestire una diagnostica piu' semplice, guidata da AI, salvando comunque stato strutturato e audit sulla pratica.
+Verificare se Elettra può gestire una diagnostica più semplice, guidata da AI, salvando comunque stato strutturato e audit sulla pratica.
 
 ## Scelte Implementate
 
 - La `Case` resta il centro operativo.
 - La conversazione usa `AiSession` e `AiMessage`.
 - Ogni risposta diagnostica produce uno snapshot strutturato.
-- Lo snapshot e' salvato in `AiDiagnosticSnapshot`.
-- Il payload strutturato della risposta e' salvato anche in `AiMessage.metadata_json`.
+- Lo snapshot è salvato in `AiDiagnosticSnapshot`.
+- Il payload strutturato della risposta è salvato anche in `AiMessage.metadata_json`.
 - Quando una diagnosi parte da una pratica `open`, la pratica passa a `in_diagnosis`.
 - Ogni avanzamento crea un evento `ai_diagnostic_progress` su `CaseEvent`.
 
@@ -75,7 +75,7 @@ GET /api/v1/ai/sessions/{session_id}/diagnostic-snapshot
 
 ## Provider
 
-Il provider locale e' deterministico e serve per test e sviluppo.
+Il provider locale è deterministico e serve per test e sviluppo.
 Riconosce in modo semplice casi elettrici e segnali di rischio come odore di bruciato, fumo, scintille, scosse e surriscaldamento.
 
 Il provider OpenAI usa lo stesso contratto e viene normalizzato lato backend.
@@ -89,11 +89,11 @@ Il provider OpenAI usa lo stesso contratto e viene normalizzato lato backend.
 
 ## Limiti Voluti
 
-- Non c'e' ancora generazione di contenuti pubblici.
-- Non c'e' promozione automatica a knowledge base.
-- Non c'e' import di alberi o seed dal vecchio progetto.
-- Non c'e' UX definitiva chat/wizard.
-- Non c'e' valutazione qualitativa su scenari reali.
+- Non c'è ancora generazione di contenuti pubblici.
+- Non c'è promozione automatica a knowledge base.
+- Non c'è import di alberi o seed dal vecchio progetto.
+- Non c'è UX definitiva chat/wizard.
+- Non c'è valutazione qualitativa su scenari reali.
 
 ## Prossima Verifica
 
@@ -105,13 +105,13 @@ Lo spike va provato su 5 scenari manuali:
 - odore di bruciato o surriscaldamento;
 - elettrodomestico che fa saltare corrente.
 
-L'obiettivo non e' dimostrare che l'AI sia definitiva, ma capire se questo modello riduce davvero la complessita' degli alberi diagnostici senza perdere controllo operativo.
+L'obiettivo non è dimostrare che l'AI sia definitiva, ma capire se questo modello riduce davvero la complessità degli alberi diagnostici senza perdere controllo operativo.
 
 ## Evoluzione Prevista
 
-La direzione successiva e' descritta in [Piano Implementativo Diagnostica Ibrida Chat-First](piano-implementativo-diagnostica-chat-first.md).
+La direzione successiva è descritta in [Piano Implementativo Diagnostica Ibrida Chat-First](piano-implementativo-diagnostica-chat-first.md).
 
-Lo spike e' stato esteso con:
+Lo spike è stato esteso con:
 
 - macro-capitoli diagnostici;
 - scelte cablate minime;
@@ -126,7 +126,7 @@ Deve ancora evolvere verso:
 
 - chat come interfaccia principale;
 - metriche reali provider quando disponibili;
-- valutazione qualita' delle risposte su scenari manuali.
+- valutazione qualità delle risposte su scenari manuali.
 
 ## Endpoint Contesto
 

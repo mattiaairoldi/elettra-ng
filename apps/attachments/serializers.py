@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.cases.models import Asset, Case
 from apps.cases.events import TERMINAL_CASE_STATUSES
+from apps.organizations.services import user_has_active_organization_membership
 
 from .models import Attachment
 
@@ -62,12 +63,16 @@ class AttachmentUploadSerializer(serializers.ModelSerializer):
 
         if asset_id is not None:
             try:
-                asset = Asset.objects.get(id=asset_id)
+                asset = Asset.objects.select_related("property").get(id=asset_id)
             except Asset.DoesNotExist as exc:
                 raise serializers.ValidationError({"asset_id": "Invalid asset."}) from exc
-            if request.user.role == "customer" and asset.property.owner_user_id != request.user.id:
+            has_asset_membership = user_has_active_organization_membership(
+                request.user,
+                asset.property.organization_id,
+            )
+            if not has_asset_membership and request.user.role != "professional":
                 raise serializers.ValidationError({"asset_id": "You do not have access to this asset."})
-            if request.user.role == "professional":
+            if not has_asset_membership and request.user.role == "professional":
                 if case is None or case.assigned_professional_id != request.user.id:
                     raise serializers.ValidationError({"asset_id": "You do not have access to this asset."})
                 if case.asset_id is not None and case.asset_id != asset.id:

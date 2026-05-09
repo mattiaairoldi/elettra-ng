@@ -2,20 +2,23 @@
 
 ## Sintesi
 
-Elettra e' una piattaforma per aiutare utenti domestici, piccoli professionisti e organizzazioni operative a gestire problemi tecnici della casa: guasti, manutenzioni, diagnosi iniziali, condivisione delle informazioni e richieste di intervento.
+Elettra è una piattaforma per aiutare utenti domestici, piccoli professionisti e organizzazioni operative a gestire la parte tecnica della casa: oggetti e impianti da documentare, manutenzioni da ricordare, problemi da diagnosticare, informazioni da condividere e richieste di intervento.
 
 L'MVP non vuole sostituire il tecnico.
 Vuole fare tre cose in modo semplice:
 
-- aiutare l'utente a descrivere bene il problema;
+- aiutare l'utente a documentare casa, impianti ed elettrodomestici;
+- aiutare l'utente a descrivere bene un problema quando si presenta;
 - raccogliere informazioni ordinate e sicure;
 - facilitare, quando serve, il contatto con un professionista.
 
-Il primo perimetro riguarda la manutenzione domestica e tecnica: elettricita', elettrodomestici, idraulica, climatizzazione, domotica, sicurezza domestica e manutenzione generale.
+Il primo perimetro riguarda la manutenzione domestica e tecnica: elettricità, elettrodomestici, idraulica, climatizzazione, domotica, sicurezza domestica e manutenzione generale.
 
 ## Problema
 
 Quando una persona ha un problema in casa, spesso non sa come descriverlo.
+In più, molte informazioni utili non sono disponibili nel momento del bisogno: marca e modello dell'elettrodomestico, data di acquisto, scontrino, manuale, storico manutenzioni, ultimo cambio filtro o ultimo intervento.
+
 Il tecnico riceve messaggi incompleti, foto sparse, informazioni mancanti e richieste difficili da valutare.
 
 Questo genera:
@@ -25,15 +28,20 @@ Questo genera:
 - preventivi meno precisi;
 - perdita di informazioni importanti;
 - rischio di suggerimenti non sicuri;
-- difficolta' nel tenere storico di immobili, impianti e interventi.
+- difficoltà nel tenere storico di immobili, impianti e interventi.
 
-Elettra organizza questo momento iniziale: dalla prima descrizione fino all'eventuale coinvolgimento del professionista.
+Elettra organizza sia la fase preventiva sia il momento del problema: prima costruisce un archivio minimo della casa, poi usa quei dati quando serve diagnosi o intervento.
 
 ## MVP: Cosa Deve Fare
 
-L'MVP ruota attorno alla pratica, cioe' il caso aperto dall'utente.
+L'MVP ha due aree principali:
 
-Una pratica contiene:
+- `La mia casa`: archivio leggero di immobili, oggetti, impianti, documenti e manutenzioni;
+- `Problemi da risolvere`: diagnosi, AI e possibile condivisione con professionisti.
+
+Il caso resta l'oggetto aperto dall'utente quando c'è un problema da risolvere.
+
+Un caso/problema contiene:
 
 - titolo e descrizione del problema;
 - categoria tecnica;
@@ -45,34 +53,75 @@ Una pratica contiene:
 - eventuale condivisione con un professionista;
 - conversazioni e aggiornamenti.
 
-L'utente puo' aprire una pratica anche senza scegliere subito un tecnico.
-Il problema potrebbe essere risolto con un controllo semplice, oppure richiedere una diagnosi piu' strutturata, oppure arrivare alla condivisione con un professionista.
+`La mia casa` contiene:
+
+- immobili;
+- asset, per esempio lavatrice, quadro elettrico, caldaia, climatizzatore, lampade o altri componenti;
+- dati come marca, modello, seriale, data acquisto, garanzia;
+- allegati come scontrini, manuali, foto, certificazioni;
+- storico attività svolte;
+- promemoria di manutenzione.
+
+L'utente può aprire un problema anche senza scegliere subito un tecnico.
+Il problema potrebbe essere risolto con un controllo semplice, oppure richiedere una diagnosi più strutturata, oppure arrivare alla condivisione con un professionista.
+
+Se il problema riguarda un asset già documentato, il contesto è già pronto e può rendere più utile AI, riepilogo e comunicazione con il tecnico.
 
 ## Flusso Utente
 
-Il flusso previsto per l'MVP e':
+Il flusso previsto per l'MVP ha due ingressi.
 
-1. L'utente apre una pratica.
+Flusso `La mia casa`:
+
+1. L'utente crea o seleziona un immobile.
+2. Aggiunge un asset o componente.
+3. Inserisce dati essenziali, anche in forma flessibile.
+4. Allega foto, scontrino, manuale o documentazione.
+5. Registra un'attività svolta, per esempio pulizia filtro o cambio lampadina.
+6. Imposta un promemoria, se utile.
+
+Flusso `Problemi da risolvere`:
+
+1. L'utente apre un problema.
 2. Sceglie un grande capitolo diagnostico, per esempio problemi elettrici, idraulica o elettrodomestici.
-3. Il sistema propone eventuali scelte semplici, solo dove utili.
-4. Prima di usare l'AI, l'app puo' mostrare consigli guidati gia' salvati.
-5. Alla fine del consiglio chiede: `Hai risolto?`
-6. Se il problema non e' risolto, l'utente puo' continuare con AI diagnostica o condividere il caso con un professionista.
-7. Il professionista riceve un titolo, un riepilogo e solo le informazioni che l'utente decide di condividere.
+3. Se esiste, collega l'asset coinvolto.
+4. Il sistema propone eventuali scelte semplici, solo dove utili.
+5. Prima di usare l'AI, l'app può mostrare consigli guidati già salvati.
+6. Alla fine del consiglio chiede: `Hai risolto?`
+7. Se il problema non è risolto, l'utente può continuare con AI diagnostica o condividere il caso con un professionista.
+8. Il professionista riceve un titolo, un riepilogo e solo le informazioni che l'utente decide di condividere.
 
 Questo mantiene il prodotto semplice e controlla i costi AI.
 L'AI viene usata quando aggiunge valore, non come primo passaggio obbligatorio.
 
+## Accesso Senza Registrazione
+
+È utile prevedere una modalità non registrata, ma solo per provare il valore iniziale.
+Nel codice attuale questa è una decisione di prodotto e un piano implementativo, non ancora una feature disponibile.
+
+Quando implementata, l'utente potrà entrare come ospite e fare una diagnosi leggera:
+
+- sceglie un capitolo diagnostico;
+- descrive il problema;
+- riceve consigli salvati;
+- se previsto dal tier, usa pochissimi turni AI;
+- può trasformare la sessione in account registrato.
+
+La modalità ospite non sostituisce l'account.
+Per salvare casa, asset, documenti, storico, promemoria, allegati persistenti, condivisione con professionisti o conversazioni serve registrarsi.
+
+Questo riduce la frizione iniziale senza aprire accesso illimitato ad AI, allegati e dati sensibili.
+
 ## AI Diagnostica
 
-L'AI e' un assistente operativo.
-Serve a fare domande, sintetizzare e rendere la pratica piu' chiara.
+L'AI è un assistente operativo.
+Serve a fare domande, sintetizzare e rendere il caso più chiaro.
 
 Nel MVP l'AI deve:
 
 - fare domande progressive;
 - aggiornare un riepilogo del problema;
-- salvare fatti gia' emersi;
+- salvare fatti già emersi;
 - evitare domande ripetute;
 - evidenziare segnali di rischio;
 - suggerire escalation verso professionista quando opportuno.
@@ -84,28 +133,28 @@ L'AI non deve:
 - ricevere automaticamente tutti gli allegati;
 - generare contenuti pubblici senza revisione.
 
-Per motivi di costo, l'accesso AI e' limitato.
-Il sistema salva lo storico completo, ma invia al modello solo un contesto compatto: riepilogo, fatti rilevanti, domande gia' poste e pochi messaggi recenti.
+Per motivi di costo, l'accesso AI è limitato.
+Il sistema salva lo storico completo, ma invia al modello solo un contesto compatto: riepilogo, fatti rilevanti, domande già poste e pochi messaggi recenti.
 
 ## Professionisti E Organizzazioni
 
 L'MVP prevede due modelli iniziali tipici:
 
-- utente finale, che apre pratiche per la propria casa;
-- professionista o piccola organizzazione, che puo' ricevere e gestire richieste.
+- utente finale, che apre problemi/casi per la propria casa;
+- professionista o piccola organizzazione, che può ricevere e gestire richieste.
 
-Un professionista puo' essere una singola persona oppure un piccolo team.
-L'organizzazione puo' avere utenti con ruoli diversi, per esempio admin, tecnico o amministrativo.
+Un professionista può essere una singola persona oppure un piccolo team.
+L'organizzazione può avere utenti con ruoli diversi, per esempio admin, tecnico o amministrativo.
 
-La pratica nasce non assegnata.
-L'utente decide se e quando condividerla.
+Il caso nasce non assegnato.
+L'utente decide se e quando condividerlo.
 La condivisione deve essere selettiva: solo riepilogo, chat diagnostica, allegati scelti o caso completo.
 
-Questo e' importante perche' le foto o gli allegati possono contenere dati sensibili, inclusi ambienti domestici o metadati tecnici.
+Questo è importante perché le foto o gli allegati possono contenere dati sensibili, inclusi ambienti domestici o metadati tecnici.
 
 ## Stack Tecnologico
 
-Lo stack scelto e' pragmatico e orientato a un backend solido.
+Lo stack scelto è pragmatico e orientato a un backend solido.
 
 Componenti principali:
 
@@ -118,11 +167,12 @@ Componenti principali:
 - MinIO in locale per simulare lo storage S3;
 - Docker Compose per sviluppo e ambiente locale;
 - pytest per test automatici;
-- provider AI astratto, con OpenAI come primo provider reale.
+- provider AI astratto, con OpenAI come primo provider reale;
+- Flutter come client mobile-ready Android/iOS, con web usato per test e demo.
 
-La scelta e' coerente con un prodotto che deve gestire dati, permessi, allegati, processi asincroni, geolocalizzazione e integrazione AI senza costruire infrastruttura custom inutile.
+La scelta è coerente con un prodotto che deve gestire dati, permessi, allegati, processi asincroni, geolocalizzazione e integrazione AI senza costruire infrastruttura custom inutile.
 
-## Cosa Non E' Nell'MVP
+## Cosa Non È Nell'MVP
 
 Per mantenere il primo rilascio gestibile, non sono prioritari:
 
@@ -131,7 +181,6 @@ Per mantenere il primo rilascio gestibile, non sono prioritari:
 - videochiamate;
 - AI su immagini;
 - grandi alberi diagnostici importati dal vecchio progetto;
-- app mobile nativa;
 - automazioni avanzate di preventivo;
 - gestione completa di cantieri o condomini.
 
@@ -139,21 +188,22 @@ Alcuni di questi scenari restano possibili in futuro, ma non devono complicare i
 
 ## Valore Del Primo MVP
 
-Il valore principale e' ridurre attrito e disordine nella fase iniziale del problema tecnico.
+Il valore principale è ridurre attrito e disordine nella fase iniziale del problema tecnico.
 
 Per l'utente:
 
 - descrive meglio il problema;
 - riceve guida prudente;
-- mantiene storico di casa, asset e pratiche;
+- mantiene storico di casa, asset e problemi risolti;
+- non deve ricostruire ogni volta marca, modello, manuali e scontrini;
 - condivide solo quello che vuole condividere.
 
 Per il professionista:
 
-- riceve richieste piu' chiare;
+- riceve richieste più chiare;
 - vede riepilogo e contesto;
 - riduce messaggi ripetitivi;
-- puo' valutare meglio urgenza e possibile intervento.
+- può valutare meglio urgenza e possibile intervento.
 
 Per il prodotto:
 
@@ -164,9 +214,12 @@ Per il prodotto:
 
 ## Stato E Prossimi Passi
 
-La base backend e' gia' impostata:
+La base backend è già impostata:
 
-- pratiche;
+- casi/problemi;
+- immobili e asset;
+- allegati su asset e casi;
+- storico e promemoria manutenzione asset;
 - organizzazioni e permessi;
 - allegati su S3-compatible;
 - conversazioni;
@@ -174,14 +227,19 @@ La base backend e' gia' impostata:
 - diagnostica AI chat-first;
 - consigli guidati salvati;
 - limiti di utilizzo AI;
+- architettura predisposta per quote guest molto basse;
+- auth token-based per mobile;
+- app Flutter mobile-ready con `La mia casa` e lista `Problemi da risolvere` collegate ad API reali;
 - test automatici e OpenAPI.
 
 Il prossimo lavoro dovrebbe concentrarsi su:
 
-1. validazione dei flussi MVP con scenari reali;
-2. interfaccia utente per apertura pratica e diagnostica guidata;
-3. raffinamento delle regole di sicurezza;
-4. condivisione selettiva con professionisti;
-5. taratura dei limiti AI su uso reale.
+1. verifica manuale del flusso Flutter `La mia casa`;
+2. dettaglio problema e diagnostica guidata/AI nel client Flutter;
+3. condivisione selettiva con professionisti;
+4. flusso guest temporaneo per diagnosi esplorativa;
+5. notifiche in-app e predisposizione push;
+6. validazione dei flussi MVP con scenari reali;
+7. taratura dei limiti AI su uso reale.
 
-L'obiettivo del primo MVP e' dimostrare che una pratica tecnica puo' nascere in modo semplice, sicuro e ordinato, arrivando al professionista solo quando serve e con informazioni migliori.
+L'obiettivo del primo MVP è dimostrare che la casa può essere documentata senza complessità e che un problema tecnico può nascere in modo semplice, sicuro e ordinato, arrivando al professionista solo quando serve e con informazioni migliori.

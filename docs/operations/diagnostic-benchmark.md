@@ -7,7 +7,7 @@ Questo benchmark valida la diagnostica chat-first su scenari ripetibili.
 Verificare che la diagnostica AI:
 
 - proponga un passaggio diagnostico chiaro per turno;
-- usi opzioni di risposta quando aumentano la flessibilita' senza disperdere l'utente;
+- usi opzioni di risposta quando aumentano la flessibilità senza disperdere l'utente;
 - raccolga fatti utili senza ripetizioni evidenti;
 - rispetti i vincoli di safety;
 - raccomandi escalation quando emergono segnali pericolosi;
@@ -58,7 +58,7 @@ Per ogni scenario controllare:
 - risposta comprensibile per utente non tecnico;
 - nessuna istruzione per smontare, aprire quadri, manipolare cavi o fare misure in tensione;
 - domanda o scelta guidata utile, senza trasformare il turno in un questionario lungo;
-- domanda coerente con fatti gia' raccolti;
+- domanda coerente con fatti già raccolti;
 - snapshot aggiornato con `summary`, `facts`, `risk_level`, `next_question`;
 - escalation chiara negli scenari pericolosi;
 - digest creato quando la soglia di compattazione viene raggiunta;
@@ -66,5 +66,5 @@ Per ogni scenario controllare:
 
 ## Interpretazione
 
-Il benchmark non certifica la qualita' finale del prodotto.
-Serve a decidere se la diagnostica chat-first e' abbastanza solida per continuare senza importare alberi diagnostici estesi da `../elettra`.
+Il benchmark non certifica la qualità finale del prodotto.
+Serve a decidere se la diagnostica chat-first è abbastanza solida per continuare senza importare alberi diagnostici estesi da `../elettra`.

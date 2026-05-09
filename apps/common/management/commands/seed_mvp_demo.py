@@ -1,10 +1,21 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
 from django.contrib.gis.geos import Point
 from django.core.management import BaseCommand, call_command
 from django.utils import timezone
 
+from apps.attachments.models import Attachment
 from apps.cases.events import create_case_event
-from apps.cases.models import Asset, Case, CaseEvent, CaseShareRequest, Property
+from apps.cases.models import (
+    Asset,
+    AssetMaintenanceEvent,
+    AssetMaintenanceReminder,
+    Case,
+    CaseEvent,
+    CaseShareRequest,
+    Property,
+)
 from apps.organizations.models import Organization, OrganizationMembership, OrganizationPlan
 from apps.organizations.services import get_or_create_builtin_plan, get_or_create_personal_organization
 from apps.professionals.models import ProfessionalProfile
@@ -74,6 +85,10 @@ class Command(BaseCommand):
 
         property_obj = self.get_or_create_property(customer, personal_organization)
         asset = self.get_or_create_asset(property_obj, categories["elettricita"])
+        appliance_asset = self.get_or_create_appliance_asset(property_obj, categories["elettrodomestici"])
+        self.get_or_create_asset_attachments(customer, appliance_asset)
+        maintenance_event = self.get_or_create_maintenance_event(customer, appliance_asset)
+        maintenance_reminder = self.get_or_create_maintenance_reminder(customer, appliance_asset)
         case = self.get_or_create_case(customer, property_obj, asset, categories["elettricita"])
         share_request = self.get_or_create_share_request(case, customer, professional_organization)
 
@@ -89,6 +104,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  professional profile id: {profile.id}")
         self.stdout.write(f"  property id: {property_obj.id}")
         self.stdout.write(f"  asset id: {asset.id}")
+        self.stdout.write(f"  appliance asset id: {appliance_asset.id}")
+        self.stdout.write(f"  maintenance event id: {maintenance_event.id}")
+        self.stdout.write(f"  maintenance reminder id: {maintenance_reminder.id}")
         self.stdout.write(f"  case id: {case.id}")
         self.stdout.write(f"  share request id: {share_request.id}")
 
@@ -211,10 +229,85 @@ class Command(BaseCommand):
                 "description": "Quadro elettrico dell'ingresso.",
                 "location_text": "Ingresso",
                 "location": Point(9.1905, 45.4643, srid=4326),
-                "metadata_json": {"demo": True},
+                "metadata_json": {
+                    "demo": True,
+                    "manufacturer": "Demo Electric",
+                    "model": "QE-12",
+                    "installed_year": 2018,
+                },
             },
         )
         return asset
+
+    def get_or_create_appliance_asset(self, property_obj, category):
+        asset, _created = Asset.objects.update_or_create(
+            property=property_obj,
+            name="Lavatrice demo",
+            defaults={
+                "category": category,
+                "description": "Lavatrice demo per flusso La mia casa.",
+                "location_text": "Bagno di servizio",
+                "metadata_json": {
+                    "demo": True,
+                    "manufacturer": "DemoWash",
+                    "model": "DW-800",
+                    "serial_number": "DW800-DEMO-001",
+                    "purchase_date": "2024-03-15",
+                    "warranty_until": "2026-03-15",
+                },
+            },
+        )
+        return asset
+
+    def get_or_create_asset_attachments(self, customer, asset):
+        attachments = [
+            ("manuale-lavatrice-demo.pdf", "attachments/demo/manuale-lavatrice-demo.pdf"),
+            ("scontrino-lavatrice-demo.pdf", "attachments/demo/scontrino-lavatrice-demo.pdf"),
+        ]
+        for file_name, storage_name in attachments:
+            Attachment.objects.update_or_create(
+                uploaded_by_user=customer,
+                asset=asset,
+                file_name=file_name,
+                defaults={
+                    "case": None,
+                    "file": storage_name,
+                    "mime_type": "application/pdf",
+                    "size_bytes": 0,
+                    "attachment_type": Attachment.AttachmentTypes.DOCUMENT,
+                },
+            )
+
+    def get_or_create_maintenance_event(self, customer, asset):
+        event, _created = AssetMaintenanceEvent.objects.update_or_create(
+            asset=asset,
+            event_type=AssetMaintenanceEvent.EventTypes.CLEANING,
+            title="Pulizia filtro lavatrice",
+            defaults={
+                "property": asset.property,
+                "description": "Pulizia filtro registrata come attività demo.",
+                "event_date": timezone.localdate(),
+                "created_by_user": customer,
+                "metadata_json": {"demo": True},
+            },
+        )
+        return event
+
+    def get_or_create_maintenance_reminder(self, customer, asset):
+        reminder, _created = AssetMaintenanceReminder.objects.update_or_create(
+            asset=asset,
+            title="Prossima pulizia filtro lavatrice",
+            defaults={
+                "property": asset.property,
+                "description": "Promemoria demo per la prossima pulizia filtro.",
+                "due_at": timezone.now() + timedelta(days=90),
+                "recurrence_rule": AssetMaintenanceReminder.RecurrenceRules.QUARTERLY,
+                "status": AssetMaintenanceReminder.Statuses.ACTIVE,
+                "created_by_user": customer,
+                "metadata_json": {"demo": True},
+            },
+        )
+        return reminder
 
     def get_or_create_case(self, customer, property_obj, asset, category):
         case, created = Case.objects.update_or_create(

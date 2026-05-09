@@ -2,11 +2,14 @@
 
 ## Obiettivo Corrente
 
-Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend minimo.
+Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, mantenendo React come frontend desktop/demo.
 
 ## In Corso
 
-- [ ] Verifica manuale del frontend MVP su flusso pratica -> diagnostica -> condivisione.
+- [ ] Verifica manuale del frontend MVP su flusso problema -> diagnostica -> condivisione.
+- [ ] Modellare notifiche in-app e device installation prima delle push native.
+- [ ] Verifica manuale del frontend Flutter su flusso `La mia casa`.
+- [ ] Implementare guest tier come pre-onboarding diagnostico a quote basse.
 
 ## Todo
 
@@ -25,7 +28,7 @@ Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend 
 - [x] Creata direttiva implementativa.
 - [x] Creato piano implementativo dettagliato.
 - [x] Organizzata documentazione in `docs/`.
-- [x] Verificata disponibilita' locale di Docker e Docker Compose.
+- [x] Verificata disponibilità locale di Docker e Docker Compose.
 - [x] Importata baseline backend da `../elettra2`.
 - [x] Creati `.gitignore`, `.dockerignore` e `.env.example`.
 - [x] Aggiornate dipendenze a Django 5.2 LTS.
@@ -92,7 +95,7 @@ Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend 
 - [x] Aggiunto benchmark ripetibile per diagnostica AI chat-first.
 - [x] Eseguita suite test dopo benchmark diagnostico: `94 passed`.
 - [x] Definiti 5 scenari canonici per verifica qualitativa dello spike diagnostico.
-- [x] Normalizzate domande diagnostiche gia' poste per ridurre duplicati nel contesto.
+- [x] Normalizzate domande diagnostiche già poste per ridurre duplicati nel contesto.
 - [x] Eseguita suite test dopo normalizzazione domande diagnostiche: `96 passed`.
 - [x] Aggiunti ledger uso AI, limiti token/turni e percorso guidato salvato con feedback `Hai risolto?`.
 - [x] Eseguita suite test dopo limiti AI e consigli guidati: `101 passed`.
@@ -104,19 +107,41 @@ Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend 
 - [x] Avviato frontend MVP React/Vite collegato ad API reali.
 - [x] Aggiunti id destinatario su profili professionisti e lista richieste di condivisione.
 - [x] Eseguita suite test dopo frontend/API MVP: `104 passed`.
+- [x] Definita direttiva Flutter mobile-ready con target Android/iOS/web.
+- [x] Creato piano implementativo Flutter mobile.
+- [x] Documentata strategia notifiche: backend broker logico, Celery, FCM/APNs, payload privacy-safe.
+- [x] Documentata strategia sviluppo iOS da Linux con CI macOS e TestFlight successivo.
+- [x] Aggiunto auth token-based mobile con JWT access/refresh e blacklist refresh token.
+- [x] Creato scaffold Flutter in `mobile/elettra_mobile` con target Android/iOS/web.
+- [x] Aggiunta CI mobile Linux e iOS `--no-codesign`.
+- [x] Eseguita suite test dopo auth mobile e scaffold Flutter: backend `106 passed`, Flutter analyze/test/build web/build apk debug verdi.
+- [x] Collegato login Flutter agli endpoint token e lista cliente `Problemi da risolvere` a `GET /api/v1/cases`.
+- [x] Aggiornata documentazione prodotto/MVP per includere `La mia casa`, asset, storico e promemoria manutenzione.
+- [x] Creato piano implementativo casa/manutenzioni.
+- [x] Documentata decisione guest tier per utenti non registrati.
+- [x] Creato piano implementativo guest tier.
+- [x] Aggiunti modelli/API `AssetMaintenanceEvent` e `AssetMaintenanceReminder`.
+- [x] Esteso seed MVP con lavatrice demo, allegati placeholder, storico manutenzione e promemoria.
+- [x] Collegato Flutter a `La mia casa` con immobili, asset, storico, promemoria e azioni minime di creazione/completamento.
+- [x] Eseguita verifica dopo `La mia casa`: backend `109 passed`, Flutter analyze/test/build web verdi.
+- [x] Allineata visibilità allegati asset alla membership organizzativa.
+- [x] Completato flusso Flutter `La mia casa` con lista/upload allegati sugli asset e apertura problematica da asset.
+- [x] Eseguita verifica dopo allegati e apertura problematica da asset: backend `110 passed`, Flutter analyze/test/build web verdi.
+- [x] Allineata documentazione al codice non committato su casa/manutenzioni, mobile, guest tier e notifiche.
 
 ## Decisioni Confermate
 
-- `elettra2` e' la baseline tecnica.
-- `elettra-ng` e' il repository definitivo.
+- `elettra2` è la baseline tecnica.
+- `elettra-ng` è il repository definitivo.
 - Storage allegati solo S3-compatible.
 - MinIO obbligatorio in locale.
 - PostgreSQL deve includere PostGIS.
-- Docker Compose e' il percorso locale standard.
-- Identita' utente globale con `Organization` unica, membership scoped e piani iniziali `personal`/`professional`.
+- Docker Compose è il percorso locale standard.
+- Identità utente globale con `Organization` unica, membership scoped e piani iniziali `personal`/`professional`.
 - I casi nascono non assegnati e vengono condivisi con professionisti solo su scelta esplicita dell'utente.
 - `Property` e `Case` hanno owner organization; `Case.property` resta opzionale.
 - `Conversation`/`ConversationPost` sono thread flessibili, non chat rigide 1:1.
+- Il guest tier è consentito solo per diagnosi temporanea e pre-onboarding; `La mia casa`, condivisione, allegati persistenti e professionisti richiedono registrazione.
 
 ## Note Operative
 
@@ -126,8 +151,14 @@ Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend 
 - MinIO console locale attiva su `http://127.0.0.1:9001`.
 - Redis non espone la porta host per evitare conflitti con installazioni locali.
 - Nessun import dati da `../elettra` deve partire prima delle decisioni nel documento dedicato.
-- La UX diagnostica prevista e' ibrida, ma prioritariamente chat.
-- Lo spike AI dinamico e' implementato per validazione tecnica, non per generare contenuti pubblici automaticamente.
+- La UX diagnostica prevista è ibrida, ma prioritariamente chat.
+- Lo spike AI dinamico è implementato per validazione tecnica, non per generare contenuti pubblici automaticamente.
 - Gli alberi diagnostici estesi non sono il modello principale da implementare in questa fase.
-- La compattazione e' deterministica lato backend: non consuma una chiamata AI aggiuntiva.
-- L'accesso AI e' limitato da quote backend; la UI deve preferire consigli salvati prima dell'escalation AI.
+- La compattazione è deterministica lato backend: non consuma una chiamata AI aggiuntiva.
+- L'accesso AI è limitato da quote backend; la UI deve preferire consigli salvati prima dell'escalation AI.
+- La nuova app Flutter deve supportare Android/iOS come target prodotto e web come target di test/demo.
+- Le notifiche push passeranno da FCM/APNs; Elettra resta broker applicativo e non invia payload sensibili.
+- Lo sviluppo può partire da Linux; iOS va validato presto con CI macOS `--no-codesign` e poi con TestFlight/device fisico.
+- `La mia casa` è parte dell'MVP: documentazione asset, allegati, storico e promemoria non devono richiedere un problema aperto.
+- Da un asset documentato si può aprire una nuova problematica già collegata all'asset.
+- Il piano guest è in `docs/operations/piano-implementativo-guest-tier.md`.

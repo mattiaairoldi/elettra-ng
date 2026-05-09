@@ -6,7 +6,7 @@
 - Docker Compose.
 - `uv` opzionale per esecuzione locale fuori container.
 
-Il percorso standard e' Docker Compose.
+Il percorso standard è Docker Compose.
 
 ## Avvio Rapido
 
@@ -28,7 +28,7 @@ Seed demo MVP ripetibile:
 docker compose run --rm web uv run python manage.py seed_mvp_demo
 ```
 
-Il comando crea categorie, macro-capitoli diagnostici, un utente finale, un professionista, un immobile, un asset, una pratica e una richiesta di condivisione demo.
+Il comando crea categorie, macro-capitoli diagnostici, un utente finale, un professionista, organizzazioni demo, un immobile, un quadro elettrico, una lavatrice con metadati, allegati placeholder, storico manutenzione, promemoria manutenzione, un caso/problema e una richiesta di condivisione demo.
 
 Benchmark diagnostico chat-first:
 
@@ -89,7 +89,9 @@ bucket: app-media
 docker compose run --rm web uv run pytest -q
 ```
 
-Ultima verifica: `104 passed`.
+Ultima verifica backend nel container: `110 passed`.
+
+Per la suite completa usare Docker Compose. Se si esegue `pytest` fuori container, configurare il database host locale, per esempio `POSTGRES_HOST=127.0.0.1` e `POSTGRES_PORT=5433`.
 
 Frontend:
 
@@ -97,6 +99,37 @@ Frontend:
 cd frontend
 npm run lint
 npm run build
+```
+
+Mobile Flutter:
+
+```bash
+cd mobile/elettra_mobile
+flutter pub get
+flutter analyze
+flutter test
+flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
+```
+
+Verifiche Flutter eseguite:
+
+```bash
+flutter analyze
+flutter test
+flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
+```
+
+La build Android debug resta coperta dalla CI mobile:
+
+```bash
+flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
+```
+
+Su Android emulator:
+
+```bash
+cd mobile/elettra_mobile
+flutter run -d emulator --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
 ```
 
 ## OpenAPI
@@ -171,7 +204,7 @@ Usare `down -v` solo quando si vuole resettare database, Redis e MinIO locali.
 
 ## Note
 
-- Redis non espone piu' la porta host `6379`, per evitare conflitti con Redis locali gia' installati.
+- Redis non espone più la porta host `6379`, per evitare conflitti con Redis locali già installati.
 - PostgreSQL/PostGIS espone la porta host `5433`.
 - Il bucket MinIO viene creato dal servizio `createbuckets`.
 - Gli allegati privati restano non pubblici.

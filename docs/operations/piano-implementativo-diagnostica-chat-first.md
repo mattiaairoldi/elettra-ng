@@ -3,9 +3,9 @@
 ## Stato
 
 Questo documento definisce la direzione implementativa corrente per la diagnostica.
-La scelta di prodotto e': esperienza ibrida, ma prioritariamente chat.
+La scelta di prodotto è: esperienza ibrida, ma prioritariamente chat.
 
-Gli alberi diagnostici estesi non sono piu' il modello principale da importare o costruire.
+Gli alberi diagnostici estesi non sono più il modello principale da importare o costruire.
 Restano utili solo come guide curate, fallback, checklist ad alta sicurezza o percorsi ufficiali molto controllati.
 
 ## Obiettivo
@@ -13,7 +13,7 @@ Restano utili solo come guide curate, fallback, checklist ad alta sicurezza o pe
 Costruire una diagnostica che:
 
 - parta da pochi macro-capitoli chiari;
-- usi scelte cablate solo quando riducono ambiguita', rischio o costo AI;
+- usi scelte cablate solo quando riducono ambiguità, rischio o costo AI;
 - mantenga la conversazione come interfaccia principale;
 - faccia porre domande all'AI in modo progressivo;
 - salvi uno stato strutturato della pratica;
@@ -30,7 +30,7 @@ Le scelte cablate devono apparire quando sono naturalmente utili:
 - scelta asset o famiglia tecnica;
 - selezione elettrodomestico;
 - conferma di segnali di pericolo;
-- scelta tra opzioni brevi e gia' validate;
+- scelta tra opzioni brevi e già validate;
 - escalation verso professionista.
 
 Il resto del flusso deve restare dinamico.
@@ -38,7 +38,7 @@ L'AI deve proporre un passaggio pertinente alla volta, anche con opzioni brevi q
 
 ## Macro-Capitoli Iniziali
 
-L'elenco non e' ancora canonico.
+L'elenco non è ancora canonico.
 Serve come base per prototipo e test:
 
 - problemi elettrici;
@@ -70,14 +70,14 @@ Esempi:
 - elettrodomestici -> lavatrice, lavastoviglie, forno, frigorifero, piano cottura, asciugatrice;
 - problemi elettrici -> salvavita, presa, luce, quadro elettrico, citofono, blackout parziale;
 - idraulica -> perdita, scarico lento, rubinetto, sanitario, caldaia, pressione acqua;
-- climatizzazione -> split, unita' esterna, telecomando, perdita acqua, rumore, aria non fredda;
+- climatizzazione -> split, unità esterna, telecomando, perdita acqua, rumore, aria non fredda;
 - domotica -> dispositivo offline, automazione non eseguita, sensore, hub, rete.
 
 Regola:
 
-- cablare solo cio' che e' stabile e utile;
+- cablare solo ciò che è stabile e utile;
 - non cablare varianti troppo specifiche;
-- non creare sotto-rami profondi finche' non emergono dai casi reali.
+- non creare sotto-rami profondi finché non emergono dai casi reali.
 
 ## Esperienza Utente
 
@@ -96,25 +96,25 @@ Flusso consigliato:
    - checklist sicura;
    - chiusura con raccomandazione.
 
-La chat deve evitare di chiedere di nuovo informazioni gia' date.
+La chat deve evitare di chiedere di nuovo informazioni già date.
 Il backend deve quindi mantenere lo stato strutturato come fonte primaria del contesto.
 
 ## Stato Diagnostico
 
 Lo stato diagnostico deve diventare il cuore del contenimento costi.
 
-Lo stato minimo gia' introdotto con `AiDiagnosticSnapshot` va esteso progressivamente con:
+Lo stato minimo già introdotto con `AiDiagnosticSnapshot` va esteso progressivamente con:
 
 - macro-capitolo;
 - asset/famiglia tecnica;
 - sintomi;
 - luogo del problema;
-- quando e' iniziato;
+- quando è iniziato;
 - frequenza;
 - condizioni in cui si verifica;
-- verifiche sicure gia' fatte;
+- verifiche sicure già fatte;
 - informazioni escluse;
-- domande gia' poste;
+- domande già poste;
 - rischio corrente;
 - motivazione rischio;
 - prossima domanda consigliata;
@@ -122,23 +122,23 @@ Lo stato minimo gia' introdotto con `AiDiagnosticSnapshot` va esteso progressiva
 - escalation consigliata.
 
 La conversazione completa resta salvata in `AiMessage`.
-Il modello pero' non deve ricevere sempre tutta la conversazione.
+Il modello però non deve ricevere sempre tutta la conversazione.
 
 ## Ottimizzazione Costi AI
 
-Il principio operativo e':
+Il principio operativo è:
 
 - salvare tutto;
 - inviare poco;
-- inviare contesto migliore, non piu' contesto.
+- inviare contesto migliore, non più contesto.
 
 Ogni chiamata AI diagnostica dovrebbe ricevere:
 
 - macro-capitolo;
 - regole di sicurezza del macro-capitolo;
 - stato sintetico corrente;
-- fatti gia' acquisiti;
-- domande gia' poste;
+- fatti già acquisiti;
+- domande già poste;
 - ultime poche interazioni rilevanti;
 - obiettivo del prossimo turno;
 - schema JSON atteso.
@@ -147,17 +147,17 @@ Non dovrebbe ricevere:
 
 - tutto lo storico grezzo;
 - allegati completi non rilevanti;
-- vecchie risposte gia' riassunte;
+- vecchie risposte già riassunte;
 - contenuti di altri capitoli;
 - grandi alberi diagnostici.
 
 ## Accesso AI Limitato
 
-L'AI non e' un canale libero.
-Il flusso preferito e':
+L'AI non è un canale libero.
+Il flusso preferito è:
 
 1. mostrare capitolo e, se utile, opzione cablata;
-2. proporre uno o piu' consigli salvati e sicuri;
+2. proporre uno o più consigli salvati e sicuri;
 3. chiedere `Hai risolto?`;
 4. se non risolto, proporre azioni successive:
    - continuare con guida salvata;
@@ -189,7 +189,7 @@ I limiti vanno mostrati alla UI tramite endpoint di usage, non dedotti dal clien
 ## Percorso Guidato Salvato
 
 `DiagnosticAdviceStep` rappresenta consigli editoriali brevi collegati a un macro-capitolo e, opzionalmente, a una scelta cablata.
-Non e' un nuovo albero diagnostico esteso: e' una prima barriera economica e di sicurezza prima dell'AI.
+Non è un nuovo albero diagnostico esteso: è una prima barriera economica e di sicurezza prima dell'AI.
 
 Endpoint iniziali:
 
@@ -221,14 +221,14 @@ Dopo ogni messaggio utente, il sistema aggiorna:
 - escalation;
 - note di sicurezza.
 
-Questo e' il comportamento base dello snapshot diagnostico.
+Questo è il comportamento base dello snapshot diagnostico.
 
 ### Sintesi Periodica
 
-Ogni N messaggi, o quando il contesto stimato supera una soglia, il sistema produce una sintesi piu' pulita:
+Ogni N messaggi, o quando il contesto stimato supera una soglia, il sistema produce una sintesi più pulita:
 
 - cosa sappiamo;
-- cosa e' stato escluso;
+- cosa è stato escluso;
 - cosa manca;
 - quali domande non ripetere;
 - quali vincoli di sicurezza sono attivi;
@@ -244,7 +244,7 @@ Soglie iniziali consigliate, da misurare:
 - massimo 2-4 messaggi recenti nel prompt;
 - massimo 1 riepilogo compatto;
 - massimo 1 set di regole di sicurezza del macro-capitolo;
-- massimo 1 elenco breve di domande gia' poste;
+- massimo 1 elenco breve di domande già poste;
 - compattazione ogni 6-8 turni o quando il contesto supera la soglia configurata.
 
 Metriche salvate o da collegare a metriche reali del provider:
@@ -256,12 +256,12 @@ Metriche salvate o da collegare a metriche reali del provider:
 - costo stimato;
 - durata chiamata;
 - motivo della chiamata;
-- se e' stata usata sintesi compatta o storico recente.
+- se è stata usata sintesi compatta o storico recente.
 
 ## Modello Dati Da Introdurre Gradualmente
 
 Non introdurre tutto subito.
-Il percorso consigliato e':
+Il percorso consigliato è:
 
 ### Fase A - Estensione Leggera
 
@@ -346,7 +346,7 @@ Quando emerge un segnale bloccante:
 
 ## API Da Evolvere
 
-Endpoint gia' presente:
+Endpoint già presente:
 
 ```http
 POST /api/v1/ai/sessions/{session_id}/diagnostic-turns
@@ -363,7 +363,7 @@ GET /api/v1/ai/sessions/{id}/context
 POST /api/v1/ai/sessions/{id}/compact-context
 ```
 
-La compattazione potra' essere automatica via task, ma e' utile avere un endpoint/admin action per debug.
+La compattazione potrà essere automatica via task, ma è utile avere un endpoint/admin action per debug.
 
 ## Implementazione Per Fasi
 
@@ -373,7 +373,7 @@ La compattazione potra' essere automatica via task, ma e' utile avere un endpoin
 - [x] Aggiungere serializer e OpenAPI.
 - [x] Aggiornare provider locale.
 - [x] Aggiungere test sui segnali di rischio e sul contesto compatto.
-- [x] Mantenere compatibilita' con endpoint esistenti.
+- [x] Mantenere compatibilità con endpoint esistenti.
 
 ### Fase 2 - Routing Ibrido
 
@@ -399,7 +399,7 @@ La compattazione potra' essere automatica via task, ma e' utile avere un endpoin
 - [x] Evitare storico completo nel turno diagnostico.
 - [x] Aggiungere limite configurabile `AI_DIAGNOSTIC_RECENT_MESSAGES_LIMIT`.
 - [x] Salvare metadati del contesto usato.
-- Includere digest periodico quando sara' disponibile.
+- Includere digest periodico quando sarà disponibile.
 
 ### Fase 5 - Compattazione Periodica
 
@@ -407,7 +407,7 @@ La compattazione potra' essere automatica via task, ma e' utile avere un endpoin
 - [x] Creare task Celery di compattazione.
 - [x] Attivare compattazione per soglia messaggi.
 - [x] Aggiungere endpoint manuale di debug.
-- [x] Aggiungere test su digest e non reinvio dello storico gia' sintetizzato.
+- [x] Aggiungere test su digest e non reinvio dello storico già sintetizzato.
 - Collegare metriche reali del provider quando disponibili.
 
 ### Fase 6 - Accesso AI Controllato
@@ -443,14 +443,14 @@ Ogni fase deve mantenere:
 - test provider locale deterministico;
 - test segnali di rischio;
 - test che una sessione senza pratica non possa fare diagnostica;
-- test che non si ripetano domande gia' salvate nello stato;
+- test che non si ripetano domande già salvate nello stato;
 - test che la compattazione non cancelli storico originale;
 - test che errori provider non rompano la pratica.
 - test su stime token/costo e soglie di compattazione.
 
 ## Criteri Di Successo
 
-La direzione e' valida se:
+La direzione è valida se:
 
 - l'utente completa una prima diagnosi con poche domande;
 - il tecnico riceve un riepilogo utile;

@@ -5,7 +5,7 @@
 Questo documento non prende decisioni definitive.
 Serve a valutare se Elettra debba ridurre drasticamente gli alberi diagnostici statici e spostare parte della guida utente verso una diagnostica dinamica assistita da AI.
 
-L'ipotesi da verificare e':
+L'ipotesi da verificare è:
 
 - pochi contenuti strutturati, semplici e controllati;
 - domande generate dinamicamente durante la conversazione;
@@ -22,11 +22,11 @@ Gli alberi diagnostici estesi hanno alcuni rischi:
 - aumentano il costo editoriale prima di aver validato il prodotto;
 - possono importare nel nuovo progetto troppo debito dal vecchio `../elettra`.
 
-Il valore del vecchio progetto non va perso, ma non e' detto che debba diventare un grande set di `DiagnosticFlow`, `DiagnosticNode` e `DiagnosticOption`.
+Il valore del vecchio progetto non va perso, ma non è detto che debba diventare un grande set di `DiagnosticFlow`, `DiagnosticNode` e `DiagnosticOption`.
 
 ## Ipotesi Di Prodotto
 
-L'esperienza potrebbe essere piu' semplice:
+L'esperienza potrebbe essere più semplice:
 
 1. L'utente descrive il problema con testo libero e, in seguito, allegati.
 2. Il sistema classifica il problema in una tassonomia leggera.
@@ -34,14 +34,14 @@ L'esperienza potrebbe essere piu' semplice:
 4. Ogni risposta aggiorna una pratica (`Case`) e un riepilogo strutturato.
 5. Quando emerge rischio, incertezza o bisogno operativo, il sistema propone escalation verso professionista.
 6. I pattern ricorrenti vengono salvati come candidati, non come contenuto ufficiale.
-7. Un admin puo' revisionare i candidati e promuoverli a template, checklist o guida pubblicata.
+7. Un admin può revisionare i candidati e promuoverli a template, checklist o guida pubblicata.
 
 In questo scenario la `Case` resta il centro operativo.
-La diagnostica non e' piu' solo navigazione di un albero, ma una sessione guidata che produce stato strutturato.
+La diagnostica non è più solo navigazione di un albero, ma una sessione guidata che produce stato strutturato.
 
 ## Approccio Consigliato Per La Verifica
 
-La strada piu' prudente non e' passare direttamente a "AI libera".
+La strada più prudente non è passare direttamente a "AI libera".
 Conviene testare un modello ibrido:
 
 - tassonomia minima e controllata;
@@ -51,7 +51,7 @@ Conviene testare un modello ibrido:
 - vecchi contenuti usati come materiale di riferimento, non importati automaticamente;
 - promozione a contenuto ufficiale solo dopo revisione.
 
-Questo permette di validare la semplificazione senza perdere controllo su sicurezza, qualita' e tracciabilita'.
+Questo permette di validare la semplificazione senza perdere controllo su sicurezza, qualità e tracciabilità.
 
 ## Cosa Deve Restare Strutturato
 
@@ -68,11 +68,11 @@ Anche con AI dinamica, alcuni elementi devono restare espliciti nel database:
 - fonte dei suggerimenti generati;
 - esito della revisione umana, quando presente.
 
-La regola operativa e': l'AI puo' generare contenuto, ma l'app deve salvare fatti e decisioni in campi strutturati.
+La regola operativa è: l'AI può generare contenuto, ma l'app deve salvare fatti e decisioni in campi strutturati.
 
 ## Cosa Non Dovrebbe Essere Automatico
 
-Non e' opportuno, almeno nel primo ciclo:
+Non è opportuno, almeno nel primo ciclo:
 
 - trasformare ogni conversazione utente in contenuto pubblico;
 - lasciare all'AI la decisione finale su interventi rischiosi;
@@ -82,7 +82,7 @@ Non e' opportuno, almeno nel primo ciclo:
 
 ## Modello Concettuale Da Valutare
 
-Entita' possibili, da non implementare finche' non servono:
+Entità possibili, da non implementare finché non servono:
 
 - `TroubleshootingSession`: sessione diagnostica legata a una pratica.
 - `TroubleshootingTurn`: domanda/risposta, anche se generata dall'AI.
@@ -99,13 +99,13 @@ Potrebbero servire per guide ufficiali, fallback, demo e percorsi ad alta sicure
 Prima di decidere, conviene misurare:
 
 - quante domande servono per arrivare a un riepilogo utile;
-- quante volte l'AI chiede informazioni gia' fornite;
+- quante volte l'AI chiede informazioni già fornite;
 - quante volte produce consigli troppo operativi o rischiosi;
 - quanto spesso riconosce correttamente che serve un professionista;
-- se il riepilogo e' abbastanza chiaro per un tecnico;
+- se il riepilogo è abbastanza chiaro per un tecnico;
 - se i pattern ricorrenti sono davvero riutilizzabili;
 - quanto lavoro richiede la revisione editoriale;
-- se l'utente percepisce il flusso come piu' semplice di un albero.
+- se l'utente percepisce il flusso come più semplice di un albero.
 
 ## Prototipo Di Validazione
 
@@ -117,7 +117,7 @@ Un primo spike potrebbe evitare import e nuove grandi migrazioni:
 4. Imporre output AI in JSON strutturato.
 5. Salvare domanda, risposta, riepilogo e rischio.
 6. Confrontare il risultato con un flusso ad albero minimo.
-7. Decidere se modellare nuove entita' o estendere quelle esistenti.
+7. Decidere se modellare nuove entità o estendere quelle esistenti.
 
 Scenari iniziali possibili:
 
@@ -131,7 +131,7 @@ Scenari iniziali possibili:
 
 Se questa ipotesi viene confermata, l'import da `../elettra` cambia natura:
 
-- non importare grandi alberi come verita' applicativa;
+- non importare grandi alberi come verità applicativa;
 - estrarre solo scenari, frasi, categorie e warning utili;
 - creare un set ridotto di casi di test e prompt di validazione;
 - usare i vecchi contenuti come corpus editoriale revisionabile;
@@ -149,7 +149,7 @@ Se questa ipotesi viene confermata, l'import da `../elettra` cambia natura:
 
 ## Direttiva Provvisoria
 
-Finche' questa ipotesi non viene validata:
+Finché questa ipotesi non viene validata:
 
 - non importare alberi diagnostici estesi;
 - non riscrivere il database attorno a contenuti AI-generated;
@@ -159,23 +159,23 @@ Finche' questa ipotesi non viene validata:
 
 ## Primo Spike Tecnico
 
-Il primo spike e' descritto in [Spike Diagnostica AI Dinamica](../operations/ai-diagnostic-spike.md).
+Il primo spike è descritto in [Spike Diagnostica AI Dinamica](../operations/ai-diagnostic-spike.md).
 Lo spike salva uno snapshot strutturato per sessione AI e permette di valutare il modello senza importare contenuti dal vecchio progetto.
 
 ## Direzione Confermata
 
-La direzione attuale e' ibrida, ma chat-first.
+La direzione attuale è ibrida, ma chat-first.
 
 I macro-capitoli diagnostici servono per orientare contesto, sicurezza e scelte iniziali.
 La conversazione resta il motore principale.
 
 Le scelte cablate sono ammesse quando:
 
-- riducono ambiguita';
+- riducono ambiguità;
 - migliorano sicurezza;
 - riducono costo AI;
 - raccolgono dati strutturati;
 - evitano domande inutili.
 
-Non devono pero' diventare alberi profondi.
-Il piano operativo e' descritto in [Piano Implementativo Diagnostica Ibrida Chat-First](../operations/piano-implementativo-diagnostica-chat-first.md).
+Non devono però diventare alberi profondi.
+Il piano operativo è descritto in [Piano Implementativo Diagnostica Ibrida Chat-First](../operations/piano-implementativo-diagnostica-chat-first.md).

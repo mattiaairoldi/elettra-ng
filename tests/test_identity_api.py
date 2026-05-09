@@ -182,6 +182,79 @@ def test_login_me_and_logout_flow(client):
 
 
 @pytest.mark.django_db
+def test_token_login_me_refresh_and_logout_flow(client):
+    user = User.objects.create_user(
+        email="mobile@example.com",
+        password="Password123!",
+        first_name="Mobile",
+        last_name="User",
+    )
+
+    login_response = client.post(
+        reverse("api_v1:auth:token-login"),
+        data=json.dumps({"email": user.email, "password": "Password123!"}),
+        content_type="application/json",
+    )
+
+    assert login_response.status_code == 200
+    login_body = login_response.json()
+    assert login_body["user"]["email"] == user.email
+    assert login_body["tokens"]["token_type"] == "Bearer"
+    access_token = login_body["tokens"]["access"]
+    refresh_token = login_body["tokens"]["refresh"]
+    assert login_body["tokens"]["access_expires_in"] > 0
+    assert login_body["tokens"]["refresh_expires_in"] > 0
+
+    me_response = client.get(
+        reverse("api_v1:auth:me"),
+        HTTP_AUTHORIZATION=f"Bearer {access_token}",
+    )
+    assert me_response.status_code == 200
+    assert me_response.json()["user"]["email"] == user.email
+
+    refresh_response = client.post(
+        reverse("api_v1:auth:token-refresh"),
+        data=json.dumps({"refresh": refresh_token}),
+        content_type="application/json",
+    )
+    assert refresh_response.status_code == 200
+    refreshed_body = refresh_response.json()
+    assert refreshed_body["token_type"] == "Bearer"
+    assert refreshed_body["access"]
+    rotated_refresh_token = refreshed_body["refresh"]
+
+    logout_response = client.post(
+        reverse("api_v1:auth:token-logout"),
+        data=json.dumps({"refresh": rotated_refresh_token}),
+        content_type="application/json",
+        HTTP_AUTHORIZATION=f"Bearer {refreshed_body['access']}",
+    )
+    assert logout_response.status_code == 204
+
+    refresh_after_logout_response = client.post(
+        reverse("api_v1:auth:token-refresh"),
+        data=json.dumps({"refresh": rotated_refresh_token}),
+        content_type="application/json",
+    )
+    assert refresh_after_logout_response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_token_login_does_not_create_session(client):
+    user = User.objects.create_user(email="token-only@example.com", password="Password123!")
+
+    response = client.post(
+        reverse("api_v1:auth:token-login"),
+        data=json.dumps({"email": user.email, "password": "Password123!"}),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+    me_without_bearer_response = client.get(reverse("api_v1:auth:me"))
+    assert me_without_bearer_response.status_code == 403
+
+
+@pytest.mark.django_db
 def test_login_endpoint_accepts_organization_invitation(client):
     owner = User.objects.create_user(email="owner@example.com", password="Password123!")
     invited_user = User.objects.create_user(email="tech@example.com", password="Password123!")

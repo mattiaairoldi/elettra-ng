@@ -24,12 +24,21 @@ DEFAULT_OUTPUT_DIR = ROOT_DIR / "docs" / "pdf"
 TEMPLATES = {
     "brief": {
         "geometry": "margin=22mm",
-        "fontsize": "11pt",
+        "fontsize": "12pt",
         "lang": "it-IT",
+        "mainfont": "DejaVu Sans",
+        "sansfont": "DejaVu Sans",
+        "monofont": "DejaVu Sans Mono",
+        "linestretch": "1.08",
         "include_toc": False,
         "header": r"""
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
+\renewcommand{\familydefault}{\sfdefault}
+\clubpenalty=10000
+\widowpenalty=10000
+\displaywidowpenalty=10000
+\brokenpenalty=10000
 \usepackage{xcolor}
 \definecolor{ElettraAccent}{HTML}{24556B}
 \usepackage{fancyhdr}
@@ -41,6 +50,10 @@ TEMPLATES = {
 \usepackage{sectsty}
 \sectionfont{\color{ElettraAccent}}
 \subsectionfont{\color{ElettraAccent}}
+\usepackage{needspace}
+\usepackage{etoolbox}
+\pretocmd{\section}{\Needspace{8\baselineskip}}{}{}
+\pretocmd{\subsection}{\Needspace{6\baselineskip}}{}{}
 """.strip(),
     }
 }
@@ -159,6 +172,14 @@ def convert_source(
             f"fontsize:{template['fontsize']}",
             "--variable",
             f"lang:{template['lang']}",
+            "--variable",
+            f"mainfont:{template['mainfont']}",
+            "--variable",
+            f"sansfont:{template['sansfont']}",
+            "--variable",
+            f"monofont:{template['monofont']}",
+            "--variable",
+            f"linestretch:{template['linestretch']}",
             "--variable",
             "colorlinks:true",
             "--variable",

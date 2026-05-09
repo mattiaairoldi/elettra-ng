@@ -21,6 +21,7 @@ dependencies = [
   "sentry-sdk>=2,<3",
   "django-cors-headers>=4.4,<5",
   "gunicorn>=23,<24",
+  "djangorestframework-simplejwt>=5.3,<6",
 ]
 
 [project.optional-dependencies]

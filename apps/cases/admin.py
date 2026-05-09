@@ -1,6 +1,15 @@
 from django.contrib import admin
 
-from .models import Asset, Case, CaseEvent, CaseNote, CaseShareRequest, Property
+from .models import (
+    Asset,
+    AssetMaintenanceEvent,
+    AssetMaintenanceReminder,
+    Case,
+    CaseEvent,
+    CaseNote,
+    CaseShareRequest,
+    Property,
+)
 
 
 @admin.register(Property)
@@ -15,6 +24,22 @@ class AssetAdmin(admin.ModelAdmin):
     list_display = ("name", "property", "category", "location_text")
     list_filter = ("category",)
     search_fields = ("name", "property__name")
+
+
+@admin.register(AssetMaintenanceEvent)
+class AssetMaintenanceEventAdmin(admin.ModelAdmin):
+    list_display = ("title", "event_type", "asset", "property", "event_date", "created_by_user")
+    list_filter = ("event_type", "event_date")
+    search_fields = ("title", "asset__name", "property__name", "created_by_user__email")
+    autocomplete_fields = ("asset", "property", "created_by_user")
+
+
+@admin.register(AssetMaintenanceReminder)
+class AssetMaintenanceReminderAdmin(admin.ModelAdmin):
+    list_display = ("title", "status", "asset", "property", "due_at", "recurrence_rule", "created_by_user")
+    list_filter = ("status", "recurrence_rule", "due_at")
+    search_fields = ("title", "asset__name", "property__name", "created_by_user__email")
+    autocomplete_fields = ("asset", "property", "created_by_user")
 
 
 @admin.register(Case)

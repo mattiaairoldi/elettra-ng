@@ -55,6 +55,34 @@ class UserResponseSerializer(serializers.Serializer):
     organization_invitation = AcceptedOrganizationInvitationResponseSerializer(required=False)
 
 
+class TokenPairSerializer(serializers.Serializer):
+    access = serializers.CharField()
+    refresh = serializers.CharField(required=False)
+    token_type = serializers.CharField()
+    access_expires_in = serializers.IntegerField()
+    refresh_expires_in = serializers.IntegerField(required=False)
+
+
+class TokenLoginResponseSerializer(UserResponseSerializer):
+    tokens = TokenPairSerializer()
+
+
+class TokenRefreshRequestSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+
+class TokenRefreshResponseSerializer(serializers.Serializer):
+    access = serializers.CharField()
+    refresh = serializers.CharField(required=False)
+    token_type = serializers.CharField()
+    access_expires_in = serializers.IntegerField()
+    refresh_expires_in = serializers.IntegerField(required=False)
+
+
+class TokenLogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+
 class DetailResponseSerializer(serializers.Serializer):
     detail = serializers.CharField()
 

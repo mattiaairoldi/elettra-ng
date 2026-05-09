@@ -10,7 +10,16 @@ from apps.organizations.services import (
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticFlow, DiagnosticNode, DiagnosticOption
 
-from .models import Asset, Case, CaseEvent, CaseNote, CaseShareRequest, Property
+from .models import (
+    Asset,
+    AssetMaintenanceEvent,
+    AssetMaintenanceReminder,
+    Case,
+    CaseEvent,
+    CaseNote,
+    CaseShareRequest,
+    Property,
+)
 
 
 CASE_STATUS_TRANSITIONS = {
@@ -47,6 +56,49 @@ TERMINAL_CASE_STATUSES = {
     Case.Statuses.CLOSED,
     Case.Statuses.CANCELLED,
 }
+
+
+def resolve_asset_property_links(attrs, *, instance, request):
+    asset_id_explicit = "asset_id" in attrs
+    property_id_explicit = "property_id" in attrs
+
+    asset_obj = instance.asset if instance is not None else None
+    property_obj = instance.property if instance is not None else None
+
+    if property_id_explicit:
+        property_id = attrs.get("property_id")
+        if property_id is None:
+            property_obj = None
+        else:
+            try:
+                property_obj = Property.objects.get(id=property_id)
+            except Property.DoesNotExist as exc:
+                raise serializers.ValidationError({"property_id": "Invalid property."}) from exc
+            if not user_has_active_organization_membership(request.user, property_obj.organization_id):
+                raise serializers.ValidationError({"property_id": "You do not own this property."})
+
+    if asset_id_explicit:
+        asset_id = attrs.get("asset_id")
+        if asset_id is None:
+            asset_obj = None
+        else:
+            try:
+                asset_obj = Asset.objects.select_related("property", "property__organization").get(id=asset_id)
+            except Asset.DoesNotExist as exc:
+                raise serializers.ValidationError({"asset_id": "Invalid asset."}) from exc
+            if not user_has_active_organization_membership(request.user, asset_obj.property.organization_id):
+                raise serializers.ValidationError({"asset_id": "You do not own this asset."})
+
+    if asset_obj is not None and property_obj is None:
+        property_obj = asset_obj.property
+
+    if asset_obj is not None and property_obj is not None and asset_obj.property_id != property_obj.id:
+        raise serializers.ValidationError({"asset_id": "Asset does not belong to the selected property."})
+
+    if asset_obj is None and property_obj is None:
+        raise serializers.ValidationError("At least one between asset_id and property_id is required.")
+
+    return asset_obj, property_obj
 
 
 class PropertySerializer(serializers.ModelSerializer):
@@ -120,6 +172,110 @@ class AssetSerializer(serializers.ModelSerializer):
             validated_data.pop("property_id")
         if "category_id" in validated_data:
             instance.category_id = validated_data.pop("category_id")
+        return super().update(instance, validated_data)
+
+
+class AssetMaintenanceEventSerializer(serializers.ModelSerializer):
+    asset_id = serializers.IntegerField(required=False, allow_null=True)
+    property_id = serializers.IntegerField(required=False, allow_null=True)
+    created_by_user_id = serializers.IntegerField(source="created_by_user.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = AssetMaintenanceEvent
+        fields = (
+            "id",
+            "asset_id",
+            "property_id",
+            "event_type",
+            "title",
+            "description",
+            "event_date",
+            "cost_amount",
+            "metadata_json",
+            "created_by_user_id",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "created_by_user_id", "created_at", "updated_at")
+
+    def validate(self, attrs):
+        asset_obj, property_obj = resolve_asset_property_links(
+            attrs,
+            instance=self.instance,
+            request=self.context["request"],
+        )
+        attrs["asset"] = asset_obj
+        attrs["property"] = property_obj
+        return attrs
+
+    def create(self, validated_data):
+        validated_data["created_by_user"] = self.context["request"].user
+        validated_data["asset"] = validated_data.pop("asset")
+        validated_data["property"] = validated_data.pop("property")
+        validated_data.pop("asset_id", None)
+        validated_data.pop("property_id", None)
+        return AssetMaintenanceEvent.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        if "asset" in validated_data:
+            instance.asset = validated_data.pop("asset")
+        if "property" in validated_data:
+            instance.property = validated_data.pop("property")
+        validated_data.pop("asset_id", None)
+        validated_data.pop("property_id", None)
+        return super().update(instance, validated_data)
+
+
+class AssetMaintenanceReminderSerializer(serializers.ModelSerializer):
+    asset_id = serializers.IntegerField(required=False, allow_null=True)
+    property_id = serializers.IntegerField(required=False, allow_null=True)
+    created_by_user_id = serializers.IntegerField(source="created_by_user.id", read_only=True, allow_null=True)
+
+    class Meta:
+        model = AssetMaintenanceReminder
+        fields = (
+            "id",
+            "asset_id",
+            "property_id",
+            "title",
+            "description",
+            "due_at",
+            "recurrence_rule",
+            "recurrence_custom",
+            "status",
+            "last_completed_at",
+            "metadata_json",
+            "created_by_user_id",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = ("id", "last_completed_at", "created_by_user_id", "created_at", "updated_at")
+
+    def validate(self, attrs):
+        asset_obj, property_obj = resolve_asset_property_links(
+            attrs,
+            instance=self.instance,
+            request=self.context["request"],
+        )
+        attrs["asset"] = asset_obj
+        attrs["property"] = property_obj
+        return attrs
+
+    def create(self, validated_data):
+        validated_data["created_by_user"] = self.context["request"].user
+        validated_data["asset"] = validated_data.pop("asset")
+        validated_data["property"] = validated_data.pop("property")
+        validated_data.pop("asset_id", None)
+        validated_data.pop("property_id", None)
+        return AssetMaintenanceReminder.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        if "asset" in validated_data:
+            instance.asset = validated_data.pop("asset")
+        if "property" in validated_data:
+            instance.property = validated_data.pop("property")
+        validated_data.pop("asset_id", None)
+        validated_data.pop("property_id", None)
         return super().update(instance, validated_data)
 
 

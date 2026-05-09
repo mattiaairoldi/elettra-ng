@@ -8,20 +8,20 @@
 
 La base tecnica di partenza deve essere `../elettra2`.
 
-Non conviene iniziare da zero. `elettra2` e' gia' una riscrittura pulita rispetto al primo prototipo: contiene un backend modulare, API versionate, test, OpenAPI, modelli per pratiche/casi, troubleshooting, allegati, appuntamenti, professionisti e AI contestuale.
+Non conviene iniziare da zero. `elettra2` è già una riscrittura pulita rispetto al primo prototipo: contiene un backend modulare, API versionate, test, OpenAPI, modelli per pratiche/casi, troubleshooting, allegati, appuntamenti, professionisti e AI contestuale.
 
-La strategia corretta e':
+La strategia corretta è:
 
 - usare `elettra2` come baseline tecnica;
 - promuoverla dentro `elettra-ng`;
-- recuperare da `../elettra` solo contenuti, seed, flussi UX e idee gia' validate;
+- recuperare da `../elettra` solo contenuti, seed, flussi UX e idee già validate;
 - non importare contratti legacy, workaround Flutter o sessioni custom del vecchio progetto.
 
 ## Quando Ripartire Da Zero
 
 Ripartire da zero avrebbe senso solo se emergesse almeno una di queste condizioni:
 
-- `elettra2` non si avvia piu' o ha dipendenze non recuperabili;
+- `elettra2` non si avvia più o ha dipendenze non recuperabili;
 - le migrazioni sono incoerenti in modo grave;
 - i test non sono ripristinabili con effort ragionevole;
 - il modello dominio reale diverge radicalmente dal PDF canonico;
@@ -31,7 +31,7 @@ Allo stato attuale non ci sono segnali sufficienti per scartare `elettra2`.
 
 ## Stack Confermato
 
-Lo stack backend da mantenere e consolidare e':
+Lo stack backend da mantenere e consolidare è:
 
 - Django 5.2 LTS.
 - Django REST Framework.
@@ -42,7 +42,7 @@ Lo stack backend da mantenere e consolidare e':
 - MinIO come storage S3-compatible locale.
 - OpenAPI tramite `drf-spectacular`.
 - Django Admin come backoffice iniziale.
-- Sentry e logging strutturato per osservabilita'.
+- Sentry e logging strutturato per osservabilità.
 - Docker Compose come ambiente locale completo.
 
 Non introdurre microservizi.
@@ -66,7 +66,7 @@ Servizi minimi:
 Regole:
 
 - Il percorso standard per un nuovo sviluppatore deve essere `docker compose up`.
-- L'applicazione deve restare eseguibile anche con comandi locali tramite `uv`, ma Docker Compose e' il riferimento per riprodurre tutto lo stack.
+- L'applicazione deve restare eseguibile anche con comandi locali tramite `uv`, ma Docker Compose è il riferimento per riprodurre tutto lo stack.
 - I dati persistenti locali devono stare in volumi Docker nominati.
 - Le dipendenze tra servizi devono usare healthcheck, non solo ordine di avvio.
 - Produzione e staging possono usare container, ma non devono essere vincolati a un singolo `docker-compose.yml`: database, storage e Redis possono essere servizi gestiti.
@@ -82,8 +82,8 @@ Motivazione:
 
 - il PDF canonico prevede tecnici geolocalizzati;
 - il dominio include abitazioni, sedi, aziende, interventi e professionisti;
-- in futuro serviranno ricerche per distanza, copertura territoriale, ordinamento per prossimita' e possibilmente aree operative;
-- introdurre PostGIS all'inizio costa poco, introdurlo dopo una base dati popolata costa di piu'.
+- in futuro serviranno ricerche per distanza, copertura territoriale, ordinamento per prossimità e possibilmente aree operative;
+- introdurre PostGIS all'inizio costa poco, introdurlo dopo una base dati popolata costa di più.
 
 Regole implementative:
 
@@ -93,17 +93,17 @@ Regole implementative:
 - Modellare coordinate come `PointField` dove il dato rappresenta una posizione reale.
 - Evitare coppie `latitudine` / `longitudine` separate nei nuovi modelli, salvo campi denormalizzati o casi di integrazione esterna.
 - Usare SRID `4326` come standard applicativo.
-- Creare indici spaziali sui campi usati per query di distanza o prossimita'.
+- Creare indici spaziali sui campi usati per query di distanza o prossimità.
 
-Entita' candidate:
+Entità candidate:
 
 - `Property`: posizione dell'abitazione o sede.
-- `Asset`: posizione opzionale se l'asset e' geograficamente distinto.
+- `Asset`: posizione opzionale se l'asset è geograficamente distinto.
 - `ProfessionalProfile`: sede o punto di riferimento del professionista.
 - `ServiceArea`: futura area operativa del professionista, non necessaria nel primo MVP.
 - `Appointment`: eventuale luogo intervento denormalizzato, se diverso dalla `Property`.
 
-Nel primo MVP e' sufficiente salvare punti geografici e usare ordinamenti per distanza. Poligoni, zone operative avanzate e ottimizzazione percorsi restano fuori dal primo rilascio.
+Nel primo MVP è sufficiente salvare punti geografici e usare ordinamenti per distanza. Poligoni, zone operative avanzate e ottimizzazione percorsi restano fuori dal primo rilascio.
 
 ## Storage Allegati
 
@@ -112,8 +112,8 @@ Lo storage applicativo deve essere S3-compatible da subito.
 Regole:
 
 - `STORAGES["default"]` deve usare sempre `storages.backends.s3.S3Storage`.
-- MinIO e' obbligatorio in locale.
-- In produzione si potra' usare MinIO self-hosted o un provider S3-compatible gestito.
+- MinIO è obbligatorio in locale.
+- In produzione si potrà usare MinIO self-hosted o un provider S3-compatible gestito.
 - Non aggiungere flag `USE_LOCAL_MEDIA`.
 - Non salvare foto/documenti utente su filesystem locale applicativo.
 - Gli allegati privati devono essere protetti tramite permessi applicativi o URL firmati a scadenza.
@@ -132,20 +132,33 @@ AWS_DEFAULT_ACL=
 
 ## Dominio MVP
 
-Il primo MVP deve essere centrato sulla gestione tecnica della casa e sui problemi domestici, partendo dall'elettrico ma senza vincolare il dominio al solo elettrico.
+Il primo MVP deve essere centrato sulla gestione tecnica della casa, non solo sui problemi domestici.
+
+L'utente deve poter:
+
+- documentare immobili, impianti, elettrodomestici e componenti anche quando non esiste un problema;
+- registrare manutenzioni svolte;
+- programmare promemoria semplici;
+- aprire un problema da risolvere quando qualcosa non funziona;
+- collegare il problema a dati già raccolti su casa o asset.
+
+Il primo ambito resta l'elettrico, ma il dominio non deve vincolarsi al solo elettrico.
 
 Oggetti centrali:
 
-- `User`: identita' globale.
+- `GuestSession`: sessione temporanea non registrata per diagnosi esplorativa e pre-onboarding.
+- `User`: identità globale.
 - `Organization`: soggetto operativo personale, professionale o futuro gestionale.
 - `OrganizationPlan`: piano/capability della organizzazione.
 - `OrganizationMembership`: ruolo, scope e stato di un utente dentro una organizzazione.
 - `Property`: abitazione o sede.
 - `Asset`: impianto, componente o area tecnica della casa.
+- `AssetMaintenanceEvent`: storico manutenzioni, sostituzioni, controlli e note non necessariamente legate a un caso.
+- `AssetMaintenanceReminder`: promemoria manutenzione o scadenze tecniche.
 - `DiagnosticFlow`: percorso diagnostico pubblicabile.
 - `DiagnosticNode`: domanda, soluzione, warning o escalation.
 - `DiagnosticOption`: transizione tra nodi.
-- `Case`: pratica/problema aperto dall'utente.
+- `Case`: problema/caso aperto dall'utente.
 - `CaseEvent`: cronologia tecnica e audit operativo.
 - `CaseNote`: note utente/professionista.
 - `Attachment`: foto, documenti e allegati.
@@ -155,24 +168,31 @@ Oggetti centrali:
 - `Appointment`: richiesta/intervento.
 - `AiSession` e `AiMessage`: AI contestuale legata a caso o percorso.
 
-La `Case` deve restare l'oggetto operativo centrale.
-Il troubleshooting non deve essere una schermata isolata: deve poter generare o aggiornare una pratica.
-Il modello organizzazioni/permessi e' descritto in [Modello Organizzazioni E Permessi](modello-organizzazioni-permessi.md).
+La `Case` deve restare l'oggetto operativo centrale solo per problemi, diagnosi e richieste di aiuto.
+Per documentazione e manutenzione ordinaria il centro operativo è `Asset`.
+La `GuestSession` non deve creare una `Organization` e non deve dare accesso persistente a `La mia casa`.
+Il troubleshooting non deve essere una schermata isolata: deve poter generare o aggiornare un caso.
+Il modello organizzazioni/permessi è descritto in [Modello Organizzazioni E Permessi](modello-organizzazioni-permessi.md).
 
 ## Perimetro Primo Rilascio
 
 Dentro il primo rilascio:
 
+- accesso guest temporaneo per diagnosi esplorativa a quote molto basse;
 - registrazione, login, logout, recupero password, verifica email;
 - organizzazioni iniziali `personal` e `professional`;
 - membership con ruolo e scope;
 - categorie e tag tecnici;
 - percorsi diagnostici pubblici;
-- creazione pratica da problema manuale o da troubleshooting;
-- avanzamento troubleshooting dentro una pratica;
-- allegati su pratica e asset;
+- archivio casa con immobili e asset;
+- documentazione asset con metadati flessibili;
+- storico manutenzioni asset;
+- promemoria manutenzione base;
+- creazione caso da problema manuale o da troubleshooting;
+- avanzamento troubleshooting dentro un caso;
+- allegati su caso e asset;
 - conversazioni thread/post tra utenti e organizzazioni, anche fuori da un caso specifico;
-- note e storico pratica;
+- note e storico caso;
 - elenco professionisti filtrabile per categoria/tag;
 - richiesta appuntamento base;
 - AI contestuale con storico persistente e provider astratto;
@@ -183,9 +203,11 @@ Fuori dal primo rilascio:
 
 - videochiamate;
 - pagamenti e commissioni;
-- pubblicita';
+- pubblicità;
 - abbonamenti complessi;
 - AI immagini;
+- account guest persistente;
+- condivisione professionista senza registrazione;
 - dashboard professionista avanzata;
 - marketplace evoluto;
 - B2B multi-sede completo;
@@ -200,7 +222,7 @@ Va usato per recuperare:
 - alberi decisionali e contenuti;
 - tag e template promemoria;
 - lista professionisti di esempio;
-- insight UX gia' provati nel client Flutter;
+- insight UX già provati nel client Flutter;
 - logiche utili come chat contestuale e promemoria da soluzione;
 - documentazione storica e pitch.
 
@@ -210,7 +232,7 @@ Non recuperare automaticamente:
 - sessioni custom;
 - serializer adattati a Flutter;
 - tab/navigation del vecchio client;
-- organizer generico scollegato dalle pratiche;
+- organizer generico scollegato dai casi;
 - configurazioni nate per workaround temporanei.
 
 ## Piano Di Passaggio Da `elettra2` A `elettra-ng`
@@ -237,13 +259,13 @@ Output atteso:
 
 - Mappare il PDF canonico sui moduli esistenti.
 - Verificare che `Property`, `Asset`, `Case` e `DiagnosticFlow` coprano il libretto digitale casa.
-- Definire meglio il ciclo pratica: apertura, diagnosi, escalation, appuntamento, risoluzione, chiusura.
+- Definire meglio il ciclo del caso: apertura, diagnosi, escalation, appuntamento, risoluzione, chiusura.
 - Aggiungere eventuali campi mancanti senza gonfiare il dominio.
 
 Output atteso:
 
 - modello dati aderente al prodotto;
-- workflow pratica chiaro;
+- workflow caso chiaro;
 - API coerenti con il primo rilascio.
 
 ### Fase 3 - Recupero contenuti
@@ -267,7 +289,7 @@ Output atteso:
 
 Output atteso:
 
-- client MVP con tre aree: Guida, Casa/Pratiche, Profilo;
+- client MVP con tre aree: Guida, Casa/Problemi, Profilo;
 - nessuna dipendenza da endpoint legacy.
 
 ## Regole Di Implementazione
@@ -281,7 +303,7 @@ Output atteso:
 - Gli allegati devono avere permessi espliciti.
 - L'AI deve essere supporto contestuale, non centro del prodotto.
 
-## Priorita' Tecnica Immediata
+## Priorità Tecnica Immediata
 
 1. Portare `elettra2` in `elettra-ng`.
 2. Definire `docker-compose.yml` per stack locale completo.
@@ -294,6 +316,6 @@ Output atteso:
 
 ## Conclusione Operativa
 
-La scelta consigliata e' continuare da `elettra2`, non ripartire puliti.
+La scelta consigliata è continuare da `elettra2`, non ripartire puliti.
 
-`elettra2` va trattato come fondazione tecnica gia' valida ma da consolidare. `elettra-ng` deve diventare il repository definitivo, con documentazione canonica, configurazione pulita e sviluppo progressivo a partire dalla baseline di `elettra2`.
+`elettra2` va trattato come fondazione tecnica già valida ma da consolidare. `elettra-ng` deve diventare il repository definitivo, con documentazione canonica, configurazione pulita e sviluppo progressivo a partire dalla baseline di `elettra2`.

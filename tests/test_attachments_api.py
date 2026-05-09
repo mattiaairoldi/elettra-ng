@@ -5,6 +5,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from apps.cases.models import Asset, Case, Property
+from apps.organizations.models import OrganizationMembership
 from apps.taxonomy.models import Category
 
 User = get_user_model()
@@ -45,6 +46,46 @@ def test_attachment_upload_retrieve_and_delete_flow(client):
 
         delete_response = client.delete(reverse("api_v1:attachments:attachment-detail", args=[attachment_id]))
         assert delete_response.status_code == 204
+
+
+@pytest.mark.django_db
+def test_organization_member_can_upload_attachment_for_asset_without_case(client):
+    owner = User.objects.create_user(email="owner@example.com", password="Password123!")
+    member = User.objects.create_user(email="member@example.com", password="Password123!")
+    category = Category.objects.create(name="Elettrodomestici", slug="elettrodomestici-attachments")
+    property_obj = Property.objects.create(owner_user=owner, name="Casa")
+    asset = Asset.objects.create(property=property_obj, category=category, name="Lavatrice")
+    OrganizationMembership.objects.create(
+        user=member,
+        organization=property_obj.organization,
+        role=OrganizationMembership.Roles.ADMINISTRATIVE,
+        scope=OrganizationMembership.Scopes.ORGANIZATION,
+        status=OrganizationMembership.Statuses.ACTIVE,
+    )
+    client.force_login(member)
+
+    uploaded_file = SimpleUploadedFile("manuale.pdf", b"%PDF-1.4 test", content_type="application/pdf")
+
+    with override_settings(
+        STORAGES={
+            "default": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+            "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+        }
+    ):
+        create_response = client.post(
+            reverse("api_v1:attachments:attachment-list"),
+            data={
+                "file": uploaded_file,
+                "asset_id": asset.id,
+                "attachment_type": "document",
+            },
+        )
+        assert create_response.status_code == 201
+        assert create_response.json()["asset_id"] == asset.id
+
+        list_response = client.get(reverse("api_v1:attachments:attachment-list"), {"asset_id": asset.id})
+        assert list_response.status_code == 200
+        assert [item["file_name"] for item in list_response.json()] == ["manuale.pdf"]
 
 
 @pytest.mark.django_db

@@ -75,12 +75,12 @@ Provider non supportati generano `AiProviderError` con elenco dei provider dispo
 - Non importare SDK provider fuori dai file provider dedicati.
 - Non mettere logiche OpenAI-specifiche nei task Celery o nelle view.
 - Non cambiare il contratto diagnostico per un singolo provider.
-- Non introdurre fallback automatici finche' non servono davvero.
+- Non introdurre fallback automatici finché non servono davvero.
 - Mantenere `local` deterministico per test automatici.
 
 ## Prossimi Passi Possibili
 
-Se in futuro serviranno piu' provider:
+Se in futuro serviranno più provider:
 
 - aggiungere classe provider concreta;
 - registrarla in `registry.py`;

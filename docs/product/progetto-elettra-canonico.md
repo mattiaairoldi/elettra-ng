@@ -6,11 +6,11 @@
 
 ## Sintesi
 
-Elettra e' un'app pensata per aiutare le persone a gestire problemi, controlli e manutenzioni legate alla casa, partendo dall'impianto elettrico e ampliandosi potenzialmente ad altri ambiti come idraulica, climatizzazione, sicurezza e piccoli guasti domestici.
+Elettra è un'app pensata per aiutare le persone a gestire problemi, controlli e manutenzioni legate alla casa, partendo dall'impianto elettrico e ampliandosi potenzialmente ad altri ambiti come idraulica, climatizzazione, sicurezza e piccoli guasti domestici.
 
 ## Rami Del Progetto
 
-L'app e' suddivisa in due rami principali:
+L'app è suddivisa in due rami principali:
 
 - Utente privato e manutenzione casa.
 - Aziende, tecnici e partite IVA.
@@ -37,7 +37,7 @@ Aiutare l'utente a:
 
 ## Diagnosi Guidata
 
-L'utente potra' selezionare problemi comuni come:
+L'utente potrà selezionare problemi comuni come:
 
 - Salvavita che scatta.
 - Prese non funzionanti.
@@ -46,11 +46,11 @@ L'utente potra' selezionare problemi comuni come:
 - Quadro elettrico.
 - Odore di bruciato.
 
-L'app fara' domande semplici e guidera' l'utente verso controlli sicuri.
+L'app farà domande semplici e guiderà l'utente verso controlli sicuri.
 
 ## Manutenzione Casa
 
-L'app includera' una sezione dedicata alla manutenzione periodica:
+L'app includerà una sezione dedicata alla manutenzione periodica:
 
 - Controllo salvavita.
 - Filtri climatizzatori.
@@ -62,7 +62,7 @@ L'app includera' una sezione dedicata alla manutenzione periodica:
 
 ## Libretto Digitale Della Casa
 
-Ogni abitazione avra' uno storico digitale con:
+Ogni abitazione avrà uno storico digitale con:
 
 - Documenti.
 - Interventi eseguiti.
@@ -73,11 +73,11 @@ Ogni abitazione avra' uno storico digitale con:
 
 ## AI E Riconoscimento Tramite Foto
 
-Nelle versioni avanzate l'utente potra' fotografare quadri elettrici, prese o componenti per ricevere una prima analisi guidata basata su AI.
+Nelle versioni avanzate l'utente potrà fotografare quadri elettrici, prese o componenti per ricevere una prima analisi guidata basata su AI.
 
 ## Contatto Tecnico
 
-Quando necessario l'app proporra':
+Quando necessario l'app proporrà:
 
 - Tecnici vicini.
 - Videochiamate.
@@ -105,7 +105,7 @@ I tecnici potranno offrire consulenze video a pagamento direttamente tramite app
 
 ## Gestione Aziende
 
-Per attivita' commerciali e aziende:
+Per attività commerciali e aziende:
 
 - Storico manutenzioni.
 - Scadenze.
@@ -115,9 +115,9 @@ Per attivita' commerciali e aziende:
 
 ## Monetizzazione
 
-Elettra potra' generare ricavi tramite:
+Elettra potrà generare ricavi tramite:
 
-- Pubblicita'.
+- Pubblicità.
 - Abbonamenti premium.
 - Commissioni sugli interventi.
 - Videochiamate.
@@ -127,11 +127,11 @@ Elettra potra' generare ricavi tramite:
 
 ## Visione Finale
 
-Elettra vuole diventare una piattaforma completa per la gestione tecnica della casa e delle piccole attivita', semplificando diagnosi, manutenzione e contatto con professionisti.
+Elettra vuole diventare una piattaforma completa per la gestione tecnica della casa e delle piccole attività, semplificando diagnosi, manutenzione e contatto con professionisti.
 
 ## Implicazioni Funzionali Per L'Analisi
 
-- Il primo dominio applicativo e' la diagnosi guidata domestica, con priorita' alla sicurezza e a controlli non rischiosi.
+- Il primo dominio applicativo è la diagnosi guidata domestica, con priorità alla sicurezza e a controlli non rischiosi.
 - Il libretto digitale della casa e lo storico guasti sono il nucleo dati da non disperdere.
 - La relazione utente-tecnico va trattata come marketplace o rete professionale solo dopo aver validato il flusso di diagnosi, richiesta e appuntamento.
 - AI, riconoscimento foto, videochiamate e monetizzazione sono funzioni ad alto impatto ma da collocare dopo un MVP solido.

@@ -1,14 +1,14 @@
 # Piano Implementativo Dettagliato
 
 > Piano operativo per trasformare `elettra-ng` nel repository definitivo del nuovo Elettra.
-> Questo documento serve come guida di lavoro quando verra' dato il via allo sviluppo autonomo.
+> Questo documento serve come guida di lavoro quando verrà dato il via allo sviluppo autonomo.
 > Fonti principali: `docs/product/progetto-elettra-canonico.md`, `docs/architecture/direttiva-implementativa.md`, analisi dei progetti `../elettra` e `../elettra2`.
 
 ## Obiettivo
 
 Costruire il nuovo Elettra partendo da `../elettra2` come baseline tecnica, evitando una riscrittura da zero non necessaria.
 
-Il risultato atteso e' un backend modulare, avviabile e testato, centrato su:
+Il risultato atteso è un backend modulare, avviabile e testato, centrato su:
 
 - gestione casa/sedi;
 - asset tecnici;
@@ -22,14 +22,14 @@ Il risultato atteso e' un backend modulare, avviabile e testato, centrato su:
 
 ## Principio Guida
 
-`elettra2` e' la base tecnica.
-`elettra` e' archivio di valore funzionale.
-`elettra-ng` e' il repository definitivo.
+`elettra2` è la base tecnica.
+`elettra` è archivio di valore funzionale.
+`elettra-ng` è il repository definitivo.
 
-Non si devono importare vecchi vincoli per compatibilita' con il client Flutter storico.
+Non si devono importare vecchi vincoli per compatibilità con il client Flutter storico.
 Le API nuove devono rappresentare il dominio, non la UI esistente.
 
-## Decisioni Gia' Prese
+## Decisioni Già Prese
 
 - Usare `elettra2` come punto di partenza.
 - Non ripartire da zero salvo blocchi tecnici gravi.
@@ -39,8 +39,8 @@ Le API nuove devono rappresentare il dominio, non la UI esistente.
 - Backoffice iniziale: Django Admin.
 - API pubbliche: `/api/v1/`.
 - Primo MVP senza videochiamate, pagamenti, AI immagini, marketplace avanzato.
-- Identita' globale con modello unico `Organization`, membership scoped e piani iniziali `personal`/`professional`.
-- Il `Case` nasce personale/non assegnato e puo' essere condiviso selettivamente con professionisti.
+- Identità globale con modello unico `Organization`, membership scoped e piani iniziali `personal`/`professional`.
+- Il `Case` nasce personale/non assegnato e può essere condiviso selettivamente con professionisti.
 - `Property` e `Case` appartengono a una `Organization`; `Asset` appartiene sempre a una `Property`.
 - Conversazioni modellate come thread flessibili: `Conversation` + `ConversationPost`.
 
@@ -50,7 +50,7 @@ Le API nuove devono rappresentare il dominio, non la UI esistente.
 
 Preparare `elettra-ng` come repository ordinato prima di importare codice.
 
-### Attivita'
+### Attività
 
 - Verificare struttura corrente del repository.
 - Mantenere in root solo file operativi essenziali.
@@ -58,7 +58,7 @@ Preparare `elettra-ng` come repository ordinato prima di importare codice.
 - Creare tracker operativo in `docs/operations/project-tracker.md`.
 - Aggiungere `.gitignore` adeguato a Python, Django, Docker, env locali, cache, media temporanei.
 - Creare `.env.example` iniziale.
-- Decidere se inizializzare Git se il repository non e' ancora versionato.
+- Decidere se inizializzare Git se il repository non è ancora versionato.
 
 ### File attesi
 
@@ -82,9 +82,9 @@ Preparare `elettra-ng` come repository ordinato prima di importare codice.
 
 ### Scopo
 
-Portare in `elettra-ng` la base backend gia' funzionante di `../elettra2`.
+Portare in `elettra-ng` la base backend già funzionante di `../elettra2`.
 
-### Attivita'
+### Attività
 
 - Copiare lo scaffold Django da `../elettra2`.
 - Mantenere la struttura modulare:
@@ -102,7 +102,7 @@ Portare in `elettra-ng` la base backend gia' funzionante di `../elettra2`.
 - Portare i test esistenti.
 - Portare documenti tecnici utili da `../elettra2/docs/` solo se ancora attuali.
 - Aggiornare naming progetto dove necessario.
-- Evitare riferimenti concettuali troppo generici se il repo e' ormai Elettra, mantenendo pero' API client-agnostiche.
+- Evitare riferimenti concettuali troppo generici se il repo è ormai Elettra, mantenendo però API client-agnostiche.
 
 ### Regole
 
@@ -135,7 +135,7 @@ Rendere l'ambiente locale riproducibile con un solo comando.
 - `createbuckets` o init equivalente per creare bucket MinIO.
 - `mailpit`: SMTP catcher locale.
 
-### Attivita'
+### Attività
 
 - Creare `Dockerfile`.
 - Creare `docker-compose.yml`.
@@ -190,10 +190,10 @@ DEFAULT_FROM_EMAIL=noreply@local.test
 
 Allineare la baseline tecnica alle decisioni finali.
 
-### Attivita'
+### Attività
 
 - Fissare Django a `5.2.x`.
-- Verificare compatibilita' DRF, drf-spectacular, django-storages, Celery.
+- Verificare compatibilità DRF, drf-spectacular, django-storages, Celery.
 - Aggiungere o confermare `django.contrib.gis`.
 - Usare backend PostgreSQL GIS.
 - Abilitare estensione PostGIS.
@@ -216,7 +216,7 @@ Allineare la baseline tecnica alle decisioni finali.
 
 Preparare bene il dominio geolocalizzato senza sovra-progettare.
 
-### Attivita'
+### Attività
 
 - Sostituire nuovi campi `lat/lng` con `PointField` dove opportuno.
 - Aggiungere `location` a `Property`.
@@ -245,9 +245,9 @@ Preparare bene il dominio geolocalizzato senza sovra-progettare.
 ### Scopo
 
 Rendere `Case` il centro operativo del prodotto.
-Allineare identita', organizzazioni e permessi al modello descritto in [Modello Organizzazioni E Permessi](../architecture/modello-organizzazioni-permessi.md).
+Allineare identità, organizzazioni e permessi al modello descritto in [Modello Organizzazioni E Permessi](../architecture/modello-organizzazioni-permessi.md).
 
-### Attivita'
+### Attività
 
 - Introdurre o rifinire:
   - `Organization`
@@ -277,7 +277,7 @@ Allineare identita', organizzazioni e permessi al modello descritto in [Modello 
   - `Appointment`
   - `AiSession`
 - Verificare permessi per utente finale, organization admin, tecnico, amministrativo e platform owner.
-- Implementare il principio: il caso nasce non assegnato e puo' essere condiviso dopo.
+- Implementare il principio: il caso nasce non assegnato e può essere condiviso dopo.
 - Modellare richiesta di condivisione, accettazione/rifiuto, partecipazione e revoca.
 - Modellare chat utente-professionista come conversazione flessibile, non come relazione rigida 1:1.
 - Modellare condivisione selettiva di riepilogo, chat diagnostica e allegati.
@@ -292,13 +292,13 @@ Allineare identita', organizzazioni e permessi al modello descritto in [Modello 
 2. Utente sceglie o avvia percorso diagnostico.
 3. Sistema registra avanzamento nel caso.
 4. Utente collega eventuale immobile e allega foto/documenti.
-5. AI puo' aiutare sul caso senza ricevere automaticamente tutti gli allegati.
+5. AI può aiutare sul caso senza ricevere automaticamente tutti gli allegati.
 6. Se necessario, utente sceglie cosa condividere con tecnico/organizzazione.
 7. Tecnico o organizzazione accetta o rifiuta la richiesta.
 8. Dopo accettazione si apre o collega una conversazione utente-professionista.
 9. Appuntamento o preventivo di massima vengono richiesti e gestiti.
 10. Caso viene risolto, chiuso o cancellato.
-11. L'utente puo' revocare la condivisione; resta visibile al professionista solo lo storico conversazione gia' scambiato.
+11. L'utente può revocare la condivisione; resta visibile al professionista solo lo storico conversazione già scambiato.
 
 ### Criteri di completamento
 
@@ -430,7 +430,7 @@ Recuperare valore dal prototipo storico senza importare debito.
 
 Rendere Django Admin sufficiente per gestire il primo MVP.
 
-### Attivita'
+### Attività
 
 - Registrare tutti i modelli principali.
 - Migliorare list display, filtri e ricerca.
@@ -469,7 +469,7 @@ Rendere Django Admin sufficiente per gestire il primo MVP.
 
 Tenere l'AI come supporto operativo, non come centro del prodotto.
 
-### Attivita'
+### Attività
 
 - Conservare provider abstraction.
 - Conservare provider locale deterministico per test.
@@ -483,7 +483,7 @@ Tenere l'AI come supporto operativo, non come centro del prodotto.
   - storico essenziale.
 - Mantenere rate limiting.
 - Gestire risposte async via Celery.
-- Mantenere polling/SSE se gia' presenti e testati.
+- Mantenere polling/SSE se già presenti e testati.
 
 ### Regole Di Sicurezza
 
@@ -522,7 +522,7 @@ Rendere il progetto gestibile anche dopo sessioni lunghe di sviluppo.
 
 ### Criteri di completamento
 
-- Nuovo sviluppatore puo' avviare il progetto.
+- Nuovo sviluppatore può avviare il progetto.
 - Stato lavori comprensibile senza rileggere tutta la chat.
 
 ## Fase 11 - Preparazione Frontend
@@ -565,7 +565,7 @@ Quando viene dato il via, procedere in questo ordine:
 6. Avviare stack locale.
 7. Applicare migrazioni.
 8. Eseguire test.
-9. Aggiungere PostGIS/GeoDjango se non gia' integrato.
+9. Aggiungere PostGIS/GeoDjango se non già integrato.
 10. Rendere storage S3-only.
 11. Consolidare modelli geografici.
 12. Consolidare workflow `Case`.
@@ -631,45 +631,45 @@ Mitigazione:
 
 - OpenAPI prima del client;
 - serializer di dominio;
-- niente formati compatibilita' Flutter storico.
+- niente formati compatibilità Flutter storico.
 
 ## Definizione Di Pronto Per Il Frontend
 
-Il frontend puo' iniziare quando:
+Il frontend può iniziare quando:
 
 - Docker Compose avvia lo stack.
 - Migrazioni da zero funzionano.
 - Test backend principali sono verdi.
-- OpenAPI e' raggiungibile.
+- OpenAPI è raggiungibile.
 - Auth funziona.
-- `Case` workflow e' stabile.
-- Troubleshooting e' navigabile via API.
+- `Case` workflow è stabile.
+- Troubleshooting è navigabile via API.
 - Allegati funzionano su MinIO.
 - Professionisti hanno geolocalizzazione base.
 - AI contestuale funziona almeno con provider locale.
 
 ## Definizione Di MVP Backend
 
-Il backend MVP e' pronto quando:
+Il backend MVP è pronto quando:
 
-- utente puo' registrarsi e autenticarsi;
-- utente puo' creare casa/sede;
-- utente puo' creare o avviare una pratica;
-- utente puo' seguire una guida diagnostica;
+- utente può registrarsi e autenticarsi;
+- utente può creare casa/sede;
+- utente può creare o avviare una pratica;
+- utente può seguire una guida diagnostica;
 - avanzamento diagnostico viene tracciato nella pratica;
-- utente puo' caricare foto/documenti;
-- utente puo' vedere storico pratica;
+- utente può caricare foto/documenti;
+- utente può vedere storico pratica;
 - sistema propone o filtra professionisti;
-- appuntamento base puo' essere richiesto;
-- AI puo' rispondere sul contesto della pratica;
-- admin puo' gestire contenuti principali;
+- appuntamento base può essere richiesto;
+- AI può rispondere sul contesto della pratica;
+- admin può gestire contenuti principali;
 - test e OpenAPI sono aggiornati.
 
 ## Note Finali
 
-La scelta piu' efficiente e' continuare da `elettra2`.
+La scelta più efficiente è continuare da `elettra2`.
 
-La priorita' non e' aggiungere subito funzioni visibili, ma rendere solida la fondazione:
+La priorità non è aggiungere subito funzioni visibili, ma rendere solida la fondazione:
 
 - ambiente riproducibile;
 - storage corretto;

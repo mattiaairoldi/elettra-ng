@@ -1,15 +1,29 @@
+import calendar
+
 from django.db.models import Q
+from django.utils import timezone
 from rest_framework import generics, mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from .access import build_case_visibility_filter, user_can_respond_to_share_request, user_can_share_case
 from .events import create_case_event, update_case_status
-from .models import Asset, Case, CaseEvent, CaseNote, CaseShareRequest, Property
+from .models import (
+    Asset,
+    AssetMaintenanceEvent,
+    AssetMaintenanceReminder,
+    Case,
+    CaseEvent,
+    CaseNote,
+    CaseShareRequest,
+    Property,
+)
 from .permissions import IsAdminUserRole
 from .share_services import accept_case_share_request, reject_case_share_request, revoke_case_share_request
 from .serializers import (
     AssetSerializer,
+    AssetMaintenanceEventSerializer,
+    AssetMaintenanceReminderSerializer,
     CaseAssignSerializer,
     CaseEventSerializer,
     CaseNoteSerializer,
@@ -31,6 +45,28 @@ def build_case_queryset(user):
     if user.role == "admin":
         return queryset
     return queryset.filter(build_case_visibility_filter(user)).distinct()
+
+
+def build_property_asset_visibility_filter(user):
+    if user.role == "admin":
+        return Q()
+    active_membership_filter = Q(
+        property__organization__memberships__user=user,
+        property__organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+    )
+    active_asset_membership_filter = Q(
+        asset__property__organization__memberships__user=user,
+        asset__property__organization__memberships__status=OrganizationMembership.Statuses.ACTIVE,
+    )
+    return active_membership_filter | active_asset_membership_filter
+
+
+def add_months(value, months):
+    month_index = value.month - 1 + months
+    year = value.year + month_index // 12
+    month = month_index % 12 + 1
+    day = min(value.day, calendar.monthrange(year, month)[1])
+    return value.replace(year=year, month=month, day=day)
 
 
 class PropertyViewSet(
@@ -79,7 +115,12 @@ class AssetViewSet(
     queryset = Asset.objects.all()
 
     def get_queryset(self):
-        queryset = Asset.objects.select_related("property", "category", "property__owner_user", "property__organization")
+        queryset = Asset.objects.select_related(
+            "property",
+            "category",
+            "property__owner_user",
+            "property__organization",
+        )
         if self.request.user.role != "admin":
             queryset = queryset.filter(
                 property__organization__memberships__user=self.request.user,
@@ -105,6 +146,136 @@ class AssetViewSet(
     def update(self, request, *args, **kwargs):
         response = super().update(request, *args, **kwargs)
         return Response(AssetSerializer(self.get_object()).data, status=response.status_code)
+
+
+class AssetMaintenanceEventViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AssetMaintenanceEventSerializer
+    queryset = AssetMaintenanceEvent.objects.all()
+
+    def get_queryset(self):
+        queryset = AssetMaintenanceEvent.objects.select_related(
+            "asset",
+            "asset__property",
+            "property",
+            "created_by_user",
+        )
+        if self.request.user.role != "admin":
+            queryset = queryset.filter(build_property_asset_visibility_filter(self.request.user)).distinct()
+
+        asset_id = self.request.query_params.get("asset_id")
+        if asset_id:
+            queryset = queryset.filter(asset_id=asset_id)
+
+        property_id = self.request.query_params.get("property_id")
+        if property_id:
+            queryset = queryset.filter(property_id=property_id)
+
+        event_type = self.request.query_params.get("event_type")
+        if event_type:
+            queryset = queryset.filter(event_type=event_type)
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(AssetMaintenanceEventSerializer(serializer.instance).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        return Response(AssetMaintenanceEventSerializer(self.get_object()).data, status=response.status_code)
+
+
+class AssetMaintenanceReminderViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = AssetMaintenanceReminderSerializer
+    queryset = AssetMaintenanceReminder.objects.all()
+
+    def get_queryset(self):
+        queryset = AssetMaintenanceReminder.objects.select_related(
+            "asset",
+            "asset__property",
+            "property",
+            "created_by_user",
+        )
+        if self.request.user.role != "admin":
+            queryset = queryset.filter(build_property_asset_visibility_filter(self.request.user)).distinct()
+
+        asset_id = self.request.query_params.get("asset_id")
+        if asset_id:
+            queryset = queryset.filter(asset_id=asset_id)
+
+        property_id = self.request.query_params.get("property_id")
+        if property_id:
+            queryset = queryset.filter(property_id=property_id)
+
+        status_value = self.request.query_params.get("status")
+        if status_value:
+            queryset = queryset.filter(status=status_value)
+
+        due_before = self.request.query_params.get("due_before")
+        if due_before:
+            queryset = queryset.filter(due_at__lte=due_before)
+
+        due_after = self.request.query_params.get("due_after")
+        if due_after:
+            queryset = queryset.filter(due_at__gte=due_after)
+
+        return queryset
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(AssetMaintenanceReminderSerializer(serializer.instance).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        response = super().update(request, *args, **kwargs)
+        return Response(AssetMaintenanceReminderSerializer(self.get_object()).data, status=response.status_code)
+
+    @action(detail=True, methods=["post"], permission_classes=[permissions.IsAuthenticated])
+    def complete(self, request, pk=None):
+        reminder = self.get_object()
+        if reminder.status != AssetMaintenanceReminder.Statuses.ACTIVE:
+            return Response({"detail": "Only active reminders can be completed."}, status=status.HTTP_400_BAD_REQUEST)
+
+        completed_at = timezone.now()
+        update_fields = ["last_completed_at", "status", "updated_at"]
+        reminder.last_completed_at = completed_at
+
+        recurrence_months = {
+            AssetMaintenanceReminder.RecurrenceRules.MONTHLY: 1,
+            AssetMaintenanceReminder.RecurrenceRules.QUARTERLY: 3,
+            AssetMaintenanceReminder.RecurrenceRules.SEMIANNUAL: 6,
+            AssetMaintenanceReminder.RecurrenceRules.ANNUAL: 12,
+        }
+        months = recurrence_months.get(reminder.recurrence_rule)
+        if months is None:
+            reminder.status = AssetMaintenanceReminder.Statuses.COMPLETED
+        else:
+            next_due_at = add_months(reminder.due_at, months)
+            while next_due_at <= completed_at:
+                next_due_at = add_months(next_due_at, months)
+            reminder.due_at = next_due_at
+            reminder.status = AssetMaintenanceReminder.Statuses.ACTIVE
+            update_fields.append("due_at")
+
+        reminder.save(update_fields=update_fields)
+        return Response({"reminder": AssetMaintenanceReminderSerializer(reminder).data})
 
 
 class CaseViewSet(
