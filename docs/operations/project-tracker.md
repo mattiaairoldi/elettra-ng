@@ -2,11 +2,11 @@
 
 ## Obiettivo Corrente
 
-Validare il routing diagnostico ibrido chat-first e la compattazione del contesto su scenari manuali.
+Preparare una demo MVP end-to-end con dati ripetibili e poi avviare il frontend minimo.
 
 ## In Corso
 
-- [ ] Verifica qualitativa dei macro-capitoli, del contesto compatto e dei digest.
+- [ ] Avvio frontend minimo per flusso pratica -> diagnostica -> condivisione.
 
 ## Todo
 
@@ -14,7 +14,6 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [ ] Decidere criteri di sicurezza non negoziabili per risposte AI.
 - [ ] Tarare soglie di compattazione storico e stime costo/token su dati reali.
 - [ ] Decidere quali contenuti di `../elettra` usare come corpus di test, non come import.
-- [ ] Decidere se i professionisti seed saranno demo o reali.
 - [ ] Decidere strategia seed/conversione.
 - [ ] Valutare se `DiagnosticFlow` deve restare solo per guide curate/fallback.
 - [ ] Rifinire condivisione selettiva allegati/chat diagnostica su `CaseShareRequest`.
@@ -97,6 +96,11 @@ Validare il routing diagnostico ibrido chat-first e la compattazione del contest
 - [x] Eseguita suite test dopo normalizzazione domande diagnostiche: `96 passed`.
 - [x] Aggiunti ledger uso AI, limiti token/turni e percorso guidato salvato con feedback `Hai risolto?`.
 - [x] Eseguita suite test dopo limiti AI e consigli guidati: `101 passed`.
+- [x] Creato documento presentazione MVP e PDF.
+- [x] Aggiunto tooling `work/md_to_pdf.py` per generare PDF dai Markdown.
+- [x] Creato piano implementativo MVP.
+- [x] Aggiunto comando `seed_mvp_demo` per dati demo ripetibili.
+- [x] Eseguita suite test dopo seed demo MVP: `102 passed`.
 
 ## Decisioni Confermate
 

@@ -22,6 +22,14 @@ Seed opzionale dei macro-capitoli diagnostici iniziali:
 docker compose run --rm web uv run python manage.py seed_diagnostic_chapters
 ```
 
+Seed demo MVP ripetibile:
+
+```bash
+docker compose run --rm web uv run python manage.py seed_mvp_demo
+```
+
+Il comando crea categorie, macro-capitoli diagnostici, un utente finale, un professionista, un immobile, un asset, una pratica e una richiesta di condivisione demo.
+
 Benchmark diagnostico chat-first:
 
 ```bash
@@ -80,7 +88,7 @@ bucket: app-media
 docker compose run --rm web uv run pytest -q
 ```
 
-Ultima verifica: `101 passed`.
+Ultima verifica: `102 passed`.
 
 ## OpenAPI
 
@@ -122,6 +130,12 @@ docker compose ps
 docker compose logs -f web
 docker compose logs -f worker
 docker compose down
+```
+
+Generazione PDF da Markdown:
+
+```bash
+python3 work/md_to_pdf.py docs/product/elettra-mvp-presentazione.md
 ```
 
 Per fermare i container lasciando i volumi:
