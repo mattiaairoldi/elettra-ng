@@ -9,7 +9,6 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 - [ ] Verifica manuale del frontend MVP su flusso problema -> diagnostica -> condivisione.
 - [ ] Modellare notifiche in-app e device installation prima delle push native.
 - [ ] Verifica manuale del frontend Flutter su flusso `La mia casa`.
-- [ ] Verifica manuale del frontend Flutter su flusso `Problemi da risolvere` -> diagnostica -> condivisione.
 - [ ] Implementare guest tier come pre-onboarding diagnostico a quote basse.
 
 ## Todo
@@ -131,6 +130,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 - [x] Allineata documentazione al codice non committato su casa/manutenzioni, mobile, guest tier e notifiche.
 - [x] Completato flusso Flutter `Problemi da risolvere` con dettaglio pratica, consigli guidati, AI diagnostica e condivisione professionista.
 - [x] Eseguita verifica dopo flusso problemi Flutter: `flutter analyze`, `flutter test`, `flutter build web` verdi.
+- [x] Verificato manualmente su Flutter web con seed demo il flusso `Problemi da risolvere` -> diagnostica guidata -> AI -> condivisione professionista.
 
 ## Decisioni Confermate
 
