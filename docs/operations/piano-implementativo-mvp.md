@@ -288,7 +288,9 @@ Già implementato nel workstream MVP:
 - API notifiche in-app e `DeviceInstallation` con hook su condivisioni/conversazioni;
 - centro notifiche Flutter con badge unread, lista notifiche e azioni mark-read, verificato manualmente su web.
 
+Snapshot operativo completo: [Stato Attuale](stato-attuale.md).
+
 Prossima sequenza:
 
-1. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.
-2. Preparare validazione mobile nativa e percorso signing/TestFlight.
+1. Preparare validazione mobile nativa e percorso signing/TestFlight.
+2. Rifinire API aggregate solo sulla base delle frizioni emerse su device/emulatore.

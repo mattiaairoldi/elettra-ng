@@ -621,6 +621,8 @@ Stato attuale:
 - Flutter mostra badge unread e centro notifiche in-app collegati alle API backend, verificati su web con notifica reale e mark-read;
 - le sezioni `Diagnosi`, `Tecnici` e `Profilo` restano placeholder operativi separati: il flusso MVP end-to-end oggi passa dal dettaglio problema.
 
+Snapshot completo: [Stato Attuale](stato-attuale.md).
+
 Il prossimo passo operativo è:
 
 1. preparare signing/TestFlight e validazione su device fisico;

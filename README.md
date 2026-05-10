@@ -25,6 +25,7 @@ Frontend locale: `http://127.0.0.1:5173`
 
 ## Documenti Principali
 
+- [Stato attuale e prossimo step](docs/operations/stato-attuale.md)
 - [Progetto Elettra canonico](docs/product/progetto-elettra-canonico.md)
 - [Sintesi progetto](docs/product/elettra-sintesi-progetto.md)
 - [Direttiva implementativa](docs/architecture/direttiva-implementativa.md)

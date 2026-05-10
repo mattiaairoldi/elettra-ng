@@ -2,11 +2,20 @@
 
 ## Obiettivo Corrente
 
-Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, mantenendo React come frontend desktop/demo.
+Portare la app Flutter dal flusso web verificato alla validazione mobile nativa.
+
+Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 
 ## In Corso
 
 - [ ] Preparare validazione mobile nativa e percorso signing/TestFlight.
+
+## Stato Sintetico
+
+- Backend API, OpenAPI, auth JWT, organizzazioni, casa/asset, casi, AI diagnostica, guest tier, notifiche in-app e promozione guest -> account/caso sono implementati.
+- Flutter web ha smoke verdi sui flussi `La mia casa`, `Problemi da risolvere`, notifiche e guest -> account/caso.
+- Il target prodotto resta Android/iOS; web e React sono strumenti di test/demo.
+- Il prossimo rischio da ridurre riguarda device/emulatore: storage sicuro token, networking reale e preparazione signing.
 
 ## Todo
 

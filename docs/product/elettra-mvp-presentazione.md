@@ -236,7 +236,8 @@ La base backend è già impostata:
 
 Il prossimo lavoro dovrebbe concentrarsi su:
 
-1. validazione dei flussi MVP con scenari reali;
-2. taratura dei limiti AI su uso reale.
+1. validazione mobile nativa dei flussi MVP su device/emulatore;
+2. taratura dei limiti AI su uso reale;
+3. rifiniture API/UI solo sulle frizioni osservate durante la validazione.
 
 L'obiettivo del primo MVP è dimostrare che la casa può essere documentata senza complessità e che un problema tecnico può nascere in modo semplice, sicuro e ordinato, arrivando al professionista solo quando serve e con informazioni migliori.
