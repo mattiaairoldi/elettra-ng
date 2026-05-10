@@ -25,6 +25,8 @@ Sono implementati e verificati:
 
 La app Flutter in `mobile/elettra_mobile` e il client principale previsto per Android/iOS. Il target web viene usato per smoke rapidi e demo funzionali.
 
+La strategia scelta per staging/deploy e usare script CI locali versionati come fonte comune: oggi esecuzione locale dopo commit, poi stessi script in GitHub Actions o Gitea Actions, con immagini Docker costruite dalla CI e scaricate dal VPS tramite registry. Dettaglio operativo: [CI Locale E Deploy Staging](ci-locale-e-deploy-staging.md).
+
 Sono operativi in Flutter:
 
 - login token-based;
@@ -89,6 +91,9 @@ Non sono ancora implementati o validati:
 - TestFlight;
 - validazione su device fisico o emulatori nativi;
 - build iOS firmata;
+- script CI locali `scripts/ci/*`;
+- Compose staging remoto `deploy/compose.staging.yml`;
+- registry immagini e deploy automatico su VPS;
 - API aggregate aggiuntive oltre a quelle emerse come necessarie dalla UI corrente;
 - assegnazione interna organizzazione/tecnico dopo accettazione richiesta;
 - regole di sicurezza AI non negoziabili formalizzate per ogni capitolo;
@@ -106,29 +111,38 @@ Restano fuori perimetro guest:
 
 ## Prossimo Step
 
-Il prossimo step operativo e preparare la validazione mobile nativa.
+Il prossimo step operativo e preparare la base CI/deploy locale prima della validazione mobile nativa su backend pubblico.
 
 Sequenza consigliata:
 
-1. Preparare configurazione runtime per device/emulatore:
+1. Implementare gli script CI locali documentati:
+   - `scripts/ci/backend.sh`;
+   - `scripts/ci/mobile.sh`;
+   - `scripts/ci/build-images.sh`;
+   - `scripts/ci/local-all.sh`.
+2. Preparare Compose staging e variabili esempio:
+   - `deploy/compose.staging.yml`;
+   - `.env.staging.example`;
+   - modello immagine backend versionata.
+3. Preparare configurazione runtime per device/emulatore:
    - API base URL per Android emulator (`10.0.2.2`) o device fisico su LAN;
    - profili ambiente Flutter per dev/demo;
    - verifica storage sicuro token su Android/iOS.
-2. Validare Android:
+4. Validare Android:
    - avvio su emulator o device fisico;
    - login;
    - `La mia casa`;
    - `Problemi da risolvere`;
    - guest -> account/caso;
    - notifiche in-app.
-3. Preparare signing:
+5. Preparare signing:
    - Android keystore e variabili CI;
    - bundle id iOS;
    - Apple Team/App Store Connect;
    - segreti CI per build firmate.
-4. Validare iOS:
+6. Validare iOS:
    - build CI macOS `--no-codesign` come controllo tecnico;
    - build firmata quando sono disponibili certificati/profili;
    - distribuzione TestFlight.
 
-La web app ora copre i tab principali; la prossima riduzione di rischio e su networking, storage token e runtime mobile reale.
+La web app ora copre i tab principali; la prossima riduzione di rischio e rendere ripetibile build/deploy, poi validare networking, storage token e runtime mobile reale.

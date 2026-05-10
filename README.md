@@ -36,6 +36,7 @@ Frontend locale: `http://127.0.0.1:5173`
 - [Piano diagnostica ibrida chat-first](docs/operations/piano-implementativo-diagnostica-chat-first.md)
 - [Astrazione provider AI](docs/operations/ai-provider-abstraction.md)
 - [Setup locale](docs/operations/local-setup.md)
+- [CI locale e deploy staging](docs/operations/ci-locale-e-deploy-staging.md)
 - [Project tracker](docs/operations/project-tracker.md)
 - [Decisioni prima dell'import da elettra](docs/operations/decisioni-prima-import-elettra.md)
 - [PDF sorgente](docs/sources/Progetto_Elettra.pdf)

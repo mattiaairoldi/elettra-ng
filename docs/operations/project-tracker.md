@@ -2,12 +2,14 @@
 
 ## Obiettivo Corrente
 
-Portare la app Flutter dal flusso web verificato alla validazione mobile nativa.
+Preparare CI locale, immagini Docker versionate e staging VPS, poi portare la app Flutter alla validazione mobile nativa.
 
 Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 
 ## In Corso
 
+- [ ] Implementare script CI locali come fonte comune per CI futura.
+- [ ] Preparare modello staging VPS con immagini Docker versionate.
 - [ ] Preparare validazione mobile nativa e percorso signing/TestFlight.
 
 ## Stato Sintetico
@@ -16,8 +18,9 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - Flutter web ha smoke verdi sui flussi `La mia casa`, `Diagnosi`, `Problemi da risolvere`, notifiche e guest -> account/caso.
 - Il tab `Tecnici` e collegato a API reali con lista professionisti, filtro categoria e ingresso rapido ai problemi.
 - Il tab `Profilo` mostra account, stato email, stato sessione, refresh `/auth/me` e logout confermato.
+- Il modello deploy scelto e: script CI locali versionati, immagini Docker costruite da CI, VPS che scarica immagini, applica migrazioni e riavvia i container.
 - Il target prodotto resta Android/iOS; web e React sono strumenti di test/demo.
-- Il prossimo rischio da ridurre riguarda device/emulatore: storage sicuro token, networking reale e preparazione signing.
+- Il prossimo rischio da ridurre riguarda ripetibilita build/deploy e poi device/emulatore: storage sicuro token, networking reale e preparazione signing.
 
 ## Todo
 
@@ -29,6 +32,8 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [ ] Valutare se `DiagnosticFlow` deve restare solo per guide curate/fallback.
 - [ ] Rifinire condivisione selettiva allegati/chat diagnostica su `CaseShareRequest`.
 - [ ] Aggiungere assegnazione interna organizzazione/tecnico dopo accettazione richiesta.
+- [ ] Implementare `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh`, `scripts/ci/local-all.sh`.
+- [ ] Implementare `deploy/compose.staging.yml` e `.env.staging.example`.
 
 ## Fatto
 
@@ -154,6 +159,7 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [x] Implementato tab Flutter `Diagnosi` autenticato con creazione pratica senza asset, primo turno AI e apertura diretta del dettaglio pratica.
 - [x] Implementato tab Flutter `Tecnici` con lista professionisti, filtro categoria e scorciatoia verso `Problemi da risolvere`.
 - [x] Implementato tab Flutter `Profilo` con stato account/sessione, refresh profilo e logout confermato.
+- [x] Documentato modello CI locale -> registry -> staging VPS in `docs/operations/ci-locale-e-deploy-staging.md`.
 
 ## Decisioni Confermate
 
@@ -189,3 +195,5 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - `La mia casa` è parte dell'MVP: documentazione asset, allegati, storico e promemoria non devono richiedere un problema aperto.
 - Da un asset documentato si può aprire una nuova problematica già collegata all'asset.
 - Il piano guest è in `docs/operations/piano-implementativo-guest-tier.md`.
+- La logica CI/deploy deve stare in script versionati; GitHub Actions o Gitea Actions devono limitarsi a invocarli.
+- Il VPS staging non deve compilare immagini: deve fare pull da registry, migrazioni e `up -d`.
