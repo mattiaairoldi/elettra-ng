@@ -73,6 +73,7 @@ docker compose ps
 - MinIO API: `http://127.0.0.1:9000`
 - MinIO console: `http://127.0.0.1:9001`
 - Mailpit UI: `http://127.0.0.1:8025`
+- Link di conferma registrazione web: controllati da `WEB_APP_BASE_URL`, in locale `http://127.0.0.1:5177`.
 - PostgreSQL host locale: `127.0.0.1:5433`
 
 Credenziali locali MinIO:

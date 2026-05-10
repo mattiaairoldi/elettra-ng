@@ -129,7 +129,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         token = validated_data.pop("organization_invitation_token", "")
         invitation = validated_data.pop("organization_invitation", None)
-        user = User.objects.create_user(**validated_data)
+        user = User.objects.create_user(**validated_data, email_verified=False)
         from apps.organizations.services import get_or_create_personal_organization
 
         get_or_create_personal_organization(user)
@@ -157,6 +157,8 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError({"detail": "Invalid credentials."})
         if not user.is_active:
             raise serializers.ValidationError({"detail": "User account is inactive."})
+        if not user.email_verified:
+            raise serializers.ValidationError({"detail": "Email address is not verified."})
         token = attrs.get("organization_invitation_token")
         if token:
             try:

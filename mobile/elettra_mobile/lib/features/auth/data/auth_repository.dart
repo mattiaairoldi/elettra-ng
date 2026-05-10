@@ -6,7 +6,14 @@ import '../../../core/storage/token_store.dart';
 import 'auth_models.dart';
 
 abstract class AuthRepository {
+  Future<RegisterResult> register({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+  });
   Future<LoginResult> login({required String email, required String password});
+  Future<VerifyEmailResult> verifyEmail({required String token});
   Future<AppUser> currentUser();
   Future<void> logout(String refreshToken);
 }
@@ -15,6 +22,26 @@ class DioAuthRepository implements AuthRepository {
   const DioAuthRepository(this._dio);
 
   final Dio _dio;
+
+  @override
+  Future<RegisterResult> register({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/auth/register',
+      data: {
+        'email': email,
+        'password': password,
+        'first_name': firstName,
+        'last_name': lastName,
+      },
+      options: Options(extra: {'skipAuth': true}),
+    );
+    return RegisterResult.fromJson(response.data ?? const {});
+  }
 
   @override
   Future<LoginResult> login({
@@ -27,6 +54,16 @@ class DioAuthRepository implements AuthRepository {
       options: Options(extra: {'skipAuth': true}),
     );
     return LoginResult.fromJson(response.data ?? const {});
+  }
+
+  @override
+  Future<VerifyEmailResult> verifyEmail({required String token}) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/auth/verify-email',
+      data: {'token': token},
+      options: Options(extra: {'skipAuth': true}),
+    );
+    return VerifyEmailResult.fromJson(response.data ?? const {});
   }
 
   @override

@@ -9,6 +9,7 @@ services:
       DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost,web}
       APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:8000}
+      WEB_APP_BASE_URL: ${WEB_APP_BASE_URL:-http://127.0.0.1:5177}
       POSTGRES_DB: ${POSTGRES_DB:-elettra_ng}
       POSTGRES_USER: ${POSTGRES_USER:-elettra}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elettra}
@@ -79,6 +80,7 @@ services:
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
       DJANGO_DEBUG: ${DJANGO_DEBUG:-true}
       DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-127.0.0.1,localhost,web}
+      WEB_APP_BASE_URL: ${WEB_APP_BASE_URL:-http://127.0.0.1:5177}
       POSTGRES_DB: ${POSTGRES_DB:-elettra_ng}
       POSTGRES_USER: ${POSTGRES_USER:-elettra}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-elettra}

@@ -4,6 +4,7 @@ import 'package:elettra_mobile/app/elettra_app.dart';
 import 'package:elettra_mobile/core/storage/token_store.dart';
 import 'package:elettra_mobile/features/auth/data/auth_models.dart';
 import 'package:elettra_mobile/features/auth/data/auth_repository.dart';
+import 'package:elettra_mobile/features/auth/presentation/email_verification_screen.dart';
 import 'package:elettra_mobile/features/guest/data/guest_models.dart';
 import 'package:elettra_mobile/features/guest/data/guest_repository.dart';
 import 'package:elettra_mobile/features/health/data/health_repository.dart';
@@ -51,6 +52,86 @@ class _FakeTokenStore implements TokenStore {
 
   @override
   Future<void> saveTokens(AuthTokens tokens) async {}
+}
+
+class _FakeAuthRepository implements AuthRepository {
+  String? registeredEmail;
+  String? verifiedToken;
+
+  @override
+  Future<RegisterResult> register({
+    required String email,
+    required String password,
+    required String firstName,
+    required String lastName,
+  }) async {
+    registeredEmail = email;
+    return RegisterResult(
+      user: AppUser(
+        id: 20,
+        email: email,
+        firstName: firstName,
+        lastName: lastName,
+        role: 'customer',
+      ),
+      detail: 'User created successfully. Verification email sent.',
+    );
+  }
+
+  @override
+  Future<LoginResult> login({
+    required String email,
+    required String password,
+  }) async {
+    return LoginResult(
+      user: AppUser(
+        id: 20,
+        email: email,
+        firstName: 'Demo',
+        lastName: 'User',
+        role: 'customer',
+        emailVerified: true,
+      ),
+      tokens: const AuthTokens(
+        access: 'access',
+        refresh: 'refresh',
+        tokenType: 'Bearer',
+        accessExpiresIn: 900,
+        refreshExpiresIn: 1209600,
+      ),
+    );
+  }
+
+  @override
+  Future<VerifyEmailResult> verifyEmail({required String token}) async {
+    verifiedToken = token;
+    return VerifyEmailResult(
+      user: const AppUser(
+        id: 20,
+        email: 'registered@example.com',
+        firstName: 'Registered',
+        lastName: 'User',
+        role: 'customer',
+        emailVerified: true,
+      ),
+      detail: 'Email verified successfully.',
+    );
+  }
+
+  @override
+  Future<AppUser> currentUser() async {
+    return const AppUser(
+      id: 20,
+      email: 'registered@example.com',
+      firstName: 'Registered',
+      lastName: 'User',
+      role: 'customer',
+      emailVerified: true,
+    );
+  }
+
+  @override
+  Future<void> logout(String refreshToken) async {}
 }
 
 class _FakeProblemsRepository implements ProblemsRepository {
@@ -603,6 +684,72 @@ void main() {
     expect(find.text('Elettra'), findsOneWidget);
     expect(find.text('Accedi'), findsWidgets);
     expect(find.text('API online'), findsOneWidget);
+  });
+
+  testWidgets('registers user and asks email confirmation', (tester) async {
+    final authRepository = _FakeAuthRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(authRepository),
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          tokenStoreProvider.overrideWithValue(_FakeTokenStore()),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Registrati'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Nome'), 'Mario');
+    await tester.enterText(find.widgetWithText(TextField, 'Cognome'), 'Rossi');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Email'),
+      'mario@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Password'),
+      'Password123!',
+    );
+    await tester.tap(find.text('Crea account'));
+    await tester.pumpAndSettle();
+
+    expect(authRepository.registeredEmail, 'mario@example.com');
+    expect(find.text('Controlla la tua email'), findsOneWidget);
+    expect(
+      find.textContaining(
+        'Abbiamo inviato il link di conferma a mario@example.com',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Vai al login'), findsOneWidget);
+  });
+
+  testWidgets('confirms email token from verification link', (tester) async {
+    final authRepository = _FakeAuthRepository();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authRepositoryProvider.overrideWithValue(authRepository),
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+        ],
+        child: const MaterialApp(
+          home: EmailVerificationScreen(token: 'email-token'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(authRepository.verifiedToken, 'email-token');
+    expect(find.text('Email confermata'), findsOneWidget);
+    expect(
+      find.text('Abbiamo confermato la tua email. Ora puoi accedere.'),
+      findsOneWidget,
+    );
+    expect(find.text('Vai al login'), findsOneWidget);
   });
 
   testWidgets('shows customer home when authenticated', (tester) async {

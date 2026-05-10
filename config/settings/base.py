@@ -114,6 +114,7 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 APP_BASE_URL = env("APP_BASE_URL", default="http://127.0.0.1:8000")
+WEB_APP_BASE_URL = env("WEB_APP_BASE_URL", default=APP_BASE_URL)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

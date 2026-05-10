@@ -2,7 +2,7 @@
 
 Ultimo aggiornamento: 2026-05-10.
 
-Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso e degli smoke Flutter web.
+Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso, degli smoke Flutter web e della registrazione standard con conferma email.
 
 ## Stato Operativo
 
@@ -12,6 +12,7 @@ Sono implementati e verificati:
 
 - API `/api/v1/` con schema OpenAPI validato;
 - autenticazione mobile token-based con JWT access/refresh, refresh e logout con blacklist;
+- registrazione standard con email di conferma, blocco login prima della verifica e link web intercettabile in Mailpit;
 - modello organizzativo con `Organization`, piani `personal`/`professional` e membership;
 - `La mia casa`: immobili, asset, allegati asset, storico manutenzione e promemoria;
 - apertura di una problematica da asset;
@@ -27,6 +28,8 @@ La app Flutter in `mobile/elettra_mobile` e il client principale previsto per An
 Sono operativi in Flutter:
 
 - login token-based;
+- registrazione utente;
+- conferma email da link web `/verify-email`;
 - bootstrap sessione da token salvato;
 - `La mia casa`;
 - `Problemi da risolvere`;
@@ -59,7 +62,7 @@ cd mobile/elettra_mobile && flutter build web
 
 Risultato:
 
-- backend: `124 passed`;
+- backend: `125 passed`;
 - migrazioni: nessun cambio rilevato;
 - OpenAPI: validato senza warning bloccanti;
 - Flutter analyze/test/build web: verdi.
@@ -69,6 +72,7 @@ Smoke funzionali eseguiti su Flutter web:
 - login autenticato e `La mia casa` con seed demo reale;
 - `Problemi da risolvere` -> consiglio guidato -> turno AI -> snapshot -> condivisione a professionista -> notifica in-app;
 - `Continua come ospite` -> diagnosi -> `Salva come pratica` -> creazione account -> caso visibile in `Problemi da risolvere`.
+- `Registrati` -> email Mailpit -> conferma email -> ritorno al login.
 
 ## Non Ancora Fatto
 
@@ -97,27 +101,33 @@ Restano fuori perimetro guest:
 
 ## Prossimo Step
 
-Il prossimo step operativo e la validazione mobile nativa.
+Il prossimo step operativo e completare meglio la web app prima della validazione mobile nativa.
 
 Sequenza consigliata:
 
-1. Preparare configurazione runtime per device/emulatore:
+1. Implementare il tab Flutter `Diagnosi` autenticato:
+   - scelta categoria/capitolo;
+   - descrizione problema;
+   - avvio diagnosi guidata/AI;
+   - salvataggio come pratica;
+   - navigazione diretta al dettaglio pratica.
+2. Preparare configurazione runtime per device/emulatore:
    - API base URL per Android emulator (`10.0.2.2`) o device fisico su LAN;
    - profili ambiente Flutter per dev/demo;
    - verifica storage sicuro token su Android/iOS.
-2. Validare Android:
+3. Validare Android:
    - avvio su emulator o device fisico;
    - login;
    - `La mia casa`;
    - `Problemi da risolvere`;
    - guest -> account/caso;
    - notifiche in-app.
-3. Preparare signing:
+4. Preparare signing:
    - Android keystore e variabili CI;
    - bundle id iOS;
    - Apple Team/App Store Connect;
    - segreti CI per build firmate.
-4. Validare iOS:
+5. Validare iOS:
    - build CI macOS `--no-codesign` come controllo tecnico;
    - build firmata quando sono disponibili certificati/profili;
    - distribuzione TestFlight.

@@ -5,6 +5,8 @@ class AppUser {
     required this.firstName,
     required this.lastName,
     required this.role,
+    this.emailVerified = false,
+    this.isActive = true,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
@@ -14,6 +16,8 @@ class AppUser {
       firstName: json['first_name']?.toString() ?? '',
       lastName: json['last_name']?.toString() ?? '',
       role: json['role']?.toString() ?? '',
+      emailVerified: json['email_verified'] as bool? ?? false,
+      isActive: json['is_active'] as bool? ?? true,
     );
   }
 
@@ -22,6 +26,8 @@ class AppUser {
   final String firstName;
   final String lastName;
   final String role;
+  final bool emailVerified;
+  final bool isActive;
 
   String get displayName {
     final fullName = '$firstName $lastName'.trim();
@@ -56,20 +62,14 @@ class AuthTokens {
 }
 
 class AuthSession {
-  const AuthSession({
-    required this.user,
-    required this.tokens,
-  });
+  const AuthSession({required this.user, required this.tokens});
 
   final AppUser user;
   final AuthTokens tokens;
 }
 
 class LoginResult {
-  const LoginResult({
-    required this.user,
-    required this.tokens,
-  });
+  const LoginResult({required this.user, required this.tokens});
 
   factory LoginResult.fromJson(Map<String, dynamic> json) {
     return LoginResult(
@@ -80,4 +80,32 @@ class LoginResult {
 
   final AppUser user;
   final AuthTokens tokens;
+}
+
+class RegisterResult {
+  const RegisterResult({required this.user, required this.detail});
+
+  factory RegisterResult.fromJson(Map<String, dynamic> json) {
+    return RegisterResult(
+      user: AppUser.fromJson(json['user'] as Map<String, dynamic>),
+      detail: json['detail']?.toString() ?? '',
+    );
+  }
+
+  final AppUser user;
+  final String detail;
+}
+
+class VerifyEmailResult {
+  const VerifyEmailResult({required this.user, required this.detail});
+
+  factory VerifyEmailResult.fromJson(Map<String, dynamic> json) {
+    return VerifyEmailResult(
+      user: AppUser.fromJson(json['user'] as Map<String, dynamic>),
+      detail: json['detail']?.toString() ?? '',
+    );
+  }
+
+  final AppUser user;
+  final String detail;
 }

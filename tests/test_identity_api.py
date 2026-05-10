@@ -37,11 +37,63 @@ def test_register_endpoint_creates_customer_user_and_sends_email(client):
     body = response.json()
     assert body["user"]["email"] == "mario@example.com"
     assert body["user"]["role"] == "customer"
+    assert body["user"]["email_verified"] is False
     assert "verification_token" not in body
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == ["mario@example.com"]
-    assert "verify your email" in mail.outbox[0].subject.lower()
-    assert User.objects.filter(email="mario@example.com").exists()
+    assert "conferma la tua email" in mail.outbox[0].subject.lower()
+    assert "http://127.0.0.1:5177/#/verify-email?token=" in mail.outbox[0].body
+    user = User.objects.get(email="mario@example.com")
+    assert user.email_verified is False
+
+
+@pytest.mark.django_db
+@override_settings(
+    EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend",
+    CELERY_TASK_ALWAYS_EAGER=True,
+    CELERY_TASK_EAGER_PROPAGATES=True,
+    WEB_APP_BASE_URL="http://testserver-web",
+)
+def test_registered_user_must_verify_email_before_token_login(client):
+    register_response = client.post(
+        reverse("api_v1:auth:register"),
+        data=json.dumps(
+            {
+                "email": "verify-login@example.com",
+                "password": "Password123!",
+                "first_name": "Verify",
+                "last_name": "Login",
+            }
+        ),
+        content_type="application/json",
+    )
+    assert register_response.status_code == 201
+
+    login_before_verification_response = client.post(
+        reverse("api_v1:auth:token-login"),
+        data=json.dumps({"email": "verify-login@example.com", "password": "Password123!"}),
+        content_type="application/json",
+    )
+    assert login_before_verification_response.status_code == 400
+    assert login_before_verification_response.json() == {
+        "detail": ["Email address is not verified."]
+    }
+
+    token = generate_email_verification_token("verify-login@example.com")
+    verify_response = client.post(
+        reverse("api_v1:auth:verify-email"),
+        data=json.dumps({"token": token}),
+        content_type="application/json",
+    )
+    assert verify_response.status_code == 200
+
+    login_after_verification_response = client.post(
+        reverse("api_v1:auth:token-login"),
+        data=json.dumps({"email": "verify-login@example.com", "password": "Password123!"}),
+        content_type="application/json",
+    )
+    assert login_after_verification_response.status_code == 200
+    assert login_after_verification_response.json()["tokens"]["access"]
 
 
 @pytest.mark.django_db
