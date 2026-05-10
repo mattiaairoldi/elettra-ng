@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../problems/data/problem_models.dart';
 import '../../problems/data/problems_repository.dart';
+import '../../shell/data/shell_navigation.dart';
 import '../data/guest_models.dart';
 import '../data/guest_repository.dart';
 
@@ -289,6 +290,10 @@ class _GuestDiagnosticScreenState extends ConsumerState<GuestDiagnosticScreen> {
             await ref
                 .read(authActionsProvider)
                 .useLoginResult(promotion.loginResult);
+            ref.invalidate(problemsProvider);
+            ref
+                .read(shellNavigationProvider.notifier)
+                .openProblems(problemId: promotion.problem?.id);
           },
         );
       },

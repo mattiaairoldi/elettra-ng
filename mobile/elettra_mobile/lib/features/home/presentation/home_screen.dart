@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../problems/data/problems_repository.dart';
+import '../../shell/data/shell_navigation.dart';
 import '../data/home_models.dart';
 import '../data/home_repository.dart';
 
@@ -1367,23 +1368,65 @@ class _EmptyPropertyAssets extends StatelessWidget {
   }
 }
 
-class _EmptyHome extends StatelessWidget {
+class _EmptyHome extends ConsumerWidget {
   const _EmptyHome();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.home_work_outlined),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Non ci sono immobili registrati.',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.home_work_outlined, color: scheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Nessuna casa registrata',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Apri una pratica o continua una diagnosi anche prima di completare la scheda casa.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: () =>
+                      ref.read(shellNavigationProvider.notifier).openProblems(),
+                  icon: const Icon(Icons.assignment_outlined),
+                  label: const Text('Apri problemi'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => ref
+                      .read(shellNavigationProvider.notifier)
+                      .openDiagnosis(),
+                  icon: const Icon(Icons.forum_outlined),
+                  label: const Text('Continua diagnosi'),
+                ),
+                Tooltip(
+                  message: 'Disponibile dopo la creazione casa',
+                  child: OutlinedButton.icon(
+                    onPressed: null,
+                    icon: const Icon(Icons.add_home_outlined),
+                    label: const Text('Aggiungi casa'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

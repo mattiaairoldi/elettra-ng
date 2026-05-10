@@ -1,11 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../shell/data/shell_navigation.dart';
 import '../data/problem_models.dart';
 import '../data/problems_repository.dart';
 
 class ProblemsScreen extends ConsumerStatefulWidget {
-  const ProblemsScreen({super.key});
+  const ProblemsScreen({
+    super.key,
+    this.initialProblemId,
+    this.navigationRevision = 0,
+  });
+
+  final int? initialProblemId;
+  final int navigationRevision;
 
   @override
   ConsumerState<ProblemsScreen> createState() => _ProblemsScreenState();
@@ -13,6 +21,7 @@ class ProblemsScreen extends ConsumerStatefulWidget {
 
 class _ProblemsScreenState extends ConsumerState<ProblemsScreen> {
   CustomerProblem? _selectedProblem;
+  int _handledNavigationRevision = -1;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +29,7 @@ class _ProblemsScreenState extends ConsumerState<ProblemsScreen> {
 
     return problems.when(
       data: (items) {
+        _applyNavigationRequest(items);
         final selected = _selectedProblem;
         if (selected != null) {
           final current =
@@ -54,6 +64,19 @@ class _ProblemsScreenState extends ConsumerState<ProblemsScreen> {
         child: Center(child: CircularProgressIndicator()),
       ),
     );
+  }
+
+  void _applyNavigationRequest(List<CustomerProblem> items) {
+    if (_handledNavigationRevision == widget.navigationRevision) {
+      return;
+    }
+    _handledNavigationRevision = widget.navigationRevision;
+    final problemId = widget.initialProblemId;
+    if (problemId == null) {
+      _selectedProblem = null;
+      return;
+    }
+    _selectedProblem = items.where((item) => item.id == problemId).firstOrNull;
   }
 }
 
@@ -1012,23 +1035,57 @@ class _InlineError extends StatelessWidget {
   }
 }
 
-class _EmptyProblems extends StatelessWidget {
+class _EmptyProblems extends ConsumerWidget {
   const _EmptyProblems();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Icon(Icons.check_circle_outline),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Non ci sono problemi aperti.',
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.check_circle_outline, color: scheme.primary),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Nessun problema aperto',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Puoi partire dagli asset della casa oppure continuare con una diagnosi guidata.',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.icon(
+                  onPressed: () =>
+                      ref.read(shellNavigationProvider.notifier).openHome(),
+                  icon: const Icon(Icons.home_work_outlined),
+                  label: const Text('La mia casa'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => ref
+                      .read(shellNavigationProvider.notifier)
+                      .openDiagnosis(),
+                  icon: const Icon(Icons.forum_outlined),
+                  label: const Text('Diagnosi'),
+                ),
+              ],
             ),
           ],
         ),

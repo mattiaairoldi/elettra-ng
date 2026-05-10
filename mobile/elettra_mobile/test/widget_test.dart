@@ -69,12 +69,26 @@ class _FakeProblemsRepository implements ProblemsRepository {
         createdAt: null,
         updatedAt: null,
       ),
+      CustomerProblem(
+        id: 2,
+        categoryId: 1,
+        propertyId: null,
+        assetId: null,
+        title: 'Diagnosi ospite',
+        description: 'Problema elettrico.',
+        status: 'in_diagnosis',
+        priority: 'normal',
+        createdAt: null,
+        updatedAt: null,
+      ),
     ];
   }
 
   @override
   Future<CustomerProblem> fetchProblem(int problemId) async {
-    return (await fetchProblems()).single;
+    return (await fetchProblems()).firstWhere(
+      (problem) => problem.id == problemId,
+    );
   }
 
   @override
@@ -717,6 +731,10 @@ void main() {
       ProviderScope(
         overrides: [
           healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          notificationsRepositoryProvider.overrideWithValue(
+            _FakeNotificationsRepository(),
+          ),
           tokenStoreProvider.overrideWithValue(_FakeTokenStore()),
           problemsRepositoryProvider.overrideWithValue(
             _FakeProblemsRepository(),
@@ -748,5 +766,23 @@ void main() {
     expect(find.text('Consigli guidati'), findsOneWidget);
     expect(find.text('Scollega il forno'), findsOneWidget);
     expect(find.text('Ho registrato la descrizione.'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Salva come pratica'));
+    await tester.tap(find.text('Salva come pratica'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Email'),
+      'guest@example.com',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Password'),
+      'Password123!',
+    );
+    await tester.tap(find.text('Crea account e salva'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Problemi da risolvere'), findsOneWidget);
+    expect(find.text('Diagnosi ospite'), findsOneWidget);
+    expect(find.text('AI diagnostica'), findsOneWidget);
   });
 }

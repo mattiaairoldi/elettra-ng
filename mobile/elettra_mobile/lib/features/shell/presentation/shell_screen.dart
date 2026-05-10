@@ -7,6 +7,7 @@ import '../../home/presentation/home_screen.dart';
 import '../../notifications/data/notification_repository.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 import '../../problems/presentation/problems_screen.dart';
+import '../data/shell_navigation.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
   const ShellScreen({super.key});
@@ -18,6 +19,7 @@ class ShellScreen extends ConsumerStatefulWidget {
 class _ShellScreenState extends ConsumerState<ShellScreen> {
   int _selectedIndex = 0;
   bool _showNotifications = false;
+  ProviderSubscription<ShellNavigationState>? _navigationSubscription;
 
   static const _destinations = [
     _Destination(
@@ -36,7 +38,33 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    final navigation = ref.read(shellNavigationProvider);
+    _selectedIndex = navigation.selectedIndex;
+    _navigationSubscription = ref.listenManual<ShellNavigationState>(
+      shellNavigationProvider,
+      (previous, next) {
+        if (!mounted || previous?.revision == next.revision) {
+          return;
+        }
+        setState(() {
+          _selectedIndex = next.selectedIndex;
+          _showNotifications = false;
+        });
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _navigationSubscription?.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final navigation = ref.watch(shellNavigationProvider);
     final destination = _destinations[_selectedIndex];
     final title = _showNotifications ? 'Notifiche' : destination.title;
 
@@ -80,7 +108,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             else if (_selectedIndex == 0)
               const HomeScreen()
             else if (_selectedIndex == 1)
-              const ProblemsScreen()
+              ProblemsScreen(
+                initialProblemId: navigation.problemId,
+                navigationRevision: navigation.revision,
+              )
             else
               _PlaceholderPanel(destination: destination),
           ],
@@ -88,12 +119,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-            _showNotifications = false;
-          });
-        },
+        onDestinationSelected: (index) =>
+            ref.read(shellNavigationProvider.notifier).selectIndex(index),
         destinations: [
           for (final item in _destinations)
             NavigationDestination(
