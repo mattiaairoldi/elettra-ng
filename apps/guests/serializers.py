@@ -1,11 +1,18 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from apps.ai_assistant.serializers import (
     AiDiagnosticSnapshotSerializer,
     AiMessageSerializer,
 )
+from apps.cases.serializers import CaseSerializer
+from apps.identity.serializers import TokenPairSerializer, UserSerializer
+from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticChapter, DiagnosticChapterOption
 from apps.troubleshooting.serializers import DiagnosticAdviceStepSerializer
+
+User = get_user_model()
 
 
 class GuestQuotaSerializer(serializers.Serializer):
@@ -79,3 +86,46 @@ class GuestDiagnosticTurnResponseSerializer(serializers.Serializer):
     diagnostic_snapshot = AiDiagnosticSnapshotSerializer(allow_null=True)
     quotas = GuestQuotaSerializer()
     call_to_action = serializers.DictField(allow_empty=True)
+
+
+class GuestPromotionSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    first_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    last_name = serializers.CharField(required=False, allow_blank=True, max_length=150)
+    category_id = serializers.IntegerField(required=False, allow_null=True)
+    case_title = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    case_description = serializers.CharField(required=False, allow_blank=True)
+
+    def validate_email(self, value):
+        normalized_value = User.objects.normalize_email(value)
+        if User.objects.filter(email=normalized_value).exists():
+            raise serializers.ValidationError("A user with this email already exists.")
+        return normalized_value
+
+    def validate_password(self, value):
+        validate_password(value)
+        return value
+
+    def validate_category_id(self, value):
+        if value is None:
+            return value
+        try:
+            category = Category.objects.get(id=value, is_active=True)
+        except Category.DoesNotExist as exc:
+            raise serializers.ValidationError("Invalid category.") from exc
+        self.context["category"] = category
+        return value
+
+    def validate(self, attrs):
+        if "category" in self.context:
+            attrs["category"] = self.context["category"]
+        return attrs
+
+
+class GuestPromotionResponseSerializer(serializers.Serializer):
+    user = UserSerializer()
+    tokens = TokenPairSerializer()
+    guest_session = GuestSessionResponseSerializer()
+    case = CaseSerializer()
+    diagnostic_snapshot = AiDiagnosticSnapshotSerializer(allow_null=True)

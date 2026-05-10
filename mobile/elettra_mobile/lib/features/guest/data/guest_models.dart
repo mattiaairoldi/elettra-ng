@@ -1,3 +1,4 @@
+import '../../auth/data/auth_models.dart';
 import '../../problems/data/problem_models.dart';
 
 class GuestQuota {
@@ -124,6 +125,34 @@ class GuestDiagnosticResult {
   final AiDiagnosticSnapshot? snapshot;
   final GuestQuota quotas;
   final GuestCallToAction callToAction;
+}
+
+class GuestPromotionResult {
+  const GuestPromotionResult({
+    required this.user,
+    required this.tokens,
+    required this.problem,
+    required this.snapshot,
+  });
+
+  factory GuestPromotionResult.fromJson(Map<String, dynamic> json) {
+    final casePayload = json['case'];
+    return GuestPromotionResult(
+      user: AppUser.fromJson(json['user'] as Map<String, dynamic>),
+      tokens: AuthTokens.fromJson(json['tokens'] as Map<String, dynamic>),
+      problem: casePayload is Map<String, dynamic>
+          ? CustomerProblem.fromJson(casePayload)
+          : null,
+      snapshot: _snapshotFromJson(json['diagnostic_snapshot']),
+    );
+  }
+
+  final AppUser user;
+  final AuthTokens tokens;
+  final CustomerProblem? problem;
+  final AiDiagnosticSnapshot? snapshot;
+
+  LoginResult get loginResult => LoginResult(user: user, tokens: tokens);
 }
 
 AiMessage? _messageFromJson(Object? value) {

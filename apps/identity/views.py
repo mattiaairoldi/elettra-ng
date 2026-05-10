@@ -1,6 +1,4 @@
-from django.conf import settings
 from django.contrib.auth import login, logout
-from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -9,6 +7,7 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from .jwt import build_refresh_payload, build_token_payload, record_token_login
 from .serializers import (
     DetailResponseSerializer,
     ForgotPasswordSerializer,
@@ -29,43 +28,6 @@ from .serializers import (
     build_register_response,
 )
 from .tasks import send_password_reset_email_task, send_verification_email_task
-
-
-def _seconds(value) -> int:
-    return int(value.total_seconds())
-
-
-def _build_token_payload(user) -> dict:
-    refresh = RefreshToken.for_user(user)
-    simple_jwt_settings = settings.SIMPLE_JWT
-    return {
-        "access": str(refresh.access_token),
-        "refresh": str(refresh),
-        "token_type": "Bearer",
-        "access_expires_in": _seconds(simple_jwt_settings["ACCESS_TOKEN_LIFETIME"]),
-        "refresh_expires_in": _seconds(simple_jwt_settings["REFRESH_TOKEN_LIFETIME"]),
-    }
-
-
-def _build_refresh_payload(validated_data: dict) -> dict:
-    simple_jwt_settings = settings.SIMPLE_JWT
-    payload = {
-        "access": validated_data["access"],
-        "token_type": "Bearer",
-        "access_expires_in": _seconds(simple_jwt_settings["ACCESS_TOKEN_LIFETIME"]),
-    }
-    if "refresh" in validated_data:
-        payload["refresh"] = validated_data["refresh"]
-        payload["refresh_expires_in"] = _seconds(simple_jwt_settings["REFRESH_TOKEN_LIFETIME"])
-    return payload
-
-
-def _record_token_login(user) -> None:
-    now = timezone.now()
-    user.last_login = now
-    user.last_login_at = now
-    user.updated_at = now
-    user.save(update_fields=["last_login", "last_login_at", "updated_at"])
 
 
 class RegisterView(APIView):
@@ -106,9 +68,9 @@ class TokenLoginView(APIView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data["user"]
         accepted_organization_invitation = serializer.accept_organization_invitation()
-        _record_token_login(user)
+        record_token_login(user)
         response = build_login_response(user, accepted_organization_invitation)
-        response["tokens"] = _build_token_payload(user)
+        response["tokens"] = build_token_payload(user)
         return Response(response)
 
 
@@ -125,7 +87,7 @@ class TokenRefreshView(APIView):
                 {"detail": str(exc), "code": "token_not_valid"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-        return Response(_build_refresh_payload(serializer.validated_data))
+        return Response(build_refresh_payload(serializer.validated_data))
 
 
 class TokenLogoutView(APIView):

@@ -86,13 +86,10 @@ Per sicurezza, gli endpoint guest sono separati da quelli autenticati:
 
 - `POST /api/v1/guest/sessions`;
 - `GET /api/v1/guest/sessions/current`;
+- `POST /api/v1/guest/promote`;
 - `POST /api/v1/guest/diagnostic-turns`;
 - `GET /api/v1/guest/messages/{message_id}`;
 - `GET /api/v1/guest/diagnostic-snapshot`.
-
-Endpoint previsto ma non implementato nella prima iterazione:
-
-- `POST /api/v1/guest/promote`.
 
 Gli endpoint autenticati restano sotto JWT utente.
 
@@ -145,12 +142,13 @@ Se in futuro si abilita upload guest:
 Flusso:
 
 1. Il guest sceglie `Salva e continua`.
-2. Inserisce email e password oppure usa registrazione standard.
+2. Inserisce email, password e dati minimi profilo.
 3. Il backend crea `User` e `Organization` personal.
 4. La `GuestSession` passa a `promoted`.
-5. Il backend crea un `Case` solo se l'utente conferma.
-6. Il riepilogo diagnostico, rischio, capitolo e fatti rilevanti vengono copiati nel caso.
-7. I messaggi originali possono essere mantenuti solo se esplicitamente consentito.
+5. Il backend crea un `Case` dalla categoria dello snapshot o dal `category_id` inviato.
+6. La `AiSession` guest viene ricollegata a utente e caso.
+7. Il ledger AI viene ricollegato a utente, organizzazione e caso.
+8. La risposta include JWT access/refresh e la UI cancella il token guest locale.
 
 Regola conservativa:
 
@@ -204,13 +202,23 @@ Output:
 
 Richiede token guest e dati di registrazione o token registrazione.
 
+Input implementato:
+
+- `email`;
+- `password`;
+- `first_name`, opzionale;
+- `last_name`, opzionale;
+- `category_id`, opzionale se lo snapshot ha gia un capitolo con categoria;
+- `case_title`, opzionale;
+- `case_description`, opzionale.
+
 Output:
 
 - user autenticato;
 - token JWT;
-- eventuale `case_id` creato.
-
-Stato: endpoint non implementato nella prima iterazione. La UI mostra CTA di accesso, ma la conversione automatica guest -> account/caso resta un passo separato.
+- sessione guest marcata `promoted`;
+- `case` creato;
+- snapshot diagnostico, se presente.
 
 ## Flutter
 
@@ -219,12 +227,9 @@ Schermate implementate:
 - scelta iniziale: `Accedi`, `Registrati`, `Continua come ospite`;
 - diagnostica guest;
 - quota residua o limite raggiunto;
-- call to action `Salva e continua`.
-
-Schermate previste per una iterazione successiva:
-
+- call to action `Salva e continua`;
 - promozione ad account;
-- passaggio da guest ad area autenticata.
+- passaggio da guest ad area autenticata con JWT.
 
 Storage client:
 
@@ -245,7 +250,7 @@ Stato implementazione corrente:
 - [x] Quote guest configurabili: TTL, turni AI, messaggi e rate limit IP giornaliero.
 - [x] Diagnostica guest riusa macro-capitoli, consigli salvati, messaggi AI e `AiDiagnosticSnapshot` senza creare `Case`, `Organization`, allegati o conversazioni.
 - [x] Flutter pre-login espone `Continua come ospite`, salva token guest, mostra quote, consigli, risposta AI, snapshot e CTA di accesso.
-- [ ] Promozione guest -> account/caso.
+- [x] Promozione guest -> account/caso con JWT, `Case`, sessione AI ricollegata e token guest cancellato lato client.
 
 ### Fase 1 - GuestSession
 
@@ -270,10 +275,10 @@ Stato implementazione corrente:
 
 ### Fase 4 - Promozione
 
-- [ ] collegare registrazione;
-- [ ] creare user e organization personal;
-- [ ] creare eventuale caso da riepilogo;
-- [ ] invalidare o marcare promossa la sessione guest.
+- [x] collegare registrazione;
+- [x] creare user e organization personal;
+- [x] creare caso da riepilogo/categoria;
+- [x] invalidare o marcare promossa la sessione guest.
 
 ### Fase 5 - Flutter
 
@@ -281,7 +286,7 @@ Stato implementazione corrente:
 - [x] salvare token guest;
 - [x] costruire UI diagnostica leggera;
 - [x] aggiungere call to action di registrazione;
-- [ ] collegare promozione.
+- [x] collegare promozione.
 
 ## Test
 
@@ -294,8 +299,9 @@ Backend:
 - [x] quote AI applicate;
 - [x] endpoint guest non crea organization;
 - [x] guest non accede ad asset/property/case autenticati;
-- [ ] promozione crea user e organization;
-- [ ] promozione opzionale crea case da snapshot.
+- [x] promozione crea user e organization;
+- [x] promozione crea case da snapshot o categoria esplicita;
+- [x] promozione ricollega sessione AI e ledger.
 
 Flutter:
 
@@ -303,7 +309,7 @@ Flutter:
 - [x] persistenza token guest;
 - [x] diagnostica guest con repository fake;
 - [x] limite quota mostrato;
-- [ ] promozione cancella token guest e passa a sessione autenticata.
+- [x] promozione cancella token guest e passa a sessione autenticata.
 
 ## Fuori Perimetro Iniziale
 
@@ -324,5 +330,5 @@ La feature è completa per MVP quando:
 - un utente può provare una diagnosi senza registrarsi;
 - il backend applica quote e scadenza;
 - il guest riceve una call to action naturale alla registrazione;
-- la registrazione conserva il riepilogo utile, se viene attivata la promozione automatica;
+- la registrazione conserva il riepilogo utile creando una pratica autenticata;
 - nessun dato guest apre accesso a funzioni persistenti senza account.

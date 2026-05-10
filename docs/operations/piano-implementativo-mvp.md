@@ -101,7 +101,7 @@ Schermate minime:
 
 - login/register;
 - accesso ospite;
-- promozione guest ad account, in una iterazione successiva;
+- promozione guest ad account/caso;
 - `La mia casa`;
 - elenco immobili;
 - elenco asset;
@@ -283,11 +283,12 @@ Già implementato nel workstream MVP:
 - verifica manuale Flutter web di `La mia casa` su seed demo reale;
 - verifica manuale Flutter web di `Problemi da risolvere` fino a consiglio guidato, AI, snapshot, condivisione e notifica professionista;
 - guest tier diagnostico pre-onboarding con sessione opaca, quote basse e UI Flutter pre-login;
+- promozione guest -> account/caso con JWT e pratica creata dal riepilogo diagnostico;
 - API e test per storico e promemoria manutenzione asset;
 - API notifiche in-app e `DeviceInstallation` con hook su condivisioni/conversazioni;
 - centro notifiche Flutter con badge unread, lista notifiche e azioni mark-read, verificato manualmente su web.
 
 Prossima sequenza:
 
-1. Completare promozione guest -> account/caso solo se validata dal percorso ospite.
+1. Validare manualmente il flusso guest -> account/caso su Flutter web con seed demo reale.
 2. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.

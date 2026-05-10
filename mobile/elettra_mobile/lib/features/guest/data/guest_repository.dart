@@ -17,6 +17,15 @@ abstract class GuestRepository {
     int? optionId,
     bool useAi = true,
   });
+  Future<GuestPromotionResult> promote({
+    required String email,
+    required String password,
+    String firstName = '',
+    String lastName = '',
+    int? categoryId,
+    String? caseTitle,
+    String? caseDescription,
+  });
   Future<void> clearSession();
 }
 
@@ -111,6 +120,42 @@ class DioGuestRepository implements GuestRepository {
   @override
   Future<void> clearSession() async {
     await _tokenStore.clearGuestToken();
+  }
+
+  @override
+  Future<GuestPromotionResult> promote({
+    required String email,
+    required String password,
+    String firstName = '',
+    String lastName = '',
+    int? categoryId,
+    String? caseTitle,
+    String? caseDescription,
+  }) async {
+    final token = await _tokenStore.readGuestToken();
+    if (token == null || token.isEmpty) {
+      throw StateError('Guest session not available.');
+    }
+
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/guest/promote',
+      data: {
+        'email': email,
+        'password': password,
+        'first_name': firstName,
+        'last_name': lastName,
+        'category_id': ?categoryId,
+        'case_title': ?caseTitle,
+        'case_description': ?caseDescription,
+      },
+      options: Options(
+        extra: {'skipAuth': true},
+        headers: {'X-Guest-Token': token},
+      ),
+    );
+    final result = GuestPromotionResult.fromJson(response.data ?? const {});
+    await _tokenStore.clearGuestToken();
+    return result;
   }
 
   Future<AiMessage?> _pollAssistantMessage(

@@ -280,6 +280,54 @@ class _FakeGuestRepository implements GuestRepository {
   }
 
   @override
+  Future<GuestPromotionResult> promote({
+    required String email,
+    required String password,
+    String firstName = '',
+    String lastName = '',
+    int? categoryId,
+    String? caseTitle,
+    String? caseDescription,
+  }) async {
+    return const GuestPromotionResult(
+      user: AppUser(
+        id: 10,
+        email: 'guest@example.com',
+        firstName: 'Guest',
+        lastName: 'User',
+        role: 'customer',
+      ),
+      tokens: AuthTokens(
+        access: 'access',
+        refresh: 'refresh',
+        tokenType: 'Bearer',
+        accessExpiresIn: 300,
+        refreshExpiresIn: 86400,
+      ),
+      problem: CustomerProblem(
+        id: 2,
+        categoryId: 1,
+        propertyId: null,
+        assetId: null,
+        title: 'Diagnosi ospite',
+        description: 'Problema elettrico.',
+        status: 'in_diagnosis',
+        priority: 'normal',
+        createdAt: null,
+        updatedAt: null,
+      ),
+      snapshot: AiDiagnosticSnapshot(
+        summary: 'Problema elettrico.',
+        riskLevel: 'medium',
+        nextQuestion: '',
+        escalationRecommended: false,
+        escalationReason: '',
+        recommendation: '',
+      ),
+    );
+  }
+
+  @override
   Future<GuestSessionSummary> startSession() async {
     return const GuestSessionSummary(
       id: 'guest-id',

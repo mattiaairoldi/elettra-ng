@@ -17,13 +17,13 @@ class DioAuthRepository implements AuthRepository {
   final Dio _dio;
 
   @override
-  Future<LoginResult> login({required String email, required String password}) async {
+  Future<LoginResult> login({
+    required String email,
+    required String password,
+  }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       '/auth/token/login',
-      data: {
-        'email': email,
-        'password': password,
-      },
+      data: {'email': email, 'password': password},
       options: Options(extra: {'skipAuth': true}),
     );
     return LoginResult.fromJson(response.data ?? const {});
@@ -75,9 +75,9 @@ final authBootstrapProvider = FutureProvider<void>((ref) async {
 
   try {
     final user = await ref.watch(authRepositoryProvider).currentUser();
-    ref.read(authSessionProvider.notifier).setSession(
-          AuthSession(user: user, tokens: tokens),
-        );
+    ref
+        .read(authSessionProvider.notifier)
+        .setSession(AuthSession(user: user, tokens: tokens));
   } catch (_) {
     await tokenStore.clearTokens();
     ref.read(authSessionProvider.notifier).setSession(null);
@@ -90,15 +90,17 @@ class AuthActions {
   final Ref _ref;
 
   Future<void> login({required String email, required String password}) async {
-    final result = await _ref.read(authRepositoryProvider).login(
-          email: email,
-          password: password,
-        );
+    final result = await _ref
+        .read(authRepositoryProvider)
+        .login(email: email, password: password);
+    await useLoginResult(result);
+  }
+
+  Future<void> useLoginResult(LoginResult result) async {
     await _ref.read(tokenStoreProvider).saveTokens(result.tokens);
-    _ref.read(authSessionProvider.notifier).setSession(AuthSession(
-          user: result.user,
-          tokens: result.tokens,
-        ));
+    _ref
+        .read(authSessionProvider.notifier)
+        .setSession(AuthSession(user: result.user, tokens: result.tokens));
   }
 
   Future<void> logout() async {

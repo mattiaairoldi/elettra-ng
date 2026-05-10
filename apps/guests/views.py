@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import permissions, status
@@ -8,6 +9,10 @@ from rest_framework.views import APIView
 from apps.ai_assistant.diagnostics import build_diagnostic_selection_metadata
 from apps.ai_assistant.models import AiDiagnosticSnapshot, AiMessage, AiSession
 from apps.ai_assistant.serializers import AiDiagnosticSnapshotSerializer, AiMessageSerializer
+from apps.cases.serializers import CaseSerializer
+from apps.identity.jwt import build_token_payload, record_token_login
+from apps.identity.serializers import UserSerializer, raise_serializer_validation_error
+from apps.identity.tasks import send_verification_email_task
 from apps.ai_assistant.tasks import generate_ai_diagnostic_reply_task
 from apps.troubleshooting.models import DiagnosticAdviceStep, DiagnosticChapter
 from apps.troubleshooting.serializers import DiagnosticAdviceStepSerializer
@@ -15,12 +20,15 @@ from apps.troubleshooting.serializers import DiagnosticAdviceStepSerializer
 from .serializers import (
     GuestDiagnosticTurnResponseSerializer,
     GuestDiagnosticTurnSerializer,
+    GuestPromotionResponseSerializer,
+    GuestPromotionSerializer,
     GuestSessionResponseSerializer,
 )
 from .services import (
     authenticate_guest_session,
     build_guest_quotas,
     create_guest_session,
+    promote_guest_session,
 )
 
 
@@ -33,6 +41,23 @@ def serialize_guest_session(session, token: str | None = None) -> dict:
     }
     if token is not None:
         payload["guest_token"] = token
+    return payload
+
+
+def serialize_guest_promotion(promotion: dict) -> dict:
+    session = promotion["guest_session"]
+    user = promotion["user"]
+    record_token_login(user)
+    payload = {
+        "user": UserSerializer(user).data,
+        "tokens": build_token_payload(user),
+        "guest_session": serialize_guest_session(session),
+        "case": CaseSerializer(promotion["case"]).data,
+        "diagnostic_snapshot": None,
+    }
+    snapshot = promotion.get("diagnostic_snapshot")
+    if snapshot is not None:
+        payload["diagnostic_snapshot"] = AiDiagnosticSnapshotSerializer(snapshot).data
     return payload
 
 
@@ -96,6 +121,25 @@ class GuestSessionCurrentView(APIView):
     def get(self, request):
         session = authenticate_guest_session(request)
         return Response(serialize_guest_session(session))
+
+
+class GuestPromotionView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        request=GuestPromotionSerializer,
+        responses={201: GuestPromotionResponseSerializer},
+    )
+    def post(self, request):
+        guest_session = authenticate_guest_session(request)
+        serializer = GuestPromotionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            promotion = promote_guest_session(guest_session, serializer.validated_data)
+        except DjangoValidationError as exc:
+            raise_serializer_validation_error(exc)
+        send_verification_email_task.delay(promotion["user"].id)
+        return Response(serialize_guest_promotion(promotion), status=status.HTTP_201_CREATED)
 
 
 class GuestDiagnosticTurnView(APIView):

@@ -109,7 +109,7 @@ Caratteristiche:
 - niente condivisione con professionisti;
 - promozione possibile ad account registrato.
 
-Quando il guest si registra, il sistema crea il normale `User`, la `Organization` personal e può migrare il riepilogo diagnostico utile in un nuovo `Case`.
+Quando il guest si registra dal flusso ospite, il sistema crea il normale `User`, la `Organization` personal e migra il riepilogo diagnostico utile in un nuovo `Case`.
 
 ### Personal
 

@@ -7,8 +7,9 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.ai_assistant.models import AiDiagnosticSnapshot, AiSession, AiUsageLedger
-from apps.cases.models import Case
+from apps.cases.models import Case, CaseEvent
 from apps.guests.models import GuestSession
+from apps.identity.models import User
 from apps.organizations.models import Organization
 from apps.taxonomy.models import Category
 from apps.troubleshooting.models import DiagnosticAdviceStep, DiagnosticChapter, DiagnosticChapterOption
@@ -190,3 +191,104 @@ def test_guest_ai_turn_limit_blocks_extra_ai_and_returns_call_to_action(client):
     guest_session = GuestSession.objects.get(public_id=guest_payload["guest_session_id"])
     ai_session = AiSession.objects.get(guest_session=guest_session)
     assert ai_session.messages.filter(role="user").count() == 1
+
+
+@pytest.mark.django_db
+@override_settings(AI_PROVIDER="local", CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPAGATES=True)
+def test_guest_promote_creates_customer_case_tokens_and_relinks_ai_session(client):
+    category = Category.objects.create(name="Elettricita", slug="guest-promote-elettricita")
+    chapter = DiagnosticChapter.objects.create(
+        name="Problemi elettrici",
+        slug="guest-promote-problemi-elettrici",
+        category=category,
+        status=DiagnosticChapter.Statuses.PUBLISHED,
+        is_public=True,
+    )
+    guest_payload = create_guest_session(client)
+    turn_response = client.post(
+        reverse("api_v1:guests:guest-diagnostic-turns"),
+        data=json.dumps(
+            {
+                "diagnostic_chapter_id": chapter.id,
+                "message": "Sento odore di bruciato vicino al quadro elettrico",
+                "use_ai": True,
+            }
+        ),
+        content_type="application/json",
+        **auth_headers(guest_payload["guest_token"]),
+    )
+    assert turn_response.status_code == 200
+
+    response = client.post(
+        reverse("api_v1:guests:guest-promote"),
+        data=json.dumps(
+            {
+                "email": "guest.promoted@example.com",
+                "password": "Password123!",
+                "first_name": "Giulia",
+                "last_name": "Verdi",
+            }
+        ),
+        content_type="application/json",
+        **auth_headers(guest_payload["guest_token"]),
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["tokens"]["access"]
+    assert payload["tokens"]["refresh"]
+    assert payload["user"]["email"] == "guest.promoted@example.com"
+    assert payload["guest_session"]["status"] == GuestSession.Statuses.PROMOTED
+    assert payload["case"]["category_id"] == category.id
+    assert payload["case"]["status"] == Case.Statuses.IN_DIAGNOSIS
+    assert payload["case"]["source"] == Case.Sources.TROUBLESHOOTING
+    assert payload["diagnostic_snapshot"]["risk_level"] == "urgent"
+
+    user = User.objects.get(email="guest.promoted@example.com")
+    guest_session = GuestSession.objects.get(public_id=guest_payload["guest_session_id"])
+    case = Case.objects.get(customer_user=user)
+    ai_session = AiSession.objects.get(user=user)
+    usage = AiUsageLedger.objects.get(session=ai_session)
+    assert guest_session.status == GuestSession.Statuses.PROMOTED
+    assert guest_session.promoted_to_user_id == user.id
+    assert guest_session.promoted_at is not None
+    assert ai_session.guest_session_id is None
+    assert ai_session.case_id == case.id
+    assert usage.user_id == user.id
+    assert usage.guest_session_id is None
+    assert usage.case_id == case.id
+    assert Organization.objects.filter(memberships__user=user).exists()
+    assert CaseEvent.objects.filter(case=case, event_type=CaseEvent.EventTypes.CASE_CREATED).exists()
+    assert CaseEvent.objects.filter(case=case, event_type=CaseEvent.EventTypes.AI_DIAGNOSTIC_PROGRESS).exists()
+
+    current_response = client.get(
+        reverse("api_v1:guests:guest-session-current"),
+        **auth_headers(guest_payload["guest_token"]),
+    )
+    assert current_response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_guest_promote_rejects_existing_email_and_keeps_session_active(client):
+    category = Category.objects.create(name="Elettricita", slug="guest-promote-existing-elettricita")
+    guest_payload = create_guest_session(client)
+    User.objects.create_user(email="existing@example.com", password="Password123!")
+
+    response = client.post(
+        reverse("api_v1:guests:guest-promote"),
+        data=json.dumps(
+            {
+                "email": "existing@example.com",
+                "password": "Password123!",
+                "category_id": category.id,
+            }
+        ),
+        content_type="application/json",
+        **auth_headers(guest_payload["guest_token"]),
+    )
+
+    assert response.status_code == 400
+    assert response.json()["email"] == ["A user with this email already exists."]
+    guest_session = GuestSession.objects.get(public_id=guest_payload["guest_session_id"])
+    assert guest_session.status == GuestSession.Statuses.ACTIVE
+    assert Case.objects.count() == 0

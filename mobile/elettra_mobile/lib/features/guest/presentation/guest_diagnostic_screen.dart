@@ -1,6 +1,8 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/data/auth_repository.dart';
 import '../../problems/data/problem_models.dart';
 import '../../problems/data/problems_repository.dart';
 import '../data/guest_models.dart';
@@ -20,6 +22,7 @@ class _GuestDiagnosticScreenState extends ConsumerState<GuestDiagnosticScreen> {
   final _messageController = TextEditingController();
   int? _selectedChapterId;
   int? _selectedOptionId;
+  int? _selectedCategoryId;
   GuestDiagnosticResult? _result;
   bool _sending = false;
   String? _error;
@@ -84,7 +87,7 @@ class _GuestDiagnosticScreenState extends ConsumerState<GuestDiagnosticScreen> {
               const SizedBox(height: 12),
               _GuestResultPanel(
                 result: _result!,
-                onLogin: widget.onBackToLogin,
+                onPromote: _showPromotionSheet,
               ),
             ],
           ],
@@ -243,6 +246,7 @@ class _GuestDiagnosticScreenState extends ConsumerState<GuestDiagnosticScreen> {
       if (mounted) {
         setState(() {
           _result = result;
+          _selectedCategoryId = chapter?.categoryId;
           _messageController.clear();
         });
         ref.invalidate(guestSessionProvider);
@@ -256,6 +260,266 @@ class _GuestDiagnosticScreenState extends ConsumerState<GuestDiagnosticScreen> {
         setState(() => _sending = false);
       }
     }
+  }
+
+  Future<void> _showPromotionSheet() async {
+    final result = _result;
+    if (result == null) {
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return _PromotionSheet(
+          categoryId: _selectedCategoryId,
+          snapshot: result.snapshot,
+          onSubmit: (data) async {
+            final promotion = await ref
+                .read(guestRepositoryProvider)
+                .promote(
+                  email: data.email,
+                  password: data.password,
+                  firstName: data.firstName,
+                  lastName: data.lastName,
+                  categoryId: data.categoryId,
+                  caseDescription: data.caseDescription,
+                );
+            await ref
+                .read(authActionsProvider)
+                .useLoginResult(promotion.loginResult);
+          },
+        );
+      },
+    );
+  }
+}
+
+class _PromotionFormData {
+  const _PromotionFormData({
+    required this.email,
+    required this.password,
+    required this.firstName,
+    required this.lastName,
+    required this.categoryId,
+    required this.caseDescription,
+  });
+
+  final String email;
+  final String password;
+  final String firstName;
+  final String lastName;
+  final int? categoryId;
+  final String? caseDescription;
+}
+
+class _PromotionSheet extends StatefulWidget {
+  const _PromotionSheet({
+    required this.categoryId,
+    required this.snapshot,
+    required this.onSubmit,
+  });
+
+  final int? categoryId;
+  final AiDiagnosticSnapshot? snapshot;
+  final Future<void> Function(_PromotionFormData data) onSubmit;
+
+  @override
+  State<_PromotionSheet> createState() => _PromotionSheetState();
+}
+
+class _PromotionSheetState extends State<_PromotionSheet> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  bool _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + viewInsets.bottom),
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.save_outlined),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Salva come pratica',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _emailController,
+                enabled: !_submitting,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.mail_outline),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _passwordController,
+                enabled: !_submitting,
+                obscureText: true,
+                autofillHints: const [AutofillHints.newPassword],
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: Icon(Icons.lock_outline),
+                ),
+                onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _firstNameController,
+                      enabled: !_submitting,
+                      autofillHints: const [AutofillHints.givenName],
+                      decoration: const InputDecoration(labelText: 'Nome'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _lastNameController,
+                      enabled: !_submitting,
+                      autofillHints: const [AutofillHints.familyName],
+                      decoration: const InputDecoration(labelText: 'Cognome'),
+                    ),
+                  ),
+                ],
+              ),
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(_error!, style: TextStyle(color: scheme.error)),
+              ],
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _submitting ? null : _submit,
+                icon: _submitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: const Text('Crea account e salva'),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _submitting
+                    ? null
+                    : () => Navigator.of(context).pop(),
+                child: const Text('Annulla'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (_submitting) {
+      return;
+    }
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Email e password sono obbligatorie.');
+      return;
+    }
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await widget.onSubmit(
+        _PromotionFormData(
+          email: email,
+          password: password,
+          firstName: _firstNameController.text.trim(),
+          lastName: _lastNameController.text.trim(),
+          categoryId: widget.categoryId,
+          caseDescription: _caseDescription(),
+        ),
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = _promotionErrorMessage(error));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
+  }
+
+  String? _caseDescription() {
+    final snapshot = widget.snapshot;
+    if (snapshot == null) {
+      return null;
+    }
+    final parts = [
+      if (snapshot.summary.isNotEmpty) snapshot.summary,
+      if (snapshot.recommendation.isNotEmpty) snapshot.recommendation,
+    ];
+    return parts.isEmpty ? null : parts.join('\n\n');
+  }
+
+  String _promotionErrorMessage(Object error) {
+    if (error is DioException) {
+      final data = error.response?.data;
+      if (data is Map<String, dynamic>) {
+        for (final key in [
+          'email',
+          'password',
+          'category_id',
+          'guest_session',
+          'detail',
+        ]) {
+          final value = data[key];
+          if (value is List && value.isNotEmpty) {
+            return value.first.toString();
+          }
+          if (value is String && value.isNotEmpty) {
+            return value;
+          }
+        }
+      }
+    }
+    return 'Salvataggio non riuscito.';
   }
 }
 
@@ -293,16 +557,24 @@ class _QuotaCard extends StatelessWidget {
 }
 
 class _GuestResultPanel extends StatelessWidget {
-  const _GuestResultPanel({required this.result, required this.onLogin});
+  const _GuestResultPanel({required this.result, required this.onPromote});
 
   final GuestDiagnosticResult result;
-  final VoidCallback onLogin;
+  final VoidCallback onPromote;
 
   @override
   Widget build(BuildContext context) {
     final assistant = result.assistantMessage;
     final snapshot = result.snapshot;
-    final callToAction = result.callToAction;
+    final callToAction = result.callToAction.isEmpty
+        ? const GuestCallToAction(
+            code: 'guest_save_case',
+            title: 'Salva diagnosi',
+            message:
+                'Crea un account e trasforma questo riepilogo in una pratica.',
+            actionLabel: 'Salva come pratica',
+          )
+        : result.callToAction;
 
     return Card(
       child: Padding(
@@ -331,10 +603,8 @@ class _GuestResultPanel extends StatelessWidget {
               const SizedBox(height: 12),
               _SnapshotBox(snapshot: snapshot),
             ],
-            if (!callToAction.isEmpty) ...[
-              const SizedBox(height: 12),
-              _CallToActionBox(callToAction: callToAction, onLogin: onLogin),
-            ],
+            const SizedBox(height: 12),
+            _CallToActionBox(callToAction: callToAction, onPromote: onPromote),
           ],
         ),
       ),
@@ -452,10 +722,10 @@ class _SnapshotRow extends StatelessWidget {
 }
 
 class _CallToActionBox extends StatelessWidget {
-  const _CallToActionBox({required this.callToAction, required this.onLogin});
+  const _CallToActionBox({required this.callToAction, required this.onPromote});
 
   final GuestCallToAction callToAction;
-  final VoidCallback onLogin;
+  final VoidCallback onPromote;
 
   @override
   Widget build(BuildContext context) {
@@ -486,8 +756,8 @@ class _CallToActionBox extends StatelessWidget {
             ],
             const SizedBox(height: 10),
             FilledButton.icon(
-              onPressed: onLogin,
-              icon: const Icon(Icons.login),
+              onPressed: onPromote,
+              icon: const Icon(Icons.save_outlined),
               label: Text(callToAction.actionLabel),
             ),
           ],

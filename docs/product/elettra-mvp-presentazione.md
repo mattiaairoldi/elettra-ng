@@ -228,6 +228,7 @@ La base backend è già impostata:
 - consigli guidati salvati;
 - limiti di utilizzo AI;
 - guest tier diagnostico pre-onboarding con quote AI molto basse;
+- promozione guest -> account/caso con JWT e pratica creata dal riepilogo diagnostico;
 - notifiche in-app backend e registrazione dispositivi predisposta;
 - auth token-based per mobile;
 - app Flutter mobile-ready con accesso ospite, `La mia casa`, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI, condivisione professionista e centro notifiche collegate ad API reali;
@@ -235,8 +236,7 @@ La base backend è già impostata:
 
 Il prossimo lavoro dovrebbe concentrarsi su:
 
-1. promozione guest -> account/caso se il percorso ospite risulta utile;
-2. validazione dei flussi MVP con scenari reali;
-3. taratura dei limiti AI su uso reale.
+1. validazione dei flussi MVP con scenari reali;
+2. taratura dei limiti AI su uso reale.
 
 L'obiettivo del primo MVP è dimostrare che la casa può essere documentata senza complessità e che un problema tecnico può nascere in modo semplice, sicuro e ordinato, arrivando al professionista solo quando serve e con informazioni migliori.
