@@ -40,3 +40,11 @@ Frontend locale: `http://127.0.0.1:5173`
 - [Project tracker](docs/operations/project-tracker.md)
 - [Decisioni prima dell'import da elettra](docs/operations/decisioni-prima-import-elettra.md)
 - [PDF sorgente](docs/sources/Progetto_Elettra.pdf)
+
+## CI Locale
+
+Esecuzione completa locale, pensata per essere riusata anche da GitHub Actions o Gitea Actions:
+
+```bash
+scripts/ci/local-all.sh
+```

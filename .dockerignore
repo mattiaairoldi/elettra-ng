@@ -6,6 +6,10 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 *.egg-info/
+frontend/node_modules/
+frontend/dist/
+mobile/elettra_mobile/.dart_tool/
+mobile/elettra_mobile/build/
 .env
 .env.*
 !.env.example
@@ -13,4 +17,3 @@ staticfiles/
 media/
 docker-data/
 *.log
-

@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - "mobile/**"
+      - "scripts/ci/**"
       - ".github/workflows/mobile.yml"
   pull_request:
     paths:
       - "mobile/**"
+      - "scripts/ci/**"
       - ".github/workflows/mobile.yml"
 
 jobs:
@@ -27,20 +29,8 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Analyze
-        run: flutter analyze
-
-      - name: Test
-        run: flutter test
-
-      - name: Build web
-        run: flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
-
-      - name: Build Android debug
-        run: flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:8000/api/v1
+      - name: Run shared mobile CI script
+        run: ../../scripts/ci/mobile.sh
 
   flutter-ios-no-codesign:
     name: Flutter iOS No-Codesign
@@ -58,8 +48,11 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
-        run: flutter pub get
-
       - name: Build iOS without codesigning
-        run: flutter build ios --no-codesign --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
+        run: |
+          RUN_ANALYZE=false \
+          RUN_TESTS=false \
+          BUILD_WEB=false \
+          BUILD_ANDROID_DEBUG=false \
+          BUILD_IOS_NO_CODESIGN=true \
+          ../../scripts/ci/mobile.sh

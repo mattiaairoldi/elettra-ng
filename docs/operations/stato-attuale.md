@@ -27,6 +27,8 @@ La app Flutter in `mobile/elettra_mobile` e il client principale previsto per An
 
 La strategia scelta per staging/deploy e usare script CI locali versionati come fonte comune: oggi esecuzione locale dopo commit, poi stessi script in GitHub Actions o Gitea Actions, con immagini Docker costruite dalla CI e scaricate dal VPS tramite registry. Dettaglio operativo: [CI Locale E Deploy Staging](ci-locale-e-deploy-staging.md).
 
+Sono disponibili gli script `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh` e `scripts/ci/local-all.sh`.
+
 Sono operativi in Flutter:
 
 - login token-based;
@@ -59,6 +61,7 @@ docker compose run --rm web uv run python manage.py spectacular --validate --fai
 cd mobile/elettra_mobile && flutter analyze
 cd mobile/elettra_mobile && flutter test
 cd mobile/elettra_mobile && flutter build web
+scripts/ci/local-all.sh
 ```
 
 Risultato:
@@ -68,6 +71,7 @@ Risultato:
 - OpenAPI: validato senza warning bloccanti;
 - Flutter analyze/test/build web: verdi.
 - Flutter widget test: `10 passed`.
+- CI locale: `scripts/ci/local-all.sh` verde, inclusa build APK debug e build immagine Docker backend.
 
 Smoke funzionali eseguiti su Flutter web:
 
@@ -91,7 +95,6 @@ Non sono ancora implementati o validati:
 - TestFlight;
 - validazione su device fisico o emulatori nativi;
 - build iOS firmata;
-- script CI locali `scripts/ci/*`;
 - Compose staging remoto `deploy/compose.staging.yml`;
 - registry immagini e deploy automatico su VPS;
 - API aggregate aggiuntive oltre a quelle emerse come necessarie dalla UI corrente;
@@ -115,15 +118,14 @@ Il prossimo step operativo e preparare la base CI/deploy locale prima della vali
 
 Sequenza consigliata:
 
-1. Implementare gli script CI locali documentati:
-   - `scripts/ci/backend.sh`;
-   - `scripts/ci/mobile.sh`;
-   - `scripts/ci/build-images.sh`;
-   - `scripts/ci/local-all.sh`.
-2. Preparare Compose staging e variabili esempio:
+1. Preparare Compose staging e variabili esempio:
    - `deploy/compose.staging.yml`;
    - `.env.staging.example`;
    - modello immagine backend versionata.
+2. Preparare workflow backend/build immagini:
+   - invocazione degli script CI locali;
+   - push registry solo quando `PUSH=true`;
+   - deploy staging via SSH dopo pull/migrate/up.
 3. Preparare configurazione runtime per device/emulatore:
    - API base URL per Android emulator (`10.0.2.2`) o device fisico su LAN;
    - profili ambiente Flutter per dev/demo;

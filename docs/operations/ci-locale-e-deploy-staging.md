@@ -9,7 +9,7 @@ La logica di CI deve stare in script versionati nel repository. La piattaforma C
 Percorso scelto:
 
 1. oggi: esecuzione locale dopo commit;
-2. prossimo step: build locale delle immagini Docker senza push;
+2. oggi: build locale delle immagini Docker senza push;
 3. staging: stessi script eseguiti da CI con push su registry e deploy SSH;
 4. produzione: stessi script attivati da tag Git versionati, con approval manuale.
 
@@ -26,9 +26,9 @@ Il VPS non deve compilare l'applicazione. Deve solo scaricare immagini gia costr
 - Una sola immagine backend deve servire `web`, `worker` e `beat`; cambia solo il comando.
 - Database, Redis e storage possono essere container in staging iniziale, ma non devono essere un vincolo architetturale per la produzione.
 
-## Script Previsti
+## Script Implementati
 
-Gli script da aggiungere sono:
+Gli script disponibili sono:
 
 ```text
 scripts/ci/backend.sh
@@ -62,6 +62,13 @@ flutter build apk --debug --dart-define=API_BASE_URL="${ANDROID_API_BASE_URL:-ht
 
 Per iOS, il controllo `flutter build ios --no-codesign` richiede runner macOS. Deve restare in pipeline quando disponibile, ma non puo essere requisito della CI locale Linux.
 
+Flag utili:
+
+- `BUILD_ANDROID_DEBUG=false` per saltare la build APK locale;
+- `BUILD_WEB=false` per saltare la build web;
+- `BUILD_IOS_NO_CODESIGN=true` per runner macOS;
+- `RUN_ANALYZE=false` o `RUN_TESTS=false` per job specializzati.
+
 ### `scripts/ci/build-images.sh`
 
 Costruisce immagini Docker versionate.
@@ -83,6 +90,16 @@ REGISTRY=ghcr.io/owner/elettra \
 PUSH=true \
 scripts/ci/build-images.sh
 ```
+
+Variabili supportate:
+
+- `REGISTRY`: prefisso registry, per esempio `ghcr.io/owner/elettra`;
+- `IMAGE_NAME`: nome immagine, default `elettra-api`;
+- `IMAGE_REPOSITORY`: repository completo, se serve bypassare `REGISTRY/IMAGE_NAME`;
+- `IMAGE_TAG`: tag principale, default `sha-<gitsha>`;
+- `EXTRA_TAGS`: lista di tag aggiuntivi separati da spazio;
+- `PUSH=true`: pubblica tutti i tag costruiti;
+- `TAG_LOCAL=false`: evita il tag locale `local`.
 
 Tag previsti:
 
@@ -241,11 +258,7 @@ La produzione non deve dipendere dal branch `main` direttamente.
 
 ## Prossimi Step Implementativi
 
-1. Aggiungere `scripts/ci/backend.sh`.
-2. Aggiungere `scripts/ci/mobile.sh`.
-3. Aggiungere `scripts/ci/build-images.sh`.
-4. Aggiungere `scripts/ci/local-all.sh`.
-5. Eseguire `scripts/ci/local-all.sh` localmente dopo un commit.
-6. Aggiungere `deploy/compose.staging.yml`.
-7. Aggiungere `.env.staging.example`.
-8. Collegare GitHub Actions o Gitea Actions agli stessi script.
+1. Aggiungere `deploy/compose.staging.yml`.
+2. Aggiungere `.env.staging.example`.
+3. Aggiungere workflow backend/build immagini che invoca gli script.
+4. Collegare GitHub Actions o Gitea Actions agli stessi script per push su registry e deploy SSH.

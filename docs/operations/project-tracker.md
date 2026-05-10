@@ -8,7 +8,6 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 
 ## In Corso
 
-- [ ] Implementare script CI locali come fonte comune per CI futura.
 - [ ] Preparare modello staging VPS con immagini Docker versionate.
 - [ ] Preparare validazione mobile nativa e percorso signing/TestFlight.
 
@@ -19,6 +18,7 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - Il tab `Tecnici` e collegato a API reali con lista professionisti, filtro categoria e ingresso rapido ai problemi.
 - Il tab `Profilo` mostra account, stato email, stato sessione, refresh `/auth/me` e logout confermato.
 - Il modello deploy scelto e: script CI locali versionati, immagini Docker costruite da CI, VPS che scarica immagini, applica migrazioni e riavvia i container.
+- Gli script `scripts/ci/*` sono implementati e il workflow mobile usa `scripts/ci/mobile.sh`.
 - Il target prodotto resta Android/iOS; web e React sono strumenti di test/demo.
 - Il prossimo rischio da ridurre riguarda ripetibilita build/deploy e poi device/emulatore: storage sicuro token, networking reale e preparazione signing.
 
@@ -32,8 +32,8 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [ ] Valutare se `DiagnosticFlow` deve restare solo per guide curate/fallback.
 - [ ] Rifinire condivisione selettiva allegati/chat diagnostica su `CaseShareRequest`.
 - [ ] Aggiungere assegnazione interna organizzazione/tecnico dopo accettazione richiesta.
-- [ ] Implementare `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh`, `scripts/ci/local-all.sh`.
 - [ ] Implementare `deploy/compose.staging.yml` e `.env.staging.example`.
+- [ ] Aggiungere workflow backend/build immagini che invoca gli script CI locali.
 
 ## Fatto
 
@@ -160,6 +160,9 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [x] Implementato tab Flutter `Tecnici` con lista professionisti, filtro categoria e scorciatoia verso `Problemi da risolvere`.
 - [x] Implementato tab Flutter `Profilo` con stato account/sessione, refresh profilo e logout confermato.
 - [x] Documentato modello CI locale -> registry -> staging VPS in `docs/operations/ci-locale-e-deploy-staging.md`.
+- [x] Implementati `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh`, `scripts/ci/local-all.sh`.
+- [x] Collegato workflow mobile agli script CI locali.
+- [x] Verificato `scripts/ci/local-all.sh`: backend, Flutter web, APK debug e build immagine backend locali verdi.
 
 ## Decisioni Confermate
 
