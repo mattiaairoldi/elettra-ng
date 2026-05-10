@@ -87,6 +87,33 @@ def test_case_creation_listing_and_detail_for_customer(client):
 
 
 @pytest.mark.django_db
+def test_case_creation_from_diagnosis_without_property_for_customer(client):
+    user = User.objects.create_user(email="diagnosis@example.com", password="Password123!")
+    client.force_login(user)
+    category = Category.objects.create(name="Elettricita", slug="elettricita-diagnosis")
+
+    response = client.post(
+        reverse("api_v1:cases:case-list"),
+        data=json.dumps(
+            {
+                "category_id": category.id,
+                "title": "Diagnosi salvavita",
+                "description": "Il salvavita scatta appena accendo il forno.",
+                "priority": Case.Priorities.NORMAL,
+            }
+        ),
+        content_type="application/json",
+    )
+
+    assert response.status_code == 201
+    payload = response.json()
+    assert payload["title"] == "Diagnosi salvavita"
+    assert payload["property_id"] is None
+    assert payload["asset_id"] is None
+    assert payload["owner_organization_id"]
+
+
+@pytest.mark.django_db
 def test_case_notes_and_events_endpoints(client):
     user = User.objects.create_user(email="customer@example.com", password="Password123!")
     client.force_login(user)

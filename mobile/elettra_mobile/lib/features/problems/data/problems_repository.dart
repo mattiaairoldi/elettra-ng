@@ -9,6 +9,12 @@ import 'problem_models.dart';
 abstract class ProblemsRepository {
   Future<List<CustomerProblem>> fetchProblems();
   Future<CustomerProblem> fetchProblem(int problemId);
+  Future<CustomerProblem> createProblemFromDiagnosis({
+    required int categoryId,
+    required String title,
+    required String description,
+    required String priority,
+  });
   Future<List<DiagnosticChapter>> fetchDiagnosticChapters({int? categoryId});
   Future<List<DiagnosticAdviceStep>> fetchAdviceSteps({
     required int chapterId,
@@ -56,6 +62,25 @@ class DioProblemsRepository implements ProblemsRepository {
   @override
   Future<CustomerProblem> fetchProblem(int problemId) async {
     final response = await _dio.get<Map<String, dynamic>>('/cases/$problemId');
+    return CustomerProblem.fromJson(response.data ?? const {});
+  }
+
+  @override
+  Future<CustomerProblem> createProblemFromDiagnosis({
+    required int categoryId,
+    required String title,
+    required String description,
+    required String priority,
+  }) async {
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/cases',
+      data: {
+        'category_id': categoryId,
+        'title': title,
+        'description': description,
+        'priority': priority,
+      },
+    );
     return CustomerProblem.fromJson(response.data ?? const {});
   }
 

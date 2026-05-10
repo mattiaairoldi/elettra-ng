@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/data/auth_repository.dart';
+import '../../diagnosis/presentation/diagnosis_screen.dart';
 import '../../health/presentation/api_status_card.dart';
 import '../../home/presentation/home_screen.dart';
 import '../../notifications/data/notification_repository.dart';
@@ -110,8 +111,13 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
             else if (_selectedIndex == 1)
               ProblemsScreen(
                 initialProblemId: navigation.problemId,
+                initialAiSession: navigation.aiSession,
+                initialAiMessages: navigation.aiMessages,
+                initialAiSnapshot: navigation.aiSnapshot,
                 navigationRevision: navigation.revision,
               )
+            else if (_selectedIndex == 2)
+              const DiagnosisScreen()
             else
               _PlaceholderPanel(destination: destination),
           ],

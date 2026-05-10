@@ -135,10 +135,12 @@ class _FakeAuthRepository implements AuthRepository {
 }
 
 class _FakeProblemsRepository implements ProblemsRepository {
+  final List<CustomerProblem> _createdProblems = [];
+
   @override
   Future<List<CustomerProblem>> fetchProblems() async {
-    return const [
-      CustomerProblem(
+    return [
+      const CustomerProblem(
         id: 1,
         categoryId: 1,
         propertyId: 1,
@@ -150,7 +152,7 @@ class _FakeProblemsRepository implements ProblemsRepository {
         createdAt: null,
         updatedAt: null,
       ),
-      CustomerProblem(
+      const CustomerProblem(
         id: 2,
         categoryId: 1,
         propertyId: null,
@@ -162,6 +164,7 @@ class _FakeProblemsRepository implements ProblemsRepository {
         createdAt: null,
         updatedAt: null,
       ),
+      ..._createdProblems,
     ];
   }
 
@@ -170,6 +173,29 @@ class _FakeProblemsRepository implements ProblemsRepository {
     return (await fetchProblems()).firstWhere(
       (problem) => problem.id == problemId,
     );
+  }
+
+  @override
+  Future<CustomerProblem> createProblemFromDiagnosis({
+    required int categoryId,
+    required String title,
+    required String description,
+    required String priority,
+  }) async {
+    final problem = CustomerProblem(
+      id: 100 + _createdProblems.length,
+      categoryId: categoryId,
+      propertyId: null,
+      assetId: null,
+      title: title,
+      description: description,
+      status: 'in_diagnosis',
+      priority: priority,
+      createdAt: null,
+      updatedAt: null,
+    );
+    _createdProblems.add(problem);
+    return problem;
   }
 
   @override
@@ -811,6 +837,56 @@ void main() {
     expect(find.text('AI diagnostica'), findsOneWidget);
     expect(find.text('Tecnici disponibili'), findsOneWidget);
     expect(find.text('Mario Rossi'), findsOneWidget);
+  });
+
+  testWidgets('starts authenticated diagnosis and opens created problem', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          notificationsRepositoryProvider.overrideWithValue(
+            _FakeNotificationsRepository(),
+          ),
+          problemsRepositoryProvider.overrideWithValue(
+            _FakeProblemsRepository(),
+          ),
+          authSessionProvider.overrideWith(_AuthenticatedSessionNotifier.new),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Diagnosi').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nuova diagnosi'), findsOneWidget);
+    expect(find.text('Controlli iniziali'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Titolo'),
+      'Diagnosi salvavita',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Descrizione'),
+      'Il salvavita scatta quando accendo il forno.',
+    );
+    final submitButton = find.widgetWithText(FilledButton, 'Avvia diagnosi');
+    await tester.ensureVisible(submitButton);
+    await tester.pumpAndSettle();
+    await tester.tap(submitButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Problemi da risolvere'), findsOneWidget);
+    expect(find.text('Diagnosi salvavita'), findsOneWidget);
+    expect(find.text('AI diagnostica'), findsOneWidget);
+    expect(
+      find.text('Il forno potrebbe avere una dispersione.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('opens notification center and marks notification read', (

@@ -148,6 +148,8 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [x] Implementata promozione guest -> account/caso con JWT, `Case`, ricollegamento sessione AI e cancellazione token guest lato Flutter.
 - [x] Eseguita verifica dopo promozione guest: backend `124 passed`, OpenAPI/migrazioni ok, `flutter analyze`, `flutter test`, `flutter build web` verdi.
 - [x] Verificato su Flutter web headless il flusso `Continua come ospite` -> diagnosi -> `Salva come pratica` -> account autenticato -> caso visibile in `Problemi da risolvere`.
+- [x] Implementata registrazione standard con conferma email via Mailpit, blocco login prima della verifica e pagina web `/verify-email`.
+- [x] Implementato tab Flutter `Diagnosi` autenticato con creazione pratica senza asset, primo turno AI e apertura diretta del dettaglio pratica.
 
 ## Decisioni Confermate
 

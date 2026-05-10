@@ -9,10 +9,16 @@ class ProblemsScreen extends ConsumerStatefulWidget {
   const ProblemsScreen({
     super.key,
     this.initialProblemId,
+    this.initialAiSession,
+    this.initialAiMessages = const [],
+    this.initialAiSnapshot,
     this.navigationRevision = 0,
   });
 
   final int? initialProblemId;
+  final AiSessionSummary? initialAiSession;
+  final List<AiMessage> initialAiMessages;
+  final AiDiagnosticSnapshot? initialAiSnapshot;
   final int navigationRevision;
 
   @override
@@ -21,6 +27,9 @@ class ProblemsScreen extends ConsumerStatefulWidget {
 
 class _ProblemsScreenState extends ConsumerState<ProblemsScreen> {
   CustomerProblem? _selectedProblem;
+  AiSessionSummary? _initialAiSession;
+  List<AiMessage> _initialAiMessages = const [];
+  AiDiagnosticSnapshot? _initialAiSnapshot;
   int _handledNavigationRevision = -1;
 
   @override
@@ -37,6 +46,9 @@ class _ProblemsScreenState extends ConsumerState<ProblemsScreen> {
               selected;
           return _ProblemDetail(
             problem: current,
+            initialAiSession: _initialAiSession,
+            initialAiMessages: _initialAiMessages,
+            initialAiSnapshot: _initialAiSnapshot,
             onBack: () => setState(() => _selectedProblem = null),
           );
         }
@@ -50,7 +62,12 @@ class _ProblemsScreenState extends ConsumerState<ProblemsScreen> {
             for (final problem in items) ...[
               _ProblemCard(
                 problem: problem,
-                onOpen: () => setState(() => _selectedProblem = problem),
+                onOpen: () => setState(() {
+                  _selectedProblem = problem;
+                  _initialAiSession = null;
+                  _initialAiMessages = const [];
+                  _initialAiSnapshot = null;
+                }),
               ),
               const SizedBox(height: 8),
             ],
@@ -74,16 +91,31 @@ class _ProblemsScreenState extends ConsumerState<ProblemsScreen> {
     final problemId = widget.initialProblemId;
     if (problemId == null) {
       _selectedProblem = null;
+      _initialAiSession = null;
+      _initialAiMessages = const [];
+      _initialAiSnapshot = null;
       return;
     }
     _selectedProblem = items.where((item) => item.id == problemId).firstOrNull;
+    _initialAiSession = widget.initialAiSession;
+    _initialAiMessages = widget.initialAiMessages;
+    _initialAiSnapshot = widget.initialAiSnapshot;
   }
 }
 
 class _ProblemDetail extends ConsumerStatefulWidget {
-  const _ProblemDetail({required this.problem, required this.onBack});
+  const _ProblemDetail({
+    required this.problem,
+    required this.initialAiSession,
+    required this.initialAiMessages,
+    required this.initialAiSnapshot,
+    required this.onBack,
+  });
 
   final CustomerProblem problem;
+  final AiSessionSummary? initialAiSession;
+  final List<AiMessage> initialAiMessages;
+  final AiDiagnosticSnapshot? initialAiSnapshot;
   final VoidCallback onBack;
 
   @override
@@ -103,9 +135,30 @@ class _ProblemDetailState extends ConsumerState<_ProblemDetail> {
   var _sharing = false;
 
   @override
+  void initState() {
+    super.initState();
+    _applyInitialAiContext();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ProblemDetail oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.problem.id != widget.problem.id ||
+        oldWidget.initialAiSession?.id != widget.initialAiSession?.id) {
+      _applyInitialAiContext();
+    }
+  }
+
+  @override
   void dispose() {
     _aiController.dispose();
     super.dispose();
+  }
+
+  void _applyInitialAiContext() {
+    _aiSession = widget.initialAiSession;
+    _aiMessages = widget.initialAiMessages;
+    _snapshot = widget.initialAiSnapshot;
   }
 
   @override
