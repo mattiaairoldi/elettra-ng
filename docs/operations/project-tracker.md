@@ -6,7 +6,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 
 ## In Corso
 
-- [ ] Validare manualmente il flusso guest -> account/caso su Flutter web con seed demo reale.
+- [ ] Preparare validazione mobile nativa e percorso signing/TestFlight.
 
 ## Todo
 
@@ -138,6 +138,7 @@ Preparare una demo MVP end-to-end e avviare la nuova app Flutter mobile-ready, m
 - [x] Verificato manualmente su Flutter web il flusso `Problemi da risolvere` corrente: consiglio guidato, turno AI, snapshot, condivisione a `Demo Impianti Rossi` e notifica professionista.
 - [x] Implementata promozione guest -> account/caso con JWT, `Case`, ricollegamento sessione AI e cancellazione token guest lato Flutter.
 - [x] Eseguita verifica dopo promozione guest: backend `124 passed`, OpenAPI/migrazioni ok, `flutter analyze`, `flutter test`, `flutter build web` verdi.
+- [x] Verificato su Flutter web headless il flusso `Continua come ospite` -> diagnosi -> `Salva come pratica` -> account autenticato -> caso visibile in `Problemi da risolvere`.
 
 ## Decisioni Confermate
 

@@ -290,5 +290,5 @@ Già implementato nel workstream MVP:
 
 Prossima sequenza:
 
-1. Validare manualmente il flusso guest -> account/caso su Flutter web con seed demo reale.
-2. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.
+1. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.
+2. Preparare validazione mobile nativa e percorso signing/TestFlight.

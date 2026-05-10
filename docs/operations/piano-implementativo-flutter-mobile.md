@@ -623,5 +623,5 @@ Stato attuale:
 
 Il prossimo passo operativo è:
 
-1. validare manualmente il flusso guest -> account/caso su Flutter web con seed demo reale;
-2. preparare signing/TestFlight solo dopo il primo flusso MVP mobile end-to-end validato manualmente.
+1. preparare signing/TestFlight e validazione su device fisico;
+2. tenere Flutter web come target rapido di smoke per ogni iterazione mobile.
