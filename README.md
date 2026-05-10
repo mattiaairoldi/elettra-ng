@@ -48,3 +48,18 @@ Esecuzione completa locale, pensata per essere riusata anche da GitHub Actions o
 ```bash
 scripts/ci/local-all.sh
 ```
+
+## Deploy Staging
+
+Configurazione locale non versionata:
+
+```bash
+cp deploy/staging.local.env.example deploy/staging.local.env
+cp .env.staging.example .env.staging
+```
+
+Deploy:
+
+```bash
+scripts/deploy/staging.sh
+```

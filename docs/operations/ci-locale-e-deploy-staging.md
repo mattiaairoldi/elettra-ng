@@ -187,22 +187,37 @@ Il VPS deve avere:
 - reverse proxy Caddy o Nginx con HTTPS;
 - firewall con pubbliche solo `80`, `443` e SSH limitato.
 
+Il deploy versionato e disponibile in:
+
+```bash
+scripts/deploy/staging.sh
+```
+
+Lo script legge una configurazione locale non versionata:
+
+```bash
+deploy/staging.local.env
+```
+
+File da preparare prima del primo deploy:
+
+```bash
+cp deploy/staging.local.env.example deploy/staging.local.env
+cp .env.staging.example .env.staging
+```
+
+La configurazione `deploy/staging.local.env` contiene host, utente SSH, porta, path remoto, registry e tag immagine. Il file `.env.staging` contiene i segreti applicativi e viene copiato sul VPS come `.env.staging`.
+
 Deploy staging previsto:
 
 ```bash
-export IMAGE_TAG=sha-<gitsha>
-docker compose -f deploy/compose.staging.yml pull
-docker compose -f deploy/compose.staging.yml run --rm web uv run python manage.py migrate --noinput
-docker compose -f deploy/compose.staging.yml up -d --remove-orphans
-docker compose -f deploy/compose.staging.yml ps
+scripts/deploy/staging.sh
 ```
 
 Rollback:
 
 ```bash
-export IMAGE_TAG=sha-<gitsha-precedente>
-docker compose -f deploy/compose.staging.yml pull
-docker compose -f deploy/compose.staging.yml up -d --remove-orphans
+STAGING_IMAGE_TAG=sha-<gitsha-precedente> scripts/deploy/staging.sh
 ```
 
 Le migrazioni irreversibili vanno trattate come blocco operativo prima del deploy produzione.
@@ -258,7 +273,7 @@ La produzione non deve dipendere dal branch `main` direttamente.
 
 ## Prossimi Step Implementativi
 
-1. Aggiungere `deploy/compose.staging.yml`.
-2. Aggiungere `.env.staging.example`.
+1. Eseguire un primo dry-run con `scripts/deploy/staging.sh --dry-run`.
+2. Eseguire un primo deploy staging reale dopo avere pushato l'immagine su registry.
 3. Aggiungere workflow backend/build immagini che invoca gli script.
 4. Collegare GitHub Actions o Gitea Actions agli stessi script per push su registry e deploy SSH.

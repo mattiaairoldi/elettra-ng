@@ -27,7 +27,7 @@ La app Flutter in `mobile/elettra_mobile` e il client principale previsto per An
 
 La strategia scelta per staging/deploy e usare script CI locali versionati come fonte comune: oggi esecuzione locale dopo commit, poi stessi script in GitHub Actions o Gitea Actions, con immagini Docker costruite dalla CI e scaricate dal VPS tramite registry. Dettaglio operativo: [CI Locale E Deploy Staging](ci-locale-e-deploy-staging.md).
 
-Sono disponibili gli script `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh` e `scripts/ci/local-all.sh`.
+Sono disponibili gli script `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh`, `scripts/ci/local-all.sh` e `scripts/deploy/staging.sh`.
 
 Sono operativi in Flutter:
 
@@ -95,8 +95,8 @@ Non sono ancora implementati o validati:
 - TestFlight;
 - validazione su device fisico o emulatori nativi;
 - build iOS firmata;
-- Compose staging remoto `deploy/compose.staging.yml`;
-- registry immagini e deploy automatico su VPS;
+- primo deploy reale su VPS staging;
+- registry immagini con push remoto configurato;
 - API aggregate aggiuntive oltre a quelle emerse come necessarie dalla UI corrente;
 - assegnazione interna organizzazione/tecnico dopo accettazione richiesta;
 - regole di sicurezza AI non negoziabili formalizzate per ogni capitolo;
@@ -118,15 +118,18 @@ Il prossimo step operativo e preparare la base CI/deploy locale prima della vali
 
 Sequenza consigliata:
 
-1. Preparare Compose staging e variabili esempio:
-   - `deploy/compose.staging.yml`;
-   - `.env.staging.example`;
-   - modello immagine backend versionata.
-2. Preparare workflow backend/build immagini:
+1. Preparare configurazione locale staging:
+   - `deploy/staging.local.env`;
+   - `.env.staging`;
+   - tag immagine gia pubblicato su registry.
+2. Eseguire deploy dry-run:
+   - `scripts/deploy/staging.sh --dry-run`.
+3. Eseguire primo deploy reale su VPS.
+4. Preparare workflow backend/build immagini:
    - invocazione degli script CI locali;
    - push registry solo quando `PUSH=true`;
    - deploy staging via SSH dopo pull/migrate/up.
-3. Preparare configurazione runtime per device/emulatore:
+5. Preparare configurazione runtime per device/emulatore:
    - API base URL per Android emulator (`10.0.2.2`) o device fisico su LAN;
    - profili ambiente Flutter per dev/demo;
    - verifica storage sicuro token su Android/iOS.

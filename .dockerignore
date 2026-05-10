@@ -13,6 +13,7 @@ mobile/elettra_mobile/build/
 .env
 .env.*
 !.env.example
+!.env.staging.example
 staticfiles/
 media/
 docker-data/

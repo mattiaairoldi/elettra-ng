@@ -19,6 +19,8 @@ ENV/
 .env
 .env.*
 !.env.example
+!.env.staging.example
+deploy/staging.local.env
 
 # Django
 staticfiles/
@@ -34,4 +36,3 @@ docker-data/
 .DS_Store
 .idea/
 .vscode/
-

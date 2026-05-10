@@ -19,6 +19,7 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - Il tab `Profilo` mostra account, stato email, stato sessione, refresh `/auth/me` e logout confermato.
 - Il modello deploy scelto e: script CI locali versionati, immagini Docker costruite da CI, VPS che scarica immagini, applica migrazioni e riavvia i container.
 - Gli script `scripts/ci/*` sono implementati e il workflow mobile usa `scripts/ci/mobile.sh`.
+- Sono disponibili `deploy/compose.staging.yml`, `.env.staging.example`, `deploy/staging.local.env.example` e `scripts/deploy/staging.sh`.
 - Il target prodotto resta Android/iOS; web e React sono strumenti di test/demo.
 - Il prossimo rischio da ridurre riguarda ripetibilita build/deploy e poi device/emulatore: storage sicuro token, networking reale e preparazione signing.
 
@@ -32,7 +33,8 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [ ] Valutare se `DiagnosticFlow` deve restare solo per guide curate/fallback.
 - [ ] Rifinire condivisione selettiva allegati/chat diagnostica su `CaseShareRequest`.
 - [ ] Aggiungere assegnazione interna organizzazione/tecnico dopo accettazione richiesta.
-- [ ] Implementare `deploy/compose.staging.yml` e `.env.staging.example`.
+- [ ] Eseguire primo dry-run deploy staging con configurazione reale non versionata.
+- [ ] Eseguire primo deploy VPS staging dopo push immagine su registry.
 - [ ] Aggiungere workflow backend/build immagini che invoca gli script CI locali.
 
 ## Fatto
@@ -163,6 +165,7 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [x] Implementati `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh`, `scripts/ci/local-all.sh`.
 - [x] Collegato workflow mobile agli script CI locali.
 - [x] Verificato `scripts/ci/local-all.sh`: backend, Flutter web, APK debug e build immagine backend locali verdi.
+- [x] Implementato modello deploy staging versionato con Compose remoto, Caddy, env staging esempio e script SSH.
 
 ## Decisioni Confermate
 
@@ -200,3 +203,4 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - Il piano guest è in `docs/operations/piano-implementativo-guest-tier.md`.
 - La logica CI/deploy deve stare in script versionati; GitHub Actions o Gitea Actions devono limitarsi a invocarli.
 - Il VPS staging non deve compilare immagini: deve fare pull da registry, migrazioni e `up -d`.
+- Host, utente, path remoto e credenziali deploy devono stare in `deploy/staging.local.env`, non versionato.
