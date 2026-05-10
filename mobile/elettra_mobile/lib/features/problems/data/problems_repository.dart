@@ -9,6 +9,7 @@ import 'problem_models.dart';
 abstract class ProblemsRepository {
   Future<List<CustomerProblem>> fetchProblems();
   Future<CustomerProblem> fetchProblem(int problemId);
+  Future<List<ProblemCategory>> fetchCategories();
   Future<CustomerProblem> createProblemFromDiagnosis({
     required int categoryId,
     required String title,
@@ -63,6 +64,18 @@ class DioProblemsRepository implements ProblemsRepository {
   Future<CustomerProblem> fetchProblem(int problemId) async {
     final response = await _dio.get<Map<String, dynamic>>('/cases/$problemId');
     return CustomerProblem.fromJson(response.data ?? const {});
+  }
+
+  @override
+  Future<List<ProblemCategory>> fetchCategories() async {
+    final response = await _dio.get<List<dynamic>>(
+      '/categories',
+      options: Options(extra: {'skipAuth': true}),
+    );
+    final data = response.data ?? const [];
+    return data
+        .map((item) => ProblemCategory.fromJson(item as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -277,6 +290,12 @@ final problemsProvider = FutureProvider.autoDispose<List<CustomerProblem>>((
   ref,
 ) {
   return ref.watch(problemsRepositoryProvider).fetchProblems();
+});
+
+final categoriesProvider = FutureProvider.autoDispose<List<ProblemCategory>>((
+  ref,
+) {
+  return ref.watch(problemsRepositoryProvider).fetchCategories();
 });
 
 final diagnosticChaptersProvider = FutureProvider.autoDispose

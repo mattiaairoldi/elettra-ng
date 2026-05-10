@@ -176,6 +176,14 @@ class _FakeProblemsRepository implements ProblemsRepository {
   }
 
   @override
+  Future<List<ProblemCategory>> fetchCategories() async {
+    return const [
+      ProblemCategory(id: 1, name: 'Elettricita', slug: 'elettricita'),
+      ProblemCategory(id: 2, name: 'Idraulica', slug: 'idraulica'),
+    ];
+  }
+
+  @override
   Future<CustomerProblem> createProblemFromDiagnosis({
     required int categoryId,
     required String title,
@@ -315,6 +323,7 @@ class _FakeProblemsRepository implements ProblemsRepository {
         serviceAreaText: 'Milano',
         recipientOrganizationId: 2,
         recipientMembershipId: 3,
+        categoryIds: [1],
       ),
     ];
   }
@@ -837,6 +846,48 @@ void main() {
     expect(find.text('AI diagnostica'), findsOneWidget);
     expect(find.text('Tecnici disponibili'), findsOneWidget);
     expect(find.text('Mario Rossi'), findsOneWidget);
+  });
+
+  testWidgets('opens technicians tab with filter and problem shortcut', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          notificationsRepositoryProvider.overrideWithValue(
+            _FakeNotificationsRepository(),
+          ),
+          problemsRepositoryProvider.overrideWithValue(
+            _FakeProblemsRepository(),
+          ),
+          authSessionProvider.overrideWith(_AuthenticatedSessionNotifier.new),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tecnici').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Filtro tecnici'), findsOneWidget);
+    expect(find.text('Tecnici disponibili'), findsOneWidget);
+    expect(find.text('Mario Rossi'), findsOneWidget);
+    expect(find.text('Milano'), findsOneWidget);
+    expect(find.text('Elettricita'), findsOneWidget);
+
+    final problemsShortcut = find.widgetWithText(TextButton, 'Vai ai problemi');
+    await tester.ensureVisible(problemsShortcut);
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -160));
+    await tester.pumpAndSettle();
+    await tester.tap(problemsShortcut);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Problemi da risolvere'), findsOneWidget);
+    expect(find.text('Salvavita abbassato'), findsOneWidget);
   });
 
   testWidgets('starts authenticated diagnosis and opens created problem', (

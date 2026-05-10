@@ -8,6 +8,7 @@ import '../../home/presentation/home_screen.dart';
 import '../../notifications/data/notification_repository.dart';
 import '../../notifications/presentation/notifications_screen.dart';
 import '../../problems/presentation/problems_screen.dart';
+import '../../professionals/presentation/professionals_screen.dart';
 import '../data/shell_navigation.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
@@ -118,6 +119,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               )
             else if (_selectedIndex == 2)
               const DiagnosisScreen()
+            else if (_selectedIndex == 3)
+              const ProfessionalsScreen()
             else
               _PlaceholderPanel(destination: destination),
           ],
@@ -199,7 +202,6 @@ class _PlaceholderPanel extends StatelessWidget {
     return switch (label) {
       'Problemi' => 'Qui collegheremo elenco e dettaglio dei problemi aperti.',
       'Diagnosi' => 'Qui entreranno consigli guidati, feedback e chat AI.',
-      'Tecnici' => 'Qui verranno mostrati professionisti e condivisioni.',
       'Casa' => 'Qui verranno mostrati immobili, asset e promemoria.',
       _ => 'Qui entreranno autenticazione, account e preferenze.',
     };

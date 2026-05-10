@@ -2,7 +2,7 @@
 
 Ultimo aggiornamento: 2026-05-10.
 
-Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso, della registrazione standard con conferma email e del tab `Diagnosi` autenticato.
+Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso, della registrazione standard con conferma email, del tab `Diagnosi` autenticato e del tab `Tecnici`.
 
 ## Stato Operativo
 
@@ -34,6 +34,7 @@ Sono operativi in Flutter:
 - `La mia casa`;
 - `Problemi da risolvere`;
 - `Diagnosi` autenticata con creazione pratica, primo turno AI e apertura diretta del dettaglio pratica;
+- `Tecnici` con lista professionisti, filtro categoria, area di servizio, profilo e ingresso rapido a `Problemi da risolvere`;
 - dettaglio problema con diagnostica guidata/AI;
 - condivisione professionista;
 - centro notifiche in-app;
@@ -42,10 +43,9 @@ Sono operativi in Flutter:
 
 Restano placeholder operativi:
 
-- tab `Tecnici`;
 - tab `Profilo`.
 
-Il flusso MVP end-to-end oggi passa da `La mia casa`, `Diagnosi`, `Problemi da risolvere` e pre-login guest.
+Il flusso MVP end-to-end oggi passa da `La mia casa`, `Diagnosi`, `Tecnici`, `Problemi da risolvere` e pre-login guest.
 
 ## Verifiche Eseguite
 
@@ -66,6 +66,7 @@ Risultato:
 - migrazioni: nessun cambio rilevato;
 - OpenAPI: validato senza warning bloccanti;
 - Flutter analyze/test/build web: verdi.
+- Flutter widget test: `9 passed`.
 
 Smoke funzionali eseguiti su Flutter web:
 
@@ -74,6 +75,10 @@ Smoke funzionali eseguiti su Flutter web:
 - `Continua come ospite` -> diagnosi -> `Salva come pratica` -> creazione account -> caso visibile in `Problemi da risolvere`.
 - `Registrati` -> email Mailpit -> conferma email -> ritorno al login.
 - `Diagnosi` autenticata -> creazione pratica senza asset -> primo turno AI -> dettaglio pratica con messaggio AI iniziale.
+
+Copertura widget test aggiunta:
+
+- `Tecnici` -> filtro categoria -> lista professionisti -> ingresso rapido a `Problemi da risolvere`.
 
 ## Non Ancora Fatto
 
@@ -84,7 +89,7 @@ Non sono ancora implementati o validati:
 - TestFlight;
 - validazione su device fisico o emulatori nativi;
 - build iOS firmata;
-- tab Flutter completi `Tecnici`, `Profilo`;
+- tab Flutter completo `Profilo`;
 - API aggregate aggiuntive oltre a quelle emerse come necessarie dalla UI corrente;
 - assegnazione interna organizzazione/tecnico dopo accettazione richiesta;
 - regole di sicurezza AI non negoziabili formalizzate per ogni capitolo;
@@ -102,14 +107,15 @@ Restano fuori perimetro guest:
 
 ## Prossimo Step
 
-Il prossimo step operativo e completare gli ultimi tab web prima della validazione mobile nativa.
+Il prossimo step operativo e completare l'ultimo tab web prima della validazione mobile nativa.
 
 Sequenza consigliata:
 
-1. Implementare il tab Flutter `Tecnici`:
-   - lista professionisti filtrabile per categoria;
-   - evidenza area di servizio e profilo;
-   - ingresso rapido alle condivisioni gia disponibili dal dettaglio pratica.
+1. Implementare il tab Flutter `Profilo`:
+   - riepilogo account autenticato;
+   - stato email verificata;
+   - dati base utente e azione logout gia disponibile in AppBar;
+   - eventuale spazio per preferenze dispositivo/notifiche senza attivare ancora push native.
 2. Preparare configurazione runtime per device/emulatore:
    - API base URL per Android emulator (`10.0.2.2`) o device fisico su LAN;
    - profili ambiente Flutter per dev/demo;
@@ -131,4 +137,4 @@ Sequenza consigliata:
    - build firmata quando sono disponibili certificati/profili;
    - distribuzione TestFlight.
 
-Solo dopo `Tecnici`/`Profilo` conviene passare alla validazione mobile, usando le frizioni reali osservate nella web app come guida.
+Solo dopo `Profilo` conviene passare alla validazione mobile, usando le frizioni reali osservate nella web app come guida.

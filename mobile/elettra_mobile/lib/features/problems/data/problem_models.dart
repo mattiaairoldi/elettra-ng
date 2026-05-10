@@ -244,9 +244,12 @@ class ProfessionalProfileSummary {
     required this.id,
     required this.displayName,
     required this.bio,
+    this.phone = '',
+    this.emailPublic = '',
     required this.serviceAreaText,
     required this.recipientOrganizationId,
     required this.recipientMembershipId,
+    this.categoryIds = const [],
   });
 
   factory ProfessionalProfileSummary.fromJson(Map<String, dynamic> json) {
@@ -254,18 +257,44 @@ class ProfessionalProfileSummary {
       id: json['id'] as int,
       displayName: json['display_name']?.toString() ?? '',
       bio: json['bio']?.toString() ?? '',
+      phone: json['phone']?.toString() ?? '',
+      emailPublic: json['email_public']?.toString() ?? '',
       serviceAreaText: json['service_area_text']?.toString() ?? '',
       recipientOrganizationId: json['recipient_organization_id'] as int?,
       recipientMembershipId: json['recipient_membership_id'] as int?,
+      categoryIds: _intList(json['category_ids']),
     );
   }
 
   final int id;
   final String displayName;
   final String bio;
+  final String phone;
+  final String emailPublic;
   final String serviceAreaText;
   final int? recipientOrganizationId;
   final int? recipientMembershipId;
+  final List<int> categoryIds;
+}
+
+class ProblemCategory {
+  const ProblemCategory({
+    required this.id,
+    required this.name,
+    required this.slug,
+  });
+
+  factory ProblemCategory.fromJson(Map<String, dynamic> json) {
+    return ProblemCategory(
+      id: json['id'] as int,
+      name: json['name']?.toString() ?? '',
+      slug: json['slug']?.toString() ?? '',
+    );
+  }
+
+  final int id;
+  final String name;
+  final String slug;
 }
 
 class CaseShareRequestSummary {
@@ -309,4 +338,21 @@ String _stringValue(Object? value) {
     return (value['label'] ?? value['title'] ?? value['code'] ?? '').toString();
   }
   return value?.toString() ?? '';
+}
+
+List<int> _intList(Object? value) {
+  if (value is! List) {
+    return const [];
+  }
+  return value.map(_intValue).whereType<int>().toList();
+}
+
+int? _intValue(Object? value) {
+  if (value is int) {
+    return value;
+  }
+  if (value is num) {
+    return value.toInt();
+  }
+  return int.tryParse(value?.toString() ?? '');
 }
