@@ -2,7 +2,7 @@
 
 Ultimo aggiornamento: 2026-05-10.
 
-Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso, della registrazione standard con conferma email, del tab `Diagnosi` autenticato e del tab `Tecnici`.
+Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso, della registrazione standard con conferma email e dei tab autenticati `Diagnosi`, `Tecnici` e `Profilo`.
 
 ## Stato Operativo
 
@@ -35,17 +35,16 @@ Sono operativi in Flutter:
 - `Problemi da risolvere`;
 - `Diagnosi` autenticata con creazione pratica, primo turno AI e apertura diretta del dettaglio pratica;
 - `Tecnici` con lista professionisti, filtro categoria, area di servizio, profilo e ingresso rapido a `Problemi da risolvere`;
+- `Profilo` con riepilogo account, stato email, stato sessione, refresh da `/auth/me` e logout confermato;
 - dettaglio problema con diagnostica guidata/AI;
 - condivisione professionista;
 - centro notifiche in-app;
 - accesso ospite;
 - promozione ospite ad account/caso.
 
-Restano placeholder operativi:
+Non restano tab placeholder nel flusso autenticato principale.
 
-- tab `Profilo`.
-
-Il flusso MVP end-to-end oggi passa da `La mia casa`, `Diagnosi`, `Tecnici`, `Problemi da risolvere` e pre-login guest.
+Il flusso MVP end-to-end oggi passa da `La mia casa`, `Diagnosi`, `Tecnici`, `Profilo`, `Problemi da risolvere` e pre-login guest.
 
 ## Verifiche Eseguite
 
@@ -66,7 +65,7 @@ Risultato:
 - migrazioni: nessun cambio rilevato;
 - OpenAPI: validato senza warning bloccanti;
 - Flutter analyze/test/build web: verdi.
-- Flutter widget test: `9 passed`.
+- Flutter widget test: `10 passed`.
 
 Smoke funzionali eseguiti su Flutter web:
 
@@ -79,6 +78,7 @@ Smoke funzionali eseguiti su Flutter web:
 Copertura widget test aggiunta:
 
 - `Tecnici` -> filtro categoria -> lista professionisti -> ingresso rapido a `Problemi da risolvere`.
+- `Profilo` -> stato account/sessione -> refresh dati da `/auth/me` -> logout confermato.
 
 ## Non Ancora Fatto
 
@@ -89,7 +89,6 @@ Non sono ancora implementati o validati:
 - TestFlight;
 - validazione su device fisico o emulatori nativi;
 - build iOS firmata;
-- tab Flutter completo `Profilo`;
 - API aggregate aggiuntive oltre a quelle emerse come necessarie dalla UI corrente;
 - assegnazione interna organizzazione/tecnico dopo accettazione richiesta;
 - regole di sicurezza AI non negoziabili formalizzate per ogni capitolo;
@@ -107,34 +106,29 @@ Restano fuori perimetro guest:
 
 ## Prossimo Step
 
-Il prossimo step operativo e completare l'ultimo tab web prima della validazione mobile nativa.
+Il prossimo step operativo e preparare la validazione mobile nativa.
 
 Sequenza consigliata:
 
-1. Implementare il tab Flutter `Profilo`:
-   - riepilogo account autenticato;
-   - stato email verificata;
-   - dati base utente e azione logout gia disponibile in AppBar;
-   - eventuale spazio per preferenze dispositivo/notifiche senza attivare ancora push native.
-2. Preparare configurazione runtime per device/emulatore:
+1. Preparare configurazione runtime per device/emulatore:
    - API base URL per Android emulator (`10.0.2.2`) o device fisico su LAN;
    - profili ambiente Flutter per dev/demo;
    - verifica storage sicuro token su Android/iOS.
-3. Validare Android:
+2. Validare Android:
    - avvio su emulator o device fisico;
    - login;
    - `La mia casa`;
    - `Problemi da risolvere`;
    - guest -> account/caso;
    - notifiche in-app.
-4. Preparare signing:
+3. Preparare signing:
    - Android keystore e variabili CI;
    - bundle id iOS;
    - Apple Team/App Store Connect;
    - segreti CI per build firmate.
-5. Validare iOS:
+4. Validare iOS:
    - build CI macOS `--no-codesign` come controllo tecnico;
    - build firmata quando sono disponibili certificati/profili;
    - distribuzione TestFlight.
 
-Solo dopo `Profilo` conviene passare alla validazione mobile, usando le frizioni reali osservate nella web app come guida.
+La web app ora copre i tab principali; la prossima riduzione di rischio e su networking, storage token e runtime mobile reale.

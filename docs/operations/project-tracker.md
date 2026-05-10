@@ -2,13 +2,12 @@
 
 ## Obiettivo Corrente
 
-Completare l'ultimo tab web Flutter e poi portare la app dal flusso web verificato alla validazione mobile nativa.
+Portare la app Flutter dal flusso web verificato alla validazione mobile nativa.
 
 Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 
 ## In Corso
 
-- [ ] Implementare tab Flutter `Profilo`.
 - [ ] Preparare validazione mobile nativa e percorso signing/TestFlight.
 
 ## Stato Sintetico
@@ -16,8 +15,9 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - Backend API, OpenAPI, auth JWT, organizzazioni, casa/asset, casi, AI diagnostica, guest tier, notifiche in-app e promozione guest -> account/caso sono implementati.
 - Flutter web ha smoke verdi sui flussi `La mia casa`, `Diagnosi`, `Problemi da risolvere`, notifiche e guest -> account/caso.
 - Il tab `Tecnici` e collegato a API reali con lista professionisti, filtro categoria e ingresso rapido ai problemi.
+- Il tab `Profilo` mostra account, stato email, stato sessione, refresh `/auth/me` e logout confermato.
 - Il target prodotto resta Android/iOS; web e React sono strumenti di test/demo.
-- Il prossimo rischio da ridurre prima del mobile e chiudere `Profilo`, poi device/emulatore: storage sicuro token, networking reale e preparazione signing.
+- Il prossimo rischio da ridurre riguarda device/emulatore: storage sicuro token, networking reale e preparazione signing.
 
 ## Todo
 
@@ -153,6 +153,7 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [x] Implementata registrazione standard con conferma email via Mailpit, blocco login prima della verifica e pagina web `/verify-email`.
 - [x] Implementato tab Flutter `Diagnosi` autenticato con creazione pratica senza asset, primo turno AI e apertura diretta del dettaglio pratica.
 - [x] Implementato tab Flutter `Tecnici` con lista professionisti, filtro categoria e scorciatoia verso `Problemi da risolvere`.
+- [x] Implementato tab Flutter `Profilo` con stato account/sessione, refresh profilo e logout confermato.
 
 ## Decisioni Confermate
 

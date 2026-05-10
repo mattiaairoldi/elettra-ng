@@ -690,6 +690,7 @@ class _AuthenticatedSessionNotifier extends AuthSessionNotifier {
         firstName: 'Demo',
         lastName: 'Customer',
         role: 'customer',
+        emailVerified: true,
       ),
       tokens: AuthTokens(
         access: 'access',
@@ -888,6 +889,66 @@ void main() {
 
     expect(find.text('Problemi da risolvere'), findsOneWidget);
     expect(find.text('Salvavita abbassato'), findsOneWidget);
+  });
+
+  testWidgets('opens profile tab with account status and logout', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          homeRepositoryProvider.overrideWithValue(_FakeHomeRepository()),
+          notificationsRepositoryProvider.overrideWithValue(
+            _FakeNotificationsRepository(),
+          ),
+          tokenStoreProvider.overrideWithValue(_FakeTokenStore()),
+          problemsRepositoryProvider.overrideWithValue(
+            _FakeProblemsRepository(),
+          ),
+          authRepositoryProvider.overrideWithValue(_FakeAuthRepository()),
+          authSessionProvider.overrideWith(_AuthenticatedSessionNotifier.new),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Profilo').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Profilo'), findsWidgets);
+    expect(find.text('Demo Customer'), findsWidgets);
+    expect(find.text('demo.customer@example.com'), findsWidgets);
+    expect(find.text('Email confermata'), findsOneWidget);
+    expect(find.text('Cliente'), findsWidgets);
+    expect(find.text('Notifiche'), findsOneWidget);
+    expect(find.text('Push native'), findsOneWidget);
+
+    final refreshButton = find.widgetWithText(
+      OutlinedButton,
+      'Aggiorna profilo',
+    );
+    await tester.ensureVisible(refreshButton);
+    await tester.pumpAndSettle();
+    await tester.tap(refreshButton);
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, 900));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Registered User'), findsWidgets);
+    expect(find.text('registered@example.com'), findsWidgets);
+
+    final logoutButton = find.widgetWithText(FilledButton, 'Esci').last;
+    await tester.ensureVisible(logoutButton);
+    await tester.pumpAndSettle();
+    await tester.tap(logoutButton);
+    await tester.pumpAndSettle();
+    expect(find.text('Vuoi uscire da questo dispositivo?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Esci').last);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Accedi'), findsWidgets);
   });
 
   testWidgets('starts authenticated diagnosis and opens created problem', (

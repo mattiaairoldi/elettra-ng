@@ -621,12 +621,11 @@ Stato attuale:
 - Flutter mostra badge unread e centro notifiche in-app collegati alle API backend, verificati su web con notifica reale e mark-read;
 - `Diagnosi` autenticata crea una pratica senza asset, avvia il primo turno AI e apre il dettaglio pratica;
 - `Tecnici` mostra professionisti da API reali, filtro categoria e ingresso rapido a `Problemi da risolvere`;
-- `Profilo` resta l'unico tab placeholder operativo.
+- `Profilo` mostra dati account/sessione, stato email, refresh da `/auth/me` e logout confermato.
 
 Snapshot completo: [Stato Attuale](stato-attuale.md).
 
 Il prossimo passo operativo è:
 
-1. completare il tab `Profilo`;
-2. preparare signing/TestFlight e validazione su device fisico;
-3. tenere Flutter web come target rapido di smoke per ogni iterazione mobile.
+1. preparare signing/TestFlight e validazione su device fisico;
+2. tenere Flutter web come target rapido di smoke per ogni iterazione mobile.

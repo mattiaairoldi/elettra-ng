@@ -7,6 +7,7 @@ import '../../health/presentation/api_status_card.dart';
 import '../../home/presentation/home_screen.dart';
 import '../../notifications/data/notification_repository.dart';
 import '../../notifications/presentation/notifications_screen.dart';
+import '../../profile/presentation/profile_screen.dart';
 import '../../problems/presentation/problems_screen.dart';
 import '../../professionals/presentation/professionals_screen.dart';
 import '../data/shell_navigation.dart';
@@ -121,8 +122,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               const DiagnosisScreen()
             else if (_selectedIndex == 3)
               const ProfessionalsScreen()
+            else if (_selectedIndex == 4)
+              const ProfileScreen()
             else
-              _PlaceholderPanel(destination: destination),
+              const SizedBox.shrink(),
           ],
         ),
       ),
@@ -168,43 +171,6 @@ class _NotificationAction extends ConsumerWidget {
             )
           : icon,
     );
-  }
-}
-
-class _PlaceholderPanel extends StatelessWidget {
-  const _PlaceholderPanel({required this.destination});
-
-  final _Destination destination;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(destination.icon, size: 28),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                _copyFor(destination.label),
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _copyFor(String label) {
-    return switch (label) {
-      'Problemi' => 'Qui collegheremo elenco e dettaglio dei problemi aperti.',
-      'Diagnosi' => 'Qui entreranno consigli guidati, feedback e chat AI.',
-      'Casa' => 'Qui verranno mostrati immobili, asset e promemoria.',
-      _ => 'Qui entreranno autenticazione, account e preferenze.',
-    };
   }
 }
 
