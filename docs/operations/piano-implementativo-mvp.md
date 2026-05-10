@@ -281,6 +281,7 @@ Già implementato nel workstream MVP:
 - scaffold Flutter Android/iOS/web;
 - flusso Flutter autenticato con `La mia casa`, allegati asset, apertura problema da asset, dettaglio `Problemi da risolvere`, diagnostica guidata/AI e condivisione professionista;
 - verifica manuale Flutter web di `La mia casa` su seed demo reale;
+- verifica manuale Flutter web di `Problemi da risolvere` fino a consiglio guidato, AI, snapshot, condivisione e notifica professionista;
 - guest tier diagnostico pre-onboarding con sessione opaca, quote basse e UI Flutter pre-login;
 - API e test per storico e promemoria manutenzione asset;
 - API notifiche in-app e `DeviceInstallation` con hook su condivisioni/conversazioni;
@@ -288,6 +289,5 @@ Già implementato nel workstream MVP:
 
 Prossima sequenza:
 
-1. Verificare manualmente il flusso problema -> diagnostica -> condivisione.
-2. Completare promozione guest -> account/caso solo se validata dal percorso ospite.
-3. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.
+1. Completare promozione guest -> account/caso solo se validata dal percorso ospite.
+2. Rifinire API aggregate solo sulla base delle frizioni emerse dalla UI reale.

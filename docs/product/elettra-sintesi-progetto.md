@@ -280,11 +280,10 @@ Lo spike attuale consente di inviare un messaggio diagnostico, generare una risp
 
 Il prossimo lavoro dovrebbe procedere così:
 
-1. verificare manualmente il flusso problema -> diagnostica -> condivisione su Flutter;
-2. completare promozione guest -> account/caso solo dopo validazione del percorso ospite;
-3. validare macro-capitoli e scelte cablate su scenari reali;
-4. raffinare regole di sicurezza per capitolo;
-5. tarare soglie di compattazione e stime costo/token;
-8. usare i contenuti storici di `../elettra` come corpus di test, non come import automatico.
+1. completare promozione guest -> account/caso solo dopo validazione del percorso ospite;
+2. validare macro-capitoli e scelte cablate su scenari reali;
+3. raffinare regole di sicurezza per capitolo;
+4. tarare soglie di compattazione e stime costo/token;
+5. usare i contenuti storici di `../elettra` come corpus di test, non come import automatico.
 
 La regola operativa resta: niente import massivo di alberi diagnostici prima di aver validato il modello chat-first.

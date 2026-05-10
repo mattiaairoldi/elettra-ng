@@ -235,9 +235,8 @@ La base backend è già impostata:
 
 Il prossimo lavoro dovrebbe concentrarsi su:
 
-1. verifica manuale del flusso Flutter problema -> diagnostica -> condivisione;
-2. promozione guest -> account/caso se il percorso ospite risulta utile;
-3. validazione dei flussi MVP con scenari reali;
-4. taratura dei limiti AI su uso reale.
+1. promozione guest -> account/caso se il percorso ospite risulta utile;
+2. validazione dei flussi MVP con scenari reali;
+3. taratura dei limiti AI su uso reale.
 
 L'obiettivo del primo MVP è dimostrare che la casa può essere documentata senza complessità e che un problema tecnico può nascere in modo semplice, sicuro e ordinato, arrivando al professionista solo quando serve e con informazioni migliori.
