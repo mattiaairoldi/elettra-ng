@@ -20,6 +20,7 @@ dependencies = [
   "openai>=1.108,<2",
   "sentry-sdk>=2,<3",
   "django-cors-headers>=4.4,<5",
+  "whitenoise>=6.8,<7",
   "gunicorn>=23,<24",
   "djangorestframework-simplejwt>=5.3,<6",
 ]

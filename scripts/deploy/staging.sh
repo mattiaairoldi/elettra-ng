@@ -55,6 +55,8 @@ ENV_STAGING_IMAGE_REPOSITORY="${STAGING_IMAGE_REPOSITORY:-}"
 ENV_STAGING_IMAGE_TAG="${STAGING_IMAGE_TAG:-}"
 ENV_STAGING_DOMAIN="${STAGING_DOMAIN:-}"
 ENV_STAGING_HEALTHCHECK_URL="${STAGING_HEALTHCHECK_URL:-}"
+ENV_GIO_DOMAIN="${GIO_DOMAIN:-}"
+ENV_GIO_SITE_ROOT="${GIO_SITE_ROOT:-}"
 
 set -a
 # shellcheck source=/dev/null
@@ -65,6 +67,8 @@ STAGING_IMAGE_REPOSITORY="${ENV_STAGING_IMAGE_REPOSITORY:-${STAGING_IMAGE_REPOSI
 STAGING_IMAGE_TAG="${ENV_STAGING_IMAGE_TAG:-${STAGING_IMAGE_TAG:-}}"
 STAGING_DOMAIN="${ENV_STAGING_DOMAIN:-${STAGING_DOMAIN:-}}"
 STAGING_HEALTHCHECK_URL="${ENV_STAGING_HEALTHCHECK_URL:-${STAGING_HEALTHCHECK_URL:-}}"
+GIO_DOMAIN="${ENV_GIO_DOMAIN:-${GIO_DOMAIN:-}}"
+GIO_SITE_ROOT="${ENV_GIO_SITE_ROOT:-${GIO_SITE_ROOT:-}}"
 
 required() {
   local name="$1"
@@ -89,6 +93,7 @@ STAGING_BOOTSTRAP="${STAGING_BOOTSTRAP:-false}"
 STAGING_REMOTE_SUDO="${STAGING_REMOTE_SUDO:-true}"
 STAGING_DOCKER_SUDO="${STAGING_DOCKER_SUDO:-true}"
 STAGING_REGISTRY_LOGIN_REQUIRED="${STAGING_REGISTRY_LOGIN_REQUIRED:-false}"
+STAGING_UPLOAD_IMAGE="${STAGING_UPLOAD_IMAGE:-false}"
 STAGING_PULL="${STAGING_PULL:-true}"
 STAGING_RUN_MIGRATIONS="${STAGING_RUN_MIGRATIONS:-true}"
 STAGING_SEED_DEMO="${STAGING_SEED_DEMO:-false}"
@@ -142,6 +147,28 @@ copy_file() {
   fi
 }
 
+upload_image() {
+  local image_ref="$STAGING_IMAGE_REPOSITORY:$STAGING_IMAGE_TAG"
+  local local_tar
+  local remote_tar
+
+  local_tar="$(mktemp "${TMPDIR:-/tmp}/elettra-image.XXXXXX.tar")"
+  remote_tar="$STAGING_REMOTE_DIR/elettra-image-$STAGING_IMAGE_TAG.tar"
+
+  echo "+ docker save $image_ref -o $local_tar"
+  if [ "$DRY_RUN" = "false" ]; then
+    docker image inspect "$image_ref" >/dev/null
+    docker save "$image_ref" -o "$local_tar"
+  fi
+
+  copy_file "$local_tar" "$remote_tar"
+  run_ssh "$REMOTE_DOCKER load -i $(sq "$remote_tar") && rm -f $(sq "$remote_tar")"
+
+  if [ "$DRY_RUN" = "false" ]; then
+    rm -f "$local_tar"
+  fi
+}
+
 remote_sudo_prefix() {
   if [ "$STAGING_REMOTE_SUDO" = "true" ]; then
     printf "sudo "
@@ -178,7 +205,30 @@ else
   run_ssh "test -f $REMOTE_ENV_Q"
 fi
 
-run_ssh "tmp=$(sq "$STAGING_REMOTE_DIR/.env.staging.next"); grep -v -E '^(IMAGE_REPOSITORY|IMAGE_TAG|STAGING_DOMAIN)=' $REMOTE_ENV_Q > \"\$tmp\"; printf '%s\n' $(sq "IMAGE_REPOSITORY=$STAGING_IMAGE_REPOSITORY") $(sq "IMAGE_TAG=$STAGING_IMAGE_TAG") $(sq "STAGING_DOMAIN=$STAGING_DOMAIN") >> \"\$tmp\"; chmod 600 \"\$tmp\"; mv \"\$tmp\" $REMOTE_ENV_Q"
+env_lines=(
+  "IMAGE_REPOSITORY=$STAGING_IMAGE_REPOSITORY"
+  "IMAGE_TAG=$STAGING_IMAGE_TAG"
+  "STAGING_DOMAIN=$STAGING_DOMAIN"
+)
+env_filter_names="IMAGE_REPOSITORY|IMAGE_TAG|STAGING_DOMAIN"
+
+if [ -n "$GIO_DOMAIN" ]; then
+  env_lines+=("GIO_DOMAIN=$GIO_DOMAIN")
+  env_filter_names="${env_filter_names}|GIO_DOMAIN"
+fi
+
+if [ -n "$GIO_SITE_ROOT" ]; then
+  env_lines+=("GIO_SITE_ROOT=$GIO_SITE_ROOT")
+  env_filter_names="${env_filter_names}|GIO_SITE_ROOT"
+fi
+
+env_filter="^(${env_filter_names})="
+printf_args=""
+for line in "${env_lines[@]}"; do
+  printf_args="$printf_args $(sq "$line")"
+done
+
+run_ssh "tmp=$(sq "$STAGING_REMOTE_DIR/.env.staging.next"); grep -v -E $(sq "$env_filter") $REMOTE_ENV_Q > \"\$tmp\"; printf '%s\n' $printf_args >> \"\$tmp\"; chmod 600 \"\$tmp\"; mv \"\$tmp\" $REMOTE_ENV_Q"
 
 if [ -n "${STAGING_REGISTRY_SERVER:-}" ] && [ -n "${STAGING_REGISTRY_USERNAME:-}" ]; then
   if [ "$DRY_RUN" = "true" ]; then
@@ -208,6 +258,11 @@ if [ -n "${STAGING_REGISTRY_SERVER:-}" ] && [ -n "${STAGING_REGISTRY_USERNAME:-}
 elif [ "$STAGING_REGISTRY_LOGIN_REQUIRED" = "true" ]; then
   echo "Registry login required but STAGING_REGISTRY_SERVER/USERNAME are missing." >&2
   exit 1
+fi
+
+if [ "$STAGING_UPLOAD_IMAGE" = "true" ]; then
+  upload_image
+  STAGING_PULL=false
 fi
 
 compose_base="cd $REMOTE_DIR_Q && $REMOTE_DOCKER compose --env-file .env.staging -p $(sq "$STAGING_PROJECT_NAME") -f deploy/compose.staging.yml"

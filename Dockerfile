@@ -24,7 +24,9 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --extra dev
 
 COPY . .
+RUN DJANGO_SECRET_KEY=build-static \
+    DJANGO_SETTINGS_MODULE=config.settings.base \
+    uv run python manage.py collectstatic --noinput
 
 ENTRYPOINT ["/bin/sh", "/app/docker/entrypoint.sh"]
 CMD ["uv", "run", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
-

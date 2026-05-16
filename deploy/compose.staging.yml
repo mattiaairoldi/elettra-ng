@@ -4,11 +4,13 @@ services:
     restart: unless-stopped
     environment:
       STAGING_DOMAIN: ${STAGING_DOMAIN:?STAGING_DOMAIN is required}
+      GIO_DOMAIN: ${GIO_DOMAIN:-gio.sitoistituzionale.ovh}
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile.staging:/etc/caddy/Caddyfile:ro
+      - ${GIO_SITE_ROOT:-/var/www/html/giorgessi/www.giorgessi.it}:/srv/gio:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
