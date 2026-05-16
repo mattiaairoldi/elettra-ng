@@ -1,12 +1,12 @@
 # Stato Attuale
 
-Ultimo aggiornamento: 2026-05-10.
+Ultimo aggiornamento: 2026-05-16.
 
-Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso, della registrazione standard con conferma email e dei tab autenticati `Diagnosi`, `Tecnici` e `Profilo`.
+Questo documento fotografa dove e arrivato `elettra-ng` dopo il completamento del flusso guest -> account/caso, della registrazione standard con conferma email, dei tab autenticati `Diagnosi`, `Tecnici` e `Profilo`, e del primo staging VPS Docker/Caddy con Flutter web servito sulla root del dominio.
 
 ## Stato Operativo
 
-Il backend Django e avviabile localmente con Docker Compose e usa PostgreSQL/PostGIS, Redis, MinIO e Mailpit.
+Il backend Django e avviabile localmente con Docker Compose e usa PostgreSQL/PostGIS, Redis, MinIO e Mailpit. Lo staging pubblico e operativo su VPS con Docker Compose, Caddy, PostgreSQL/PostGIS, Redis, MinIO, Mailpit privato e Flutter web servito da `https://elettra.iapersonale.it/`.
 
 Sono implementati e verificati:
 
@@ -25,7 +25,7 @@ Sono implementati e verificati:
 
 La app Flutter in `mobile/elettra_mobile` e il client principale previsto per Android/iOS. Il target web viene usato per smoke rapidi e demo funzionali.
 
-La strategia scelta per staging/deploy e usare script CI locali versionati come fonte comune: oggi esecuzione locale dopo commit, poi stessi script in GitHub Actions o Gitea Actions, con immagini Docker costruite dalla CI e scaricate dal VPS tramite registry. Dettaglio operativo: [CI Locale E Deploy Staging](ci-locale-e-deploy-staging.md).
+La strategia scelta per staging/deploy e usare script CI locali versionati come fonte comune: oggi lo staging funziona con build/upload locale dell'immagine e upload del bundle Flutter web; il prossimo passaggio e spostare l'immagine backend su registry, cosi il VPS scarica immagini gia costruite invece di riceverle dal checkout locale. Dettaglio operativo: [CI Locale E Deploy Staging](ci-locale-e-deploy-staging.md).
 
 Sono disponibili gli script `scripts/ci/backend.sh`, `scripts/ci/mobile.sh`, `scripts/ci/build-images.sh`, `scripts/ci/local-all.sh` e `scripts/deploy/staging.sh`.
 
@@ -44,7 +44,8 @@ Sono operativi in Flutter:
 - condivisione professionista;
 - centro notifiche in-app;
 - accesso ospite;
-- promozione ospite ad account/caso.
+- promozione ospite ad account/caso;
+- localizzazione italiana dei livelli di rischio diagnostico (`unknown`, `low`, `medium`, `high`, `urgent`).
 
 Non restano tab placeholder nel flusso autenticato principale.
 
@@ -64,7 +65,7 @@ cd mobile/elettra_mobile && flutter build web
 scripts/ci/local-all.sh
 ```
 
-Risultato:
+Risultato dell'ultimo giro completo:
 
 - backend: `126 passed`;
 - migrazioni: nessun cambio rilevato;
@@ -72,6 +73,15 @@ Risultato:
 - Flutter analyze/test/build web: verdi.
 - Flutter widget test: `10 passed`.
 - CI locale: `scripts/ci/local-all.sh` verde, inclusa build APK debug e build immagine Docker backend.
+
+Verifiche successive eseguite dopo il deploy staging e la localizzazione dei livelli di rischio:
+
+- `flutter analyze`: verde;
+- `flutter test`: `12 passed`;
+- `flutter build web --dart-define=API_BASE_URL=https://elettra.iapersonale.it/api/v1`: verde;
+- deploy Flutter web su staging: completato;
+- health staging `https://elettra.iapersonale.it/api/v1/health`: `{"status": "ok"}`;
+- provider AI OpenAI configurato su staging con chiave presente nel container, senza esporre il valore.
 
 Smoke funzionali eseguiti su Flutter web:
 
@@ -95,8 +105,8 @@ Non sono ancora implementati o validati:
 - TestFlight;
 - validazione su device fisico o emulatori nativi;
 - build iOS firmata;
-- primo deploy reale su VPS staging;
 - registry immagini con push remoto configurato;
+- deploy staging basato su pull da registry invece che upload locale dell'immagine;
 - API aggregate aggiuntive oltre a quelle emerse come necessarie dalla UI corrente;
 - assegnazione interna organizzazione/tecnico dopo accettazione richiesta;
 - regole di sicurezza AI non negoziabili formalizzate per ogni capitolo;
@@ -114,40 +124,47 @@ Restano fuori perimetro guest:
 
 ## Prossimo Step
 
-Il prossimo step operativo e preparare la base CI/deploy locale prima della validazione mobile nativa su backend pubblico.
+Il prossimo step operativo e trasformare lo staging gia funzionante in un deploy ripetibile tramite registry, poi passare alla validazione mobile nativa su backend pubblico.
 
 Sequenza consigliata:
 
-1. Preparare configurazione locale staging:
-   - `deploy/staging.local.env`;
-   - `.env.staging`;
-   - tag immagine gia pubblicato su registry.
-2. Eseguire deploy dry-run:
-   - `scripts/deploy/staging.sh --dry-run`.
-3. Eseguire primo deploy reale su VPS.
-4. Preparare workflow backend/build immagini:
-   - invocazione degli script CI locali;
-   - push registry solo quando `PUSH=true`;
-   - deploy staging via SSH dopo pull/migrate/up.
+1. Decidere il registry immagini:
+   - GitHub Container Registry, Gitea registry o registry Docker privato;
+   - convenzione tag per staging, per esempio `sha-<commit>`.
+2. Configurare build/push immagine:
+   - usare `scripts/ci/build-images.sh`;
+   - abilitare push solo quando `PUSH=true`;
+   - salvare credenziali fuori repo.
+3. Adeguare deploy staging al pull:
+   - `STAGING_UPLOAD_IMAGE=false`;
+   - `STAGING_PULL=true`;
+   - `STAGING_IMAGE_REPOSITORY` puntato al registry;
+   - deploy via SSH con migrate/up/restart.
+4. Verificare staging post-registry:
+   - API health;
+   - Flutter web;
+   - registrazione/conferma email;
+   - diagnosi AI con provider reale;
+   - flusso casa/asset/problemi.
 5. Preparare configurazione runtime per device/emulatore:
    - API base URL per Android emulator (`10.0.2.2`) o device fisico su LAN;
    - profili ambiente Flutter per dev/demo;
    - verifica storage sicuro token su Android/iOS.
-4. Validare Android:
+6. Validare Android:
    - avvio su emulator o device fisico;
    - login;
    - `La mia casa`;
    - `Problemi da risolvere`;
    - guest -> account/caso;
    - notifiche in-app.
-5. Preparare signing:
+7. Preparare signing:
    - Android keystore e variabili CI;
    - bundle id iOS;
    - Apple Team/App Store Connect;
    - segreti CI per build firmate.
-6. Validare iOS:
+8. Validare iOS:
    - build CI macOS `--no-codesign` come controllo tecnico;
    - build firmata quando sono disponibili certificati/profili;
    - distribuzione TestFlight.
 
-La web app ora copre i tab principali; la prossima riduzione di rischio e rendere ripetibile build/deploy, poi validare networking, storage token e runtime mobile reale.
+La web app ora copre i tab principali ed e pubblicata su staging; la prossima riduzione di rischio e eliminare l'upload manuale dell'immagine backend, poi validare networking, storage token e runtime mobile reale.

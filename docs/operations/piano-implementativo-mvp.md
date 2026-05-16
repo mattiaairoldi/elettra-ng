@@ -286,11 +286,13 @@ Già implementato nel workstream MVP:
 - promozione guest -> account/caso con JWT e pratica creata dal riepilogo diagnostico;
 - API e test per storico e promemoria manutenzione asset;
 - API notifiche in-app e `DeviceInstallation` con hook su condivisioni/conversazioni;
-- centro notifiche Flutter con badge unread, lista notifiche e azioni mark-read, verificato manualmente su web.
+- centro notifiche Flutter con badge unread, lista notifiche e azioni mark-read, verificato manualmente su web;
+- primo staging VPS Docker/Caddy con API, Flutter web sulla root del dominio e provider OpenAI reale configurato.
 
 Snapshot operativo completo: [Stato Attuale](stato-attuale.md).
 
 Prossima sequenza:
 
-1. Preparare validazione mobile nativa e percorso signing/TestFlight.
-2. Rifinire API aggregate solo sulla base delle frizioni emerse su device/emulatore.
+1. Spostare il deploy staging da upload locale immagine a pull da registry.
+2. Preparare validazione mobile nativa e percorso signing/TestFlight.
+3. Rifinire API aggregate solo sulla base delle frizioni emerse su device/emulatore.

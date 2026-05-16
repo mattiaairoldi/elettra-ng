@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:elettra_mobile/app/elettra_app.dart';
+import 'package:elettra_mobile/core/i18n/diagnostic_labels.dart';
 import 'package:elettra_mobile/core/storage/token_store.dart';
 import 'package:elettra_mobile/features/auth/data/auth_models.dart';
 import 'package:elettra_mobile/features/auth/data/auth_repository.dart';
@@ -738,6 +739,15 @@ class _AuthenticatedSessionNotifier extends AuthSessionNotifier {
 }
 
 void main() {
+  test('localizes diagnostic risk levels in Italian', () {
+    expect(diagnosticRiskLevelLabel('unknown'), 'Non determinato');
+    expect(diagnosticRiskLevelLabel('low'), 'Basso');
+    expect(diagnosticRiskLevelLabel('medium'), 'Medio');
+    expect(diagnosticRiskLevelLabel('high'), 'Alto');
+    expect(diagnosticRiskLevelLabel('urgent'), 'Urgente');
+    expect(diagnosticRiskLevelLabel('unexpected'), 'Non determinato');
+  });
+
   testWidgets('shows login when unauthenticated', (tester) async {
     await tester.pumpWidget(
       ProviderScope(

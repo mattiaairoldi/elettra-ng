@@ -2,13 +2,13 @@
 
 ## Obiettivo Corrente
 
-Preparare CI locale, immagini Docker versionate e staging VPS, poi portare la app Flutter alla validazione mobile nativa.
+Passare lo staging VPS gia operativo da upload locale dell'immagine a registry Docker, poi portare la app Flutter alla validazione mobile nativa.
 
 Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 
 ## In Corso
 
-- [ ] Preparare modello staging VPS con immagini Docker versionate.
+- [ ] Configurare registry Docker e deploy staging con pull dell'immagine versionata.
 - [ ] Preparare validazione mobile nativa e percorso signing/TestFlight.
 
 ## Stato Sintetico
@@ -20,8 +20,9 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - Il modello deploy scelto e: script CI locali versionati, immagini Docker costruite da CI, VPS che scarica immagini, applica migrazioni e riavvia i container.
 - Gli script `scripts/ci/*` sono implementati e il workflow mobile usa `scripts/ci/mobile.sh`.
 - Sono disponibili `deploy/compose.staging.yml`, `.env.staging.example`, `deploy/staging.local.env.example` e `scripts/deploy/staging.sh`.
+- Lo staging VPS e operativo con Docker Compose, Caddy e Flutter web su `https://elettra.iapersonale.it/`; oggi usa ancora upload locale dell'immagine backend.
 - Il target prodotto resta Android/iOS; web e React sono strumenti di test/demo.
-- Il prossimo rischio da ridurre riguarda ripetibilita build/deploy e poi device/emulatore: storage sicuro token, networking reale e preparazione signing.
+- Il prossimo rischio da ridurre riguarda registry/pull immagine e poi device/emulatore: storage sicuro token, networking reale e preparazione signing.
 
 ## Todo
 
@@ -33,9 +34,10 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [ ] Valutare se `DiagnosticFlow` deve restare solo per guide curate/fallback.
 - [ ] Rifinire condivisione selettiva allegati/chat diagnostica su `CaseShareRequest`.
 - [ ] Aggiungere assegnazione interna organizzazione/tecnico dopo accettazione richiesta.
-- [ ] Eseguire primo dry-run deploy staging con configurazione reale non versionata.
-- [ ] Eseguire primo deploy VPS staging dopo push immagine su registry.
-- [ ] Aggiungere workflow backend/build immagini che invoca gli script CI locali.
+- [ ] Scegliere registry immagini: GitHub Container Registry, Gitea registry o registry Docker privato.
+- [ ] Configurare credenziali push/pull fuori repo.
+- [ ] Eseguire primo deploy staging con `STAGING_UPLOAD_IMAGE=false` e `STAGING_PULL=true`.
+- [ ] Aggiungere workflow backend/build immagini che invoca gli script CI locali e pubblica solo quando richiesto.
 
 ## Fatto
 
@@ -166,6 +168,10 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - [x] Collegato workflow mobile agli script CI locali.
 - [x] Verificato `scripts/ci/local-all.sh`: backend, Flutter web, APK debug e build immagine backend locali verdi.
 - [x] Implementato modello deploy staging versionato con Compose remoto, Caddy, env staging esempio e script SSH.
+- [x] Eseguito primo deploy reale su VPS staging con Docker Compose e Caddy.
+- [x] Pubblicata app Flutter web sulla root di `https://elettra.iapersonale.it/`.
+- [x] Configurato provider OpenAI reale su staging tramite `.env.staging` non versionato.
+- [x] Localizzati in italiano i livelli di rischio diagnostico mostrati in Flutter.
 
 ## Decisioni Confermate
 
@@ -202,5 +208,5 @@ Snapshot operativo dettagliato: [Stato Attuale](stato-attuale.md).
 - Da un asset documentato si può aprire una nuova problematica già collegata all'asset.
 - Il piano guest è in `docs/operations/piano-implementativo-guest-tier.md`.
 - La logica CI/deploy deve stare in script versionati; GitHub Actions o Gitea Actions devono limitarsi a invocarli.
-- Il VPS staging non deve compilare immagini: deve fare pull da registry, migrazioni e `up -d`.
+- Il VPS staging non deve compilare immagini: lo stato intermedio accetta upload locale dell'immagine, ma il target operativo e pull da registry, migrazioni e `up -d`.
 - Host, utente, path remoto e credenziali deploy devono stare in `deploy/staging.local.env`, non versionato.

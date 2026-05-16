@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/i18n/diagnostic_labels.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../problems/data/problem_models.dart';
 import '../../problems/data/problems_repository.dart';
@@ -690,7 +691,10 @@ class _SnapshotBox extends StatelessWidget {
         if (snapshot.summary.isNotEmpty)
           _SnapshotRow(label: 'Riepilogo', value: snapshot.summary),
         if (snapshot.riskLevel.isNotEmpty)
-          _SnapshotRow(label: 'Rischio', value: snapshot.riskLevel),
+          _SnapshotRow(
+            label: 'Rischio',
+            value: diagnosticRiskLevelLabel(snapshot.riskLevel),
+          ),
         if (snapshot.recommendation.isNotEmpty)
           _SnapshotRow(label: 'Indicazione', value: snapshot.recommendation),
         if (snapshot.nextQuestion.isNotEmpty)
