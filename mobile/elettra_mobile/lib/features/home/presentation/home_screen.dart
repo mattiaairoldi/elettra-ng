@@ -17,7 +17,9 @@ class HomeScreen extends ConsumerWidget {
     return overview.when(
       data: (data) {
         if (data.properties.isEmpty) {
-          return const _EmptyHome();
+          return _EmptyHome(
+            onAddProperty: () => _showCreatePropertyDialog(context, ref),
+          );
         }
 
         return Column(
@@ -76,6 +78,33 @@ class HomeScreen extends ConsumerWidget {
     return overview.assets
         .where((asset) => asset.propertyId == property.id)
         .toList();
+  }
+
+  Future<void> _showCreatePropertyDialog(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    var created = false;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _CreatePropertyDialog(
+        onSubmit: (payload) async {
+          await ref
+              .read(homeRepositoryProvider)
+              .createProperty(
+                name: payload.name,
+                addressText: payload.addressText,
+                city: payload.city,
+                notes: payload.notes,
+              );
+          created = true;
+          ref.invalidate(homeOverviewProvider);
+        },
+      ),
+    );
+    if (created && context.mounted) {
+      _showSnackBar(context, 'Casa aggiunta.');
+    }
   }
 
   Future<void> _showCreateAssetDialog(
@@ -637,6 +666,140 @@ class _TimelineRow extends StatelessWidget {
       ],
     );
   }
+}
+
+class _CreatePropertyDialog extends StatefulWidget {
+  const _CreatePropertyDialog({required this.onSubmit});
+
+  final Future<void> Function(_PropertyFormPayload payload) onSubmit;
+
+  @override
+  State<_CreatePropertyDialog> createState() => _CreatePropertyDialogState();
+}
+
+class _CreatePropertyDialogState extends State<_CreatePropertyDialog> {
+  final _nameController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _notesController = TextEditingController();
+  var _submitting = false;
+  String? _error;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _addressController.dispose();
+    _cityController.dispose();
+    _notesController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Aggiungi casa'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              enabled: !_submitting,
+              decoration: const InputDecoration(labelText: 'Nome'),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _addressController,
+              enabled: !_submitting,
+              decoration: const InputDecoration(labelText: 'Indirizzo'),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _cityController,
+              enabled: !_submitting,
+              decoration: const InputDecoration(labelText: 'Città'),
+              textInputAction: TextInputAction.next,
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _notesController,
+              enabled: !_submitting,
+              decoration: const InputDecoration(labelText: 'Note'),
+              minLines: 2,
+              maxLines: 4,
+            ),
+            if (_error != null) _DialogError(message: _error!),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _submitting ? null : () => Navigator.of(context).pop(),
+          child: const Text('Annulla'),
+        ),
+        FilledButton(
+          onPressed: _submitting ? null : _submit,
+          child: _submitting
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Text('Salva'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _submit() async {
+    final name = _nameController.text.trim();
+    final address = _addressController.text.trim();
+    final city = _cityController.text.trim();
+    final notes = _notesController.text.trim();
+    if (name.isEmpty) {
+      setState(() => _error = 'Inserisci un nome per la casa.');
+      return;
+    }
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    try {
+      await widget.onSubmit(
+        _PropertyFormPayload(
+          name: name,
+          addressText: address,
+          city: city,
+          notes: notes,
+        ),
+      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _error = 'Creazione casa non riuscita.';
+        });
+      }
+    }
+  }
+}
+
+class _PropertyFormPayload {
+  const _PropertyFormPayload({
+    required this.name,
+    required this.addressText,
+    required this.city,
+    required this.notes,
+  });
+
+  final String name;
+  final String addressText;
+  final String city;
+  final String notes;
 }
 
 class _CreateAssetDialog extends StatefulWidget {
@@ -1369,7 +1532,9 @@ class _EmptyPropertyAssets extends StatelessWidget {
 }
 
 class _EmptyHome extends ConsumerWidget {
-  const _EmptyHome();
+  const _EmptyHome({required this.onAddProperty});
+
+  final VoidCallback onAddProperty;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1418,13 +1583,10 @@ class _EmptyHome extends ConsumerWidget {
                   icon: const Icon(Icons.forum_outlined),
                   label: const Text('Continua diagnosi'),
                 ),
-                Tooltip(
-                  message: 'Disponibile dopo la creazione casa',
-                  child: OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.add_home_outlined),
-                    label: const Text('Aggiungi casa'),
-                  ),
+                OutlinedButton.icon(
+                  onPressed: onAddProperty,
+                  icon: const Icon(Icons.add_home_outlined),
+                  label: const Text('Aggiungi casa'),
                 ),
               ],
             ),

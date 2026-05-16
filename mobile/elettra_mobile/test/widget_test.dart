@@ -477,74 +477,108 @@ class _FakeGuestRepository implements GuestRepository {
 }
 
 class _FakeHomeRepository implements HomeRepository {
+  _FakeHomeRepository({HomeOverview? initialOverview})
+    : _overview = initialOverview ?? _defaultOverview;
+
+  static const _defaultOverview = HomeOverview(
+    properties: [
+      HomeProperty(
+        id: 1,
+        name: 'Casa Demo',
+        addressText: 'Via Demo 1',
+        city: 'Milano',
+        notes: '',
+      ),
+    ],
+    assets: [
+      HomeAsset(
+        id: 1,
+        propertyId: 1,
+        categoryId: 1,
+        name: 'Lavatrice',
+        description: 'Lavatrice di servizio',
+        locationText: 'Bagno',
+        metadata: {'manufacturer': 'DemoWash', 'model': 'DW-800'},
+      ),
+    ],
+    categories: [
+      HomeCategory(id: 1, name: 'Elettrodomestici', slug: 'elettrodomestici'),
+    ],
+    eventsByAssetId: {
+      1: [
+        HomeMaintenanceEvent(
+          id: 1,
+          assetId: 1,
+          propertyId: 1,
+          eventType: 'cleaning',
+          title: 'Pulizia filtro',
+          description: '',
+          eventDate: null,
+        ),
+      ],
+    },
+    remindersByAssetId: {
+      1: [
+        HomeMaintenanceReminder(
+          id: 1,
+          assetId: 1,
+          propertyId: 1,
+          title: 'Prossima pulizia filtro',
+          description: '',
+          dueAt: null,
+          recurrenceRule: 'quarterly',
+          status: 'active',
+        ),
+      ],
+    },
+    attachmentsByAssetId: {
+      1: [
+        HomeAttachment(
+          id: 1,
+          caseId: null,
+          assetId: 1,
+          fileUrl: '/media/manuale.pdf',
+          fileName: 'manuale-lavatrice.pdf',
+          mimeType: 'application/pdf',
+          sizeBytes: 1200,
+          attachmentType: 'document',
+          createdAt: null,
+        ),
+      ],
+    },
+  );
+
+  HomeOverview _overview;
+  String? createdPropertyName;
+
   @override
   Future<HomeOverview> fetchOverview() async {
-    return const HomeOverview(
+    return _overview;
+  }
+
+  @override
+  Future<void> createProperty({
+    required String name,
+    required String addressText,
+    required String city,
+    required String notes,
+  }) async {
+    createdPropertyName = name;
+    _overview = HomeOverview(
       properties: [
         HomeProperty(
-          id: 1,
-          name: 'Casa Demo',
-          addressText: 'Via Demo 1',
-          city: 'Milano',
-          notes: '',
+          id: 10,
+          name: name,
+          addressText: addressText,
+          city: city,
+          notes: notes,
         ),
       ],
-      assets: [
-        HomeAsset(
-          id: 1,
-          propertyId: 1,
-          categoryId: 1,
-          name: 'Lavatrice',
-          description: 'Lavatrice di servizio',
-          locationText: 'Bagno',
-          metadata: {'manufacturer': 'DemoWash', 'model': 'DW-800'},
-        ),
-      ],
-      categories: [
-        HomeCategory(id: 1, name: 'Elettrodomestici', slug: 'elettrodomestici'),
-      ],
-      eventsByAssetId: {
-        1: [
-          HomeMaintenanceEvent(
-            id: 1,
-            assetId: 1,
-            propertyId: 1,
-            eventType: 'cleaning',
-            title: 'Pulizia filtro',
-            description: '',
-            eventDate: null,
-          ),
-        ],
-      },
-      remindersByAssetId: {
-        1: [
-          HomeMaintenanceReminder(
-            id: 1,
-            assetId: 1,
-            propertyId: 1,
-            title: 'Prossima pulizia filtro',
-            description: '',
-            dueAt: null,
-            recurrenceRule: 'quarterly',
-            status: 'active',
-          ),
-        ],
-      },
-      attachmentsByAssetId: {
-        1: [
-          HomeAttachment(
-            id: 1,
-            caseId: null,
-            assetId: 1,
-            fileUrl: '/media/manuale.pdf',
-            fileName: 'manuale-lavatrice.pdf',
-            mimeType: 'application/pdf',
-            sizeBytes: 1200,
-            attachmentType: 'document',
-            createdAt: null,
-          ),
-        ],
-      },
+      assets: const [],
+      categories: _overview.categories,
+      eventsByAssetId: const {},
+      remindersByAssetId: const {},
+      attachmentsByAssetId: const {},
     );
   }
 
@@ -813,6 +847,64 @@ void main() {
     expect(find.text('API online'), findsOneWidget);
     expect(find.text('Casa Demo'), findsOneWidget);
     expect(find.text('Lavatrice'), findsOneWidget);
+  });
+
+  testWidgets('creates first home from empty home state', (tester) async {
+    final homeRepository = _FakeHomeRepository(
+      initialOverview: const HomeOverview(
+        properties: [],
+        assets: [],
+        categories: [
+          HomeCategory(
+            id: 1,
+            name: 'Elettrodomestici',
+            slug: 'elettrodomestici',
+          ),
+        ],
+        eventsByAssetId: {},
+        remindersByAssetId: {},
+        attachmentsByAssetId: {},
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          healthRepositoryProvider.overrideWithValue(_FakeHealthRepository()),
+          homeRepositoryProvider.overrideWithValue(homeRepository),
+          notificationsRepositoryProvider.overrideWithValue(
+            _FakeNotificationsRepository(),
+          ),
+          problemsRepositoryProvider.overrideWithValue(
+            _FakeProblemsRepository(),
+          ),
+          authSessionProvider.overrideWith(_AuthenticatedSessionNotifier.new),
+        ],
+        child: const ElettraApp(),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nessuna casa registrata'), findsOneWidget);
+    await tester.tap(find.text('Aggiungi casa'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.widgetWithText(TextField, 'Nome'), 'Casa Mia');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Indirizzo'),
+      'Via Roma 10',
+    );
+    await tester.enterText(find.widgetWithText(TextField, 'Città'), 'Torino');
+    await tester.tap(find.text('Salva'));
+    await tester.pumpAndSettle();
+
+    expect(homeRepository.createdPropertyName, 'Casa Mia');
+    expect(find.text('Casa Mia'), findsOneWidget);
+    expect(
+      find.text('Nessun asset registrato per questo immobile.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('opens problem detail with diagnostics and sharing', (

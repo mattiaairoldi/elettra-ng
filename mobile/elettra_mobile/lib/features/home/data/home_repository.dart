@@ -8,6 +8,12 @@ import 'home_models.dart';
 
 abstract class HomeRepository {
   Future<HomeOverview> fetchOverview();
+  Future<void> createProperty({
+    required String name,
+    required String addressText,
+    required String city,
+    required String notes,
+  });
   Future<void> createAsset({
     required int propertyId,
     required int categoryId,
@@ -99,6 +105,24 @@ class DioHomeRepository implements HomeRepository {
         attachments,
         (attachment) => attachment.assetId,
       ),
+    );
+  }
+
+  @override
+  Future<void> createProperty({
+    required String name,
+    required String addressText,
+    required String city,
+    required String notes,
+  }) async {
+    await _dio.post<void>(
+      '/properties',
+      data: {
+        'name': name,
+        'address_text': addressText,
+        'city': city,
+        'notes': notes,
+      },
     );
   }
 
