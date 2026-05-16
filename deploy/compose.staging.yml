@@ -10,6 +10,7 @@ services:
       - "443:443"
     volumes:
       - ./Caddyfile.staging:/etc/caddy/Caddyfile:ro
+      - ../flutter-web:/srv/elettra-web:ro
       - ${GIO_SITE_ROOT:-/var/www/html/giorgessi/www.giorgessi.it}:/srv/gio:ro
       - caddy_data:/data
       - caddy_config:/config

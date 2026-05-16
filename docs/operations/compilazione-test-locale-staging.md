@@ -35,6 +35,13 @@ flutter test
 flutter run -d chrome --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1
 ```
 
+Build Flutter web per staging:
+
+```bash
+cd mobile/elettra_mobile
+flutter build web --dart-define=API_BASE_URL=https://elettra.iapersonale.it/api/v1
+```
+
 ## Build Immagine Da Commit
 
 Per staging non usare un tag casuale o `latest`. Il tag deve indicare il commit.
@@ -82,6 +89,8 @@ STAGING_IMAGE_REPOSITORY=elettra-api
 STAGING_IMAGE_TAG=sha-<gitsha>
 STAGING_UPLOAD_IMAGE=true
 STAGING_PULL=false
+STAGING_UPLOAD_FLUTTER_WEB=true
+STAGING_FLUTTER_WEB_DIR=mobile/elettra_mobile/build/web
 ```
 
 Con `STAGING_UPLOAD_IMAGE=true` non serve un registry: lo script carica l'immagine sul VPS via SSH usando `docker save` e `docker load`.
@@ -103,6 +112,7 @@ scripts/deploy/staging.sh
 Lo script:
 
 - copia `deploy/compose.staging.yml` e `deploy/Caddyfile.staging`;
+- carica la build Flutter web se `STAGING_UPLOAD_FLUTTER_WEB=true`;
 - carica `.env.staging` sul VPS;
 - carica l'immagine Docker se `STAGING_UPLOAD_IMAGE=true`;
 - esegue le migrazioni;

@@ -94,6 +94,8 @@ STAGING_REMOTE_SUDO="${STAGING_REMOTE_SUDO:-true}"
 STAGING_DOCKER_SUDO="${STAGING_DOCKER_SUDO:-true}"
 STAGING_REGISTRY_LOGIN_REQUIRED="${STAGING_REGISTRY_LOGIN_REQUIRED:-false}"
 STAGING_UPLOAD_IMAGE="${STAGING_UPLOAD_IMAGE:-false}"
+STAGING_UPLOAD_FLUTTER_WEB="${STAGING_UPLOAD_FLUTTER_WEB:-false}"
+STAGING_FLUTTER_WEB_DIR="${STAGING_FLUTTER_WEB_DIR:-$ROOT_DIR/mobile/elettra_mobile/build/web}"
 STAGING_PULL="${STAGING_PULL:-true}"
 STAGING_RUN_MIGRATIONS="${STAGING_RUN_MIGRATIONS:-true}"
 STAGING_SEED_DEMO="${STAGING_SEED_DEMO:-false}"
@@ -102,6 +104,10 @@ STAGING_HEALTHCHECK_URL="${STAGING_HEALTHCHECK_URL:-https://$STAGING_DOMAIN/api/
 
 if [[ "$STAGING_APP_ENV_FILE" != /* ]]; then
   STAGING_APP_ENV_FILE="$ROOT_DIR/$STAGING_APP_ENV_FILE"
+fi
+
+if [[ "$STAGING_FLUTTER_WEB_DIR" != /* ]]; then
+  STAGING_FLUTTER_WEB_DIR="$ROOT_DIR/$STAGING_FLUTTER_WEB_DIR"
 fi
 
 if [ "$STAGING_UPLOAD_APP_ENV" = "true" ] && [ ! -f "$STAGING_APP_ENV_FILE" ]; then
@@ -127,6 +133,32 @@ run_local() {
   echo "+ $*"
   if [ "$DRY_RUN" = "false" ]; then
     "$@"
+  fi
+}
+
+upload_flutter_web() {
+  local local_tar
+  local remote_tar
+
+  if [ ! -f "$STAGING_FLUTTER_WEB_DIR/index.html" ]; then
+    echo "Missing Flutter web build: $STAGING_FLUTTER_WEB_DIR/index.html" >&2
+    echo "Run: cd mobile/elettra_mobile && flutter build web --dart-define=API_BASE_URL=https://$STAGING_DOMAIN/api/v1" >&2
+    exit 1
+  fi
+
+  local_tar="$(mktemp "${TMPDIR:-/tmp}/elettra-web.XXXXXX.tar.gz")"
+  remote_tar="$STAGING_REMOTE_DIR/elettra-web.tar.gz"
+
+  echo "+ tar -czf $local_tar -C $STAGING_FLUTTER_WEB_DIR ."
+  if [ "$DRY_RUN" = "false" ]; then
+    tar -czf "$local_tar" -C "$STAGING_FLUTTER_WEB_DIR" .
+  fi
+
+  copy_file "$local_tar" "$remote_tar"
+  run_ssh "rm -rf $(sq "$STAGING_REMOTE_DIR/flutter-web") && mkdir -p $(sq "$STAGING_REMOTE_DIR/flutter-web") && tar -xzf $(sq "$remote_tar") -C $(sq "$STAGING_REMOTE_DIR/flutter-web") && rm -f $(sq "$remote_tar")"
+
+  if [ "$DRY_RUN" = "false" ]; then
+    rm -f "$local_tar"
   fi
 }
 
@@ -197,6 +229,10 @@ run_ssh "${REMOTE_SUDO}mkdir -p $REMOTE_DEPLOY_DIR_Q && ${REMOTE_SUDO}chown -R $
 
 copy_file "$ROOT_DIR/deploy/compose.staging.yml" "$STAGING_REMOTE_DIR/deploy/compose.staging.yml"
 copy_file "$ROOT_DIR/deploy/Caddyfile.staging" "$STAGING_REMOTE_DIR/deploy/Caddyfile.staging"
+
+if [ "$STAGING_UPLOAD_FLUTTER_WEB" = "true" ]; then
+  upload_flutter_web
+fi
 
 if [ "$STAGING_UPLOAD_APP_ENV" = "true" ]; then
   copy_file "$STAGING_APP_ENV_FILE" "$STAGING_REMOTE_DIR/.env.staging.tmp"
@@ -281,6 +317,7 @@ if [ "$STAGING_SEED_DEMO" = "true" ]; then
 fi
 
 run_ssh "$compose_base up -d --remove-orphans"
+run_ssh "$compose_base restart caddy"
 run_ssh "$compose_base ps"
 
 if [ "$STAGING_RUN_HEALTHCHECK" = "true" ]; then
