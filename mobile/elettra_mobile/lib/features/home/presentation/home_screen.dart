@@ -675,6 +675,27 @@ class _TimelineRow extends StatelessWidget {
   }
 }
 
+class _ResponsiveDialogContent extends StatelessWidget {
+  const _ResponsiveDialogContent({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final viewportWidth = MediaQuery.sizeOf(context).width;
+    final width = switch (viewportWidth) {
+      < 360 => viewportWidth - 48,
+      < 640 => viewportWidth - 64,
+      _ => 520.0,
+    };
+
+    return SizedBox(
+      width: width,
+      child: SingleChildScrollView(child: child),
+    );
+  }
+}
+
 class _CreatePropertyDialog extends StatefulWidget {
   const _CreatePropertyDialog({required this.onSubmit});
 
@@ -705,7 +726,7 @@ class _CreatePropertyDialogState extends State<_CreatePropertyDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Aggiungi casa'),
-      content: SingleChildScrollView(
+      content: _ResponsiveDialogContent(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -856,7 +877,7 @@ class _CreateAssetDialogState extends State<_CreateAssetDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Nuovo asset'),
-      content: SingleChildScrollView(
+      content: _ResponsiveDialogContent(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1019,7 +1040,7 @@ class _CreateEventDialogState extends State<_CreateEventDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Nuova attività'),
-      content: SingleChildScrollView(
+      content: _ResponsiveDialogContent(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1168,7 +1189,7 @@ class _CreateReminderDialogState extends State<_CreateReminderDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Nuovo promemoria'),
-      content: SingleChildScrollView(
+      content: _ResponsiveDialogContent(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1324,7 +1345,7 @@ class _CreateProblemDialogState extends State<_CreateProblemDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('Nuova problematica'),
-      content: SingleChildScrollView(
+      content: _ResponsiveDialogContent(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
