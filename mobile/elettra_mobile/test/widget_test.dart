@@ -905,6 +905,7 @@ void main() {
       find.text('Nessun asset registrato per questo immobile.'),
       findsOneWidget,
     );
+    expect(find.text('Aggiungi asset'), findsOneWidget);
   });
 
   testWidgets('opens problem detail with diagnostics and sharing', (

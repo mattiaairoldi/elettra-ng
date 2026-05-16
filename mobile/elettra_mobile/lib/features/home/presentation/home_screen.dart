@@ -59,7 +59,14 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
               if (_assetsFor(data, property).isEmpty)
-                const _EmptyPropertyAssets(),
+                _EmptyPropertyAssets(
+                  onAddAsset: () => _showCreateAssetDialog(
+                    context,
+                    ref,
+                    property,
+                    data.categories,
+                  ),
+                ),
               const SizedBox(height: 12),
             ],
           ],
@@ -1517,15 +1524,28 @@ class _ProblemFormPayload {
 }
 
 class _EmptyPropertyAssets extends StatelessWidget {
-  const _EmptyPropertyAssets();
+  const _EmptyPropertyAssets({required this.onAddAsset});
+
+  final VoidCallback onAddAsset;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Text(
-        'Nessun asset registrato per questo immobile.',
-        style: Theme.of(context).textTheme.bodyMedium,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Nessun asset registrato per questo immobile.',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            onPressed: onAddAsset,
+            icon: const Icon(Icons.add),
+            label: const Text('Aggiungi asset'),
+          ),
+        ],
       ),
     );
   }
